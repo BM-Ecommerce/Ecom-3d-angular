@@ -331,11 +331,25 @@ ngOnInit(): void {
 
   // Check if running on localhost
   const isLocalhost = window.location.hostname === 'localhost';
+  const pathParams = this.route.snapshot.params;
 
-  if (isLocalhost) {
-  
-    this.img_file_path_url = environment.apiUrl + '/api/public/';
-
+    if (pathParams && pathParams['product_id']) {
+        // WordPress path-based integration
+        this.img_file_path_url = environment.apiUrl + '/api/public/';
+        this.route.params.pipe(
+            takeUntil(this.destroy$)
+        ).subscribe(paramsFromRoute => {
+            const params = {
+                ...paramsFromRoute,
+                api_url: environment.apiUrl,
+                api_key: environment.apiKey,
+                api_name: environment.apiName,
+                site: environment.site
+            };
+            this.fetchInitialData(params);
+        });
+    } else if (isLocalhost) {
+     this.img_file_path_url = environment.apiUrl + '/api/public/';
     this.route.queryParams.pipe(
       takeUntil(this.destroy$)
     ).subscribe(queryParams => {

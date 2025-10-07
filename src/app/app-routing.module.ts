@@ -3,7 +3,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { OrderformComponent } from './orderform/orderform.component';
 
 const routes: Routes = [
-  { path: '', component: OrderformComponent }
+  { path: '', component: OrderformComponent },
+  { path: ':product_id/:recipeid/:category/:product/:fabric/:fabric_id/:color_id/:pricing_group/:supplier/:cart_productid', component: OrderformComponent },
 ];
 
 @NgModule({
