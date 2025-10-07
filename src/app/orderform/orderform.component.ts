@@ -1304,6 +1304,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
   }else if (selectedOption !== null) {
     if (Array.isArray(selectedOption)) {
       if ([14, 34, 17, 13, 4].includes(field.fieldtypeid)) {
+        
         const ids = selectedOption.map(opt => String(opt.optionid)).join(',');
         targetField.value = ids;
         targetField.optiondefault = ids;
@@ -1327,9 +1328,16 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
 
     else if (selectedOption && selectedOption.optionname) {
       targetField.labelname = targetField.fieldname ?? '';
-      targetField.value = String(selectedOption.optionname);
-      targetField.valueid = String(selectedOption.fieldoptionlinkid);
+      
+    targetField.valueid = selectedOption?.fieldoptionlinkid
+                              ? String(selectedOption.fieldoptionlinkid)
+                              : '';
       targetField.optionid = String(selectedOption.optionid);
+      if ([17, 13].includes(field.fieldtypeid)) {
+        targetField.value = String(selectedOption.optionid);
+      }else{
+        targetField.value = String(selectedOption.optionname);
+      }
       targetField.optionvalue = [selectedOption];
       targetField.optionquantity = '1';
     }
@@ -1563,7 +1571,7 @@ onSubmit(): void {
         };
         return i.subchild=this.cleanSubchild(i.subchild),i
     });
-
+ console.log(this.jsondata);
     if (!this.routeParams || !this.routeParams.site || !this.routeParams.cart_productid) {
       this.errorMessage = 'Missing required route parameters for cart submission.';
       this.isSubmitting = false;
