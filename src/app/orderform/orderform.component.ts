@@ -1316,7 +1316,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
             : '';
       } else {
         targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
-        targetField.valueid = selectedOption.map(opt => String(opt.optionid)).join(',');
+        targetField.valueid = selectedOption.map(opt => String(opt.fieldoptionlinkid)).join(',');
         targetField.optionquantity = selectedOption.map(() => '1').join(',');
       }
 
@@ -1328,7 +1328,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     else if (selectedOption && selectedOption.optionname) {
       targetField.labelname = targetField.fieldname ?? '';
       targetField.value = String(selectedOption.optionname);
-      targetField.valueid = String(selectedOption.optionid);
+      targetField.valueid = String(selectedOption.fieldoptionlinkid);
       targetField.optionid = String(selectedOption.optionid);
       targetField.optionvalue = [selectedOption];
       targetField.optionquantity = '1';
