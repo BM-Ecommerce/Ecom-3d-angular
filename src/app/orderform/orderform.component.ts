@@ -1330,11 +1330,12 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
       targetField.labelname = targetField.fieldname ?? '';
       
       targetField.valueid = selectedOption?.fieldoptionlinkid ? String(selectedOption.fieldoptionlinkid): '';
+
       targetField.optionid = String(selectedOption.optionid);
       if ([17, 13].includes(field.fieldtypeid)) {
         targetField.value = String(selectedOption.optionid);
       }else{
-        targetField.value = String(selectedOption.optionid);
+        targetField.value = String(selectedOption.optionname);
       }
       targetField.optionvalue = [selectedOption];
       targetField.optionquantity = '1';
