@@ -11,6 +11,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { ThreeService } from '../services/three.service';;
 import { HttpClient } from '@angular/common/http';
+import Swal from 'sweetalert2';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
 import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime } from 'rxjs/operators';
@@ -1615,8 +1616,21 @@ onSubmit(): void {
     ).subscribe({
       next: (response) => {
         if (response.success) {
-          console.log('Product added to cart:', response);
-            window.location.href = this.routeParams.site+'/cart';
+           Swal.fire({
+                title: 'Added to Cart!',
+                text: 'Your product has been added successfully.',
+                icon: 'success',
+                showConfirmButton: false,
+                timer: 3000,
+                background: '#fefefe',
+                color: '#333',
+                customClass: {
+                  popup: 'small-toast'
+                }
+              }).then(() => {
+                window.location.href = this.routeParams.site + '/cart';
+              });
+
         } else {
           this.errorMessage = response.message || 'An unknown error occurred while adding to cart.';
         }
