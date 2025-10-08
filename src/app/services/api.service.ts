@@ -155,16 +155,18 @@ export class ApiService {
     );
   }
 
-  addToCart(formData: any, productId: string, apiUrl: string, productName: string,priceData: any,vatpercentage: number, vatname: string,currenturl: string,visualizerImage?: string): Observable<ApiResponse> {
+  addToCart(formData: any, productId: string, apiUrl: string, cartproductName: string,priceData: any,vatpercentage: number, vatName: string,currenturl: string,productName: string,categoryId: number,visualizerImage?: string): Observable<ApiResponse> {
     let body = new HttpParams()
       .set('action', 'add_to_cart')
       .set('product_id', productId)
       .set('form_data', JSON.stringify(formData))
-      .set('product_name', productName)
+      .set('cart_product_name', cartproductName)
       .set('pricedata', JSON.stringify(priceData))
       .set('vatpercentage', vatpercentage)
-      .set('vatname', vatname)
-      .set('currenturl', currenturl);
+      .set('vatname', vatName)
+      .set('currenturl', currenturl)
+      .set('product_name', productName)
+      .set('category_id', categoryId);
     if (visualizerImage) {
       body = body.set('visualizer_image', visualizerImage);
     }

@@ -454,6 +454,7 @@ private fetchInitialData(params: any): void {
       if (productData.result?.EcomProductlist?.length > 0) {
         const data: ProductDetails = productData.result.EcomProductlist[0];
         this.ecomproductname = data.pei_ecomProductName;
+        this.productname = data.label;
         let productBgImages: string[] = [];
         try {
           productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
@@ -466,7 +467,7 @@ private fetchInitialData(params: any): void {
         let ecomProductName = '';
         try {
           productDefaultImage = JSON.parse(data.pi_deafultimage || '{}');
-          ecomProductName = data.pei_ecomProductName
+          ecomProductName = data.pei_ecomProductName;
         } catch (e) {
           console.error('Error parsing pi_deafultimage:', e);
           productDefaultImage = {};
@@ -1584,7 +1585,6 @@ onSubmit(): void {
         };
         return i.subchild=this.cleanSubchild(i.subchild),i
     });
- console.log(this.jsondata);
     if (!this.routeParams || !this.routeParams.site || !this.routeParams.cart_productid) {
       this.errorMessage = 'Missing required route parameters for cart submission.';
       this.isSubmitting = false;
@@ -1599,11 +1599,13 @@ onSubmit(): void {
 
     this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site,
      this.buildProductTitle(this.ecomproductname,this.fabricname,this.colorname),
-     this.pricedata,
-     this.vatpercentage,
-     this.vatname,
-     window.location.href,
-     visualizerImage,
+      this.pricedata,
+      this.vatpercentage,
+      this.vatname,
+      window.location.href,
+      this.productname,
+      this.routeParams.category,
+      visualizerImage,
     ).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
@@ -1614,9 +1616,7 @@ onSubmit(): void {
       next: (response) => {
         if (response.success) {
           console.log('Product added to cart:', response);
-          if (response.data && response.data.redirect_url) {
-            window.location.href = response.data.redirect_url;
-          }
+            window.location.href = this.routeParams.site+'/cart';
         } else {
           this.errorMessage = response.message || 'An unknown error occurred while adding to cart.';
         }
