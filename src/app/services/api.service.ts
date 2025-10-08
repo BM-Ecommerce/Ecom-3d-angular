@@ -60,7 +60,7 @@ export class ApiService {
     if (appointment) {
       url = this.constructUrl(`${api_url}/api/public/api`, passData);
     } else if (node) {
-      url = this.constructUrl('https://curtainmatrix.co.uk/devsource/nodeapi', passData);
+      url = this.constructUrl(`${api_url}/nodeapi/`, passData);
     } else {
       url = this.constructUrl(`${api_url}/api/public/api`, passData);
     }
