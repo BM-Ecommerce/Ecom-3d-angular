@@ -861,7 +861,6 @@ private fetchInitialData(params: any): void {
         if(field.fieldtypeid === 5 && field.level == 1){
           this.fabricid  = value;
           this.fabricname = selectedOption.optionname;
-          this.updateFieldValues(field, selectedOption,'updatefabric');
         }
        if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
           this.colorid = value;
