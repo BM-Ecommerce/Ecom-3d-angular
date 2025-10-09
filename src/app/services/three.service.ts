@@ -108,7 +108,12 @@ export class ThreeService implements OnDestroy {
       this.scene.add(gltf.scene);
 
       gltf.scene.traverse((child) => {
-        if(type == 'venetian'){
+      if(type == 'rollerblinds'){
+         const mesh = child as THREE.Mesh;
+          if (mesh.name.startsWith("Cylinder") || mesh.name.startsWith("Cube")) {
+             this.cube5Meshes.push(mesh);
+          }
+      }else if(type == 'venetian'){
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
             if (mesh.name.startsWith("Cylinder") || mesh.name.startsWith("Cube")) {
