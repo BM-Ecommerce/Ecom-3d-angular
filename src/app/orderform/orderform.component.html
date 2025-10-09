@@ -217,6 +217,15 @@
                              [placeholder]="'Between ' + min_width + ' and ' + max_width"
                              aria-label="Width">
                         <mat-hint>Min: {{min_width}}, Max: {{max_width}}</mat-hint>
+                        <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
+                          Width is required.
+                        </mat-error>
+                        <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('min')">
+                          Width must be at least {{ min_width }}.
+                        </mat-error>
+                        <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('max')">
+                          Width cannot exceed {{ max_width }}.
+                        </mat-error>
                     </mat-form-field>
                     <mat-form-field *ngIf="showFractions" class="fraction-select" >
                       <mat-label>Fraction</mat-label>
@@ -243,6 +252,15 @@
                              [placeholder]="'Between ' + min_drop + ' and ' + max_drop"
                              aria-label="Drop">
                         <mat-hint>Min: {{min_drop}}, Max: {{max_drop}}</mat-hint>
+                         <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
+                          Drop is required.
+                        </mat-error>
+                        <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('min')">
+                          Drop must be at least {{ min_drop }}.
+                        </mat-error>
+                        <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('max')">
+                          Drop cannot exceed {{ max_drop }}.
+                        </mat-error>
                     </mat-form-field>
                     <mat-form-field *ngIf="showFractions" class="fraction-select">
                       <mat-label>Fraction</mat-label>

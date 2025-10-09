@@ -203,6 +203,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   priceGroupOption: any;
   unitOption: any;
   isScrolled = false;
+  inchfractionselected:Number = 0;
   inchfraction_array: FractionOption[] = [
   {
     "name": "1/32",
@@ -304,23 +305,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     // initial minimal group; will be replaced in initializeFormControls
     this.orderForm = this.fb.group({
         unit: ['', Validators.required],
-        width: [
-          '',
-          [
-            Validators.required,
-            Validators.min(this.min_width),
-            ...(this.max_width > 0 ? [Validators.max(this.max_width)] : [])
-          ]
-        ],
         widthfraction: [''],
-        drop: [
-          '',
-          [
-            Validators.required,
-            Validators.min(this.min_drop),
-            ...(this.max_drop > 0 ? [Validators.max(this.max_drop)] : [])
-          ]
-        ],
         dropfraction: [''],
         qty: [1, [Validators.required, Validators.min(1)]]
       });
@@ -579,17 +564,7 @@ private fetchInitialData(params: any): void {
    
     const formControls: Record<string, any> = {
       unit: ['mm', Validators.required],
-       width: ['', [
-        Validators.required,
-        Validators.min(this.min_width),
-        ...(this.max_width > 0 ? [Validators.max(this.max_width)] : [])
-      ]],
       widthfraction: [''],
-       drop: ['', [
-        Validators.required,
-        Validators.min(this.min_drop),
-        ...(this.max_drop > 0 ? [Validators.max(this.max_drop)] : [])
-      ]],
       dropfraction: [''],
       qty: [1, [Validators.required, Validators.min(1)]]
     };
@@ -861,6 +836,7 @@ private fetchInitialData(params: any): void {
         if(field.fieldtypeid === 5 && field.level == 1){
           this.fabricid  = value;
           this.fabricname = selectedOption.optionname;
+          this.updateFieldValues(field, selectedOption,'updatefabric');
         }
        if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
           this.colorid = value;
@@ -883,20 +859,29 @@ private fetchInitialData(params: any): void {
           this.min_drop = minmaxdata.data.dropminmax.min;
           this.max_width = minmaxdata.data.widthminmax.max;
           this.max_drop = minmaxdata.data.dropminmax.max;
+          if (this.widthField) {
+            const widthControl = this.orderForm.get(`field_${this.widthField.fieldid}`);
+            if (widthControl) {
+              widthControl.setValidators([
+                Validators.required,
+                Validators.min(this.min_width),
+                ...(this.max_width != null ? [Validators.max(this.max_width)] : [])
+              ]);
+              widthControl.updateValueAndValidity();
+            }
+          }
 
-          this.orderForm.controls['width'].setValidators([
-            Validators.required,
-            Validators.min(this.min_width),
-            ...(this.max_width > 0 ? [Validators.max(this.max_width)] : [])
-          ]);
-          this.orderForm.controls['width'].updateValueAndValidity();
-
-          this.orderForm.controls['drop'].setValidators([
-            Validators.required,
-            Validators.min(this.min_drop),
-            ...(this.max_drop > 0 ? [Validators.max(this.max_drop)] : [])
-          ]);
-          this.orderForm.controls['drop'].updateValueAndValidity();
+          if (this.dropField) {
+            const dropControl = this.orderForm.get(`field_${this.dropField.fieldid}`);
+            if (dropControl) {
+              dropControl.setValidators([
+                Validators.required,
+                Validators.min(this.min_drop),
+                ...(this.max_drop != null ? [Validators.max(this.max_drop)] : [])
+              ]);
+              dropControl.updateValueAndValidity();
+            }
+          }
         }
       });
   }
@@ -1359,35 +1344,48 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     else {
       targetField.value = String(selectedOption) ?? '';
     }
-  }
+  };
+  
     let fractionValue: any;
-    if([ 7,11,31].includes(targetField.fieldtypeid) && this.showFractions  ){
-      fractionValue = Number(this.orderForm.get('widthfraction')?.value) || 0;
-      const selectedInchesOption = this.inchfraction_array.find(
-                                      (opt) => String(opt.decimalvalue) === String(fractionValue)
-                                    );
-      const selectedUnitOption = this.unitOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.unittype}`);
-      targetField.widthfraction = this.unittype+"_"+selectedUnitOption.optionname+"_"+fractionValue+"_"+selectedInchesOption?.id;
-    
-    }else if([ 7,11,31].includes(targetField.fieldtypeid) && !this.showFractions){
-      
-       const selectedUnitOption = this.unitOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.unittype}`);
-      
-        targetField.widthfraction = 0+"_"+selectedUnitOption.optionname+"_"+this.unittype+"_"+0;
+    const selectedUnitOption = this.unitOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.unittype}`);
+
+    if ([7, 11, 31,34].includes(targetField.fieldtypeid)) {
+      if (this.showFractions) {
+        fractionValue = Number(this.orderForm.get('widthfraction')?.value) || 0;
+        const selectedInchesOption = this.inchfraction_array.find(
+          (opt) => String(opt.decimalvalue) === String(fractionValue)
+        );
+        if (selectedInchesOption) {
+          this.widthField.widthfraction = `${selectedInchesOption?.id || 0}_${selectedUnitOption.optionname}_${this.inchfractionselected}_${fractionValue}`;
+          this.widthField.widthfractiontext = selectedInchesOption.name;
+        }else{
+          this.widthField.widthfraction = `0_${selectedUnitOption.optionname}_${this.inchfractionselected}_0`;
+        }
+       
+      } else {
+        if (selectedUnitOption) {
+          this.widthField.widthfraction = `0_${selectedUnitOption.optionname}_${this.inchfractionselected}_0`;
+        }
+      }
     }
-      
-    if( [9,12,32].includes(targetField.fieldtypeid)  && this.showFractions  ){
-      fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
-   
-      const selectedUnitOption = this.unitOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.unittype}`);
-      const selectedInchesOption = this.inchfraction_array.find(
-                                          (opt) => String(opt.decimalvalue) === String(fractionValue)
-                                        );
-      targetField.dropfraction = this.unittype+"_"+selectedUnitOption.optionname+"_"+fractionValue+"_"+selectedInchesOption?.id;
-    }else if( [9,12,32].includes(targetField.fieldtypeid) && !this.showFractions) {
-       const selectedUnitOption = this.unitOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.unittype}`);
-      
-        targetField.dropfraction = 0+"_"+selectedUnitOption.optionname+"_"+this.unittype+"_"+0;
+
+    if ([9, 12, 32,34].includes(targetField.fieldtypeid)) {
+      if (this.showFractions) {
+        fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
+        const selectedInchesOption = this.inchfraction_array.find(
+          (opt) => String(opt.decimalvalue) === String(fractionValue)
+        );
+        if (selectedInchesOption) {
+          this.dropField.dropfraction = `${selectedInchesOption?.id || 0}_${selectedUnitOption.optionname}_${this.inchfractionselected}_${fractionValue}`;
+          this.dropField.dropfractiontext = selectedInchesOption.name;
+        } else {
+          this.dropField.dropfraction = `0_${selectedUnitOption?.optionname || 'unit'}_${this.inchfractionselected}_0`;
+        }
+      } else {
+        if (selectedUnitOption) {
+          this.dropField.dropfraction = `0_${selectedUnitOption.optionname}_${this.inchfractionselected}_0`;
+        }
+      }
     }
 
 }
@@ -1396,6 +1394,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
    * Called on valueChanges; detects changed field_x controls and triggers handlers.
    */
   onFormChanges(values: any, params: any): void {
+    
     if (!this.previousFormValue) {
       this.previousFormValue = { ...values };
       return;
@@ -1405,14 +1404,14 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
       let fractionValue = Number(values['widthfraction']) || 0;
       const totalWidth = mainWidth + fractionValue;
       this.width = totalWidth;
-      this.updateFieldValues(this.widthField, totalWidth, 'Totalwidth');
+      this.updateFieldValues(this.widthField, mainWidth, 'Totalwidth');
     }
     if (values['dropfraction'] !== this.previousFormValue['dropfraction'] && this.dropField) {
       let mainDrop = Number(this.orderForm.get('field_' + this.dropField.fieldid)?.value) || 0;
       let fractionValue = Number(values['dropfraction']) || 0;
       const totalDrop = mainDrop + fractionValue;
       this.drop = totalDrop;
-      this.updateFieldValues(this.dropField, totalDrop, 'TotalDrop');
+      this.updateFieldValues(this.dropField, mainDrop, 'TotalDrop');
     }
     for (const key in values) {
       if (!key.startsWith('field_')) continue;
@@ -1481,7 +1480,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
 
     const totalWidth = Number(value) + fractionValue;
     this.width = totalWidth;
-    this.updateFieldValues(field, totalWidth,'Totalwidth');
+    this.updateFieldValues(field, value,'Totalwidth');
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
@@ -1492,7 +1491,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
 
     const totalDrop = Number(value) + fractionValue;
     this.drop = totalDrop;
-    this.updateFieldValues(field, totalDrop,'TotalDrop');
+    this.updateFieldValues(field, value,'TotalDrop');
   }
   
   private handleRestOptionChange(params: any, field: ProductField, value: any): void {
@@ -1525,6 +1524,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
         return of(null);
       })
     ).subscribe((FractionData: any) => {
+      this.inchfractionselected = FractionData?.result?.inchfractionselected || 0;
       if (FractionData?.result?.inchfraction) {
         this.inchfraction_array = FractionData.result.inchfraction.map((item: any) => ({
           name: item.name,
@@ -1550,6 +1550,10 @@ private cleanSubchild(fields: any[]): any[] {
     }));
 }
 onSubmit(): void {
+    if (this.orderForm.invalid) {
+      this.markFormGroupTouched(this.orderForm);
+      return;
+    }
     this.jsondata = this.parameters_data.map(t=>{
         const i={
             id:+t.fieldid,
@@ -1586,6 +1590,7 @@ onSubmit(): void {
         };
         return i.subchild=this.cleanSubchild(i.subchild),i
     });
+    console.log(this.jsondata);
     if (!this.routeParams || !this.routeParams.site || !this.routeParams.cart_productid) {
       this.errorMessage = 'Missing required route parameters for cart submission.';
       this.isSubmitting = false;
