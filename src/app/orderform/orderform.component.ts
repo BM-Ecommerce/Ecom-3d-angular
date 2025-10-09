@@ -416,7 +416,7 @@ private updatePriceFromData(data: any) {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
       if(productname.toLowerCase().includes("roller blinds")){
         this.threeService.loadGltfModel('assets/rollerblinds.gltf','rollerblinds');
-      }else if(productname.toLowerCase().includes("rd77 single")){
+      }else if(productname.toLowerCase().includes("venetian") || productname.toLowerCase().includes("fauxwood")){
         this.threeService.loadGltfModel('assets/venetianblinds.gltf','venetian');
       }else{
         this.threeService.loadGltfModel('assets/rollerdoor.gltf','rollerdoor');

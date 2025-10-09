@@ -22,10 +22,6 @@
           <div #stickyEl class="sticky-container" [class.scrolled]="isScrolled">
        <div class="product-header">
           <div class="productaname">
-            <a [routerLink]="[product_list_page_link]" target="_self">
-              <i class="fa-solid fa-angle-left"></i>
-              <span> Back to {{ ecomproductname }}</span>
-            </a>
             <h1 class="product-title">
               <span>{{ buildProductTitle(ecomproductname, fabricname, colorname) }}</span>
             </h1>
