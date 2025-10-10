@@ -15,6 +15,11 @@ import Swal from 'sweetalert2';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
 import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime } from 'rxjs/operators';
+import {MatTabsModule} from '@angular/material/tabs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+
+
 
 // Interfaces (kept as you had them)
 // Interfaces
@@ -165,7 +170,10 @@ interface FractionOption {
     MatInputModule,
     MatRadioModule,
     MatButtonToggleModule,
-    MatExpansionModule
+    MatTabsModule,
+    MatButtonModule,
+    MatExpansionModule,
+    MatIconModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -202,6 +210,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   supplierOption: any;
   priceGroupOption: any;
   unitOption: any;
+  productdescription:string = "";
+  pei_prospec:string = "";
   isScrolled = false;
   inchfractionselected:Number = 0;
   inchfraction_array: FractionOption[] = [
@@ -292,6 +302,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   unittype: number = 1;
   pricegroup: string = "";
   public grossPrice: string | null = null;
+  grossPricenum:number = 0;
   private priceUpdate$ = new Subject<void>();
   constructor(
     private apiService: ApiService,
@@ -382,9 +393,16 @@ ngOnInit(): void {
       const { grossprice } = res.fullpriceobject;
       this.pricedata = res.fullpriceobject;
       this.grossPrice = `£${Number(grossprice).toFixed(2)}`;
+      this.grossPricenum = Number(grossprice);
+      if(grossprice == 0){
+        this.isSubmitting = false;
+      }else{
+        this.isSubmitting = true;
+      }
     } else {
       this.grossPrice = null;
       this.pricedata = [];
+      this.isSubmitting = false;
     }
     this.cd.markForCheck();
   });
@@ -433,6 +451,9 @@ private fetchInitialData(params: any): void {
         const data: ProductDetails = productData.result.EcomProductlist[0];
         this.ecomproductname = data.pei_ecomProductName;
         this.productname = data.label;
+        this.productdescription = data.pi_productdescription;
+        this.pei_prospec = data.pei_prospec;
+        
         let productBgImages: string[] = [];
         try {
           productBgImages = JSON.parse(data.pi_backgroundimage || '[]');

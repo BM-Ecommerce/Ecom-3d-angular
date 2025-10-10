@@ -26,7 +26,7 @@
               <span>{{ buildProductTitle(ecomproductname, fabricname, colorname) }}</span>
             </h1>
           </div>
-            <div class="price-box">
+            <div class="price-box" *ngIf="grossPricenum != 0">
               <label class="price-label">Estimated Price:</label>
               <span class="price">{{ grossPrice }}</span>
             </div>
@@ -302,7 +302,7 @@
               </div>
             </div>
 
-            <div class="price_wrapper" *ngIf="grossPrice">
+            <div class="price_wrapper" *ngIf="grossPricenum != 0">
               <div class="price_text">Your Price</div>
               <div class="showprice_wrapper">
                 <span class="price">{{ grossPrice }}</span>
@@ -321,20 +321,11 @@
                        aria-label="Quantity">
                 <button type="button" class="plus" (click)="incrementQty()">+</button>
               </div>
-              <button type="submit" 
-                      name="submit-btn" 
-                      value="Submit" 
-                      class="add_to_cart_button">
-                <i class="fa-solid fa-cart-shopping"></i> 
-                {{ isSubmitting ? 'Adding...' : 'Add to cart' }}
+             <button mat-raised-button color="primary" type="submit" [disabled]="isSubmitting">
+                <mat-icon>shopping_cart</mat-icon>
+                {{ isSubmitting ? 'Adding...' : 'Add to Cart' }}
               </button>
             </div>
-
-            <p [style.visibility]="delivery_duration ? 'visible' : 'hidden'" class="paramlable">
-              <span><i class="fas fa-shipping-fast"></i></span> 
-              Delivered in<strong>&nbsp;&nbsp;{{ delivery_duration || '5-6 working days' }}</strong>
-            </p>
-
               <mat-accordion>
                 <mat-expansion-panel>
                   <mat-expansion-panel-header>
@@ -354,21 +345,26 @@
                   </div>
                 </mat-expansion-panel>
               </mat-accordion>
-           
-
-            <div class="order-sample-container">
-              <table>
-                <tr class="guides-page-contianer">
-                  <td colspan="3">
-                    <a target="_blank" href="/measuring-guide/">Measuring Guide</a>
-                    <a target="_blank" href="/fitting-guide/">Fitting Guide</a>
-                  </td>
-                </tr>
-              </table>
-            </div>
+              <div class="guides-buttons">
+                <a mat-stroked-button color="primary" target="_blank" href="/measuring-guide/">
+                  Measuring Guide
+                </a>
+                <a mat-stroked-button color="primary" target="_blank" href="/fitting-guide/">
+                  Fitting Guide
+                </a>
+              </div>
           </div>
         </div>
       </div>
     </div>
+   <mat-tab-group dynamicHeight>
+      <mat-tab label="Product Specification">
+        <div class="tabsproduct" [innerHTML]="pei_prospec"></div>
+      </mat-tab>
+
+      <mat-tab label="Details">
+        <div class="tabsproduct" [innerHTML]="productdescription"></div>
+      </mat-tab>
+    </mat-tab-group>
   </div>
 </form>

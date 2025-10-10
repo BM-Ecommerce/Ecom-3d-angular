@@ -141,20 +141,6 @@ export class ApiService {
     const passData = `appSetup/fractionlist/${product_id}/-1/${faction_value}`;
     return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
   }
-
-  calculatePrice(formData: any): Observable<ApiResponse> {
-    const payload = {
-      action: 'price_calculation',
-      form_data: JSON.stringify(formData)
-    };
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
-    return this.http.post<ApiResponse>(this.apiUrl, payload, { headers }).pipe(
-      catchError(this.handleError)
-    );
-  }
-
   addToCart(formData: any, productId: string, apiUrl: string, cartproductName: string,priceData: any,vatpercentage: number, vatName: string,currenturl: string,productName: string,categoryId: number,visualizerImage?: string): Observable<ApiResponse> {
     let body = new HttpParams()
       .set('action', 'add_to_cart')
@@ -176,19 +162,6 @@ export class ApiService {
     return this.http.post<ApiResponse>(requestUrl, body.toString(), {
       headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' })
     }).pipe(
-      catchError(this.handleError)
-    );
-  }
-
-  addFreeSample(sampleData: any): Observable<ApiResponse> {
-    const payload = {
-      action: 'add_freesample',
-      ...sampleData
-    };
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
-    return this.http.post<ApiResponse>(this.apiUrl, payload, { headers }).pipe(
       catchError(this.handleError)
     );
   }
