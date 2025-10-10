@@ -397,6 +397,7 @@ ngOnInit(): void {
     } else {
       this.grossPrice = null;
       this.pricedata = [];
+      this.grossPricenum = 0;
     }
     this.cd.markForCheck();
   });
