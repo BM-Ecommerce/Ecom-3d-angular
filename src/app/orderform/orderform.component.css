@@ -466,11 +466,17 @@ textarea {
     gap: 1rem;
     align-items: center;
 }
-
+.product_preview canvas {
+    border-radius: 8px;
+}
 .product_preview {
     position: relative;
     cursor: crosshair;
     padding-bottom: unset!important;
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--border-color);
 }
 
 .product_preview.zooming {
@@ -523,7 +529,7 @@ canvas {
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   border: 1px solid var(--border-color);
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 
 .price-box {
@@ -684,7 +690,7 @@ canvas {
   box-shadow: var(--box-shadow);
   border: 1px solid var(--border-color);
   overflow: hidden;
-  margin-top: 30px;
+  margin-top: 10px;
 }
 
 .mat-tab-label {
