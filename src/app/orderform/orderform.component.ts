@@ -394,15 +394,9 @@ ngOnInit(): void {
       this.pricedata = res.fullpriceobject;
       this.grossPrice = `£${Number(grossprice).toFixed(2)}`;
       this.grossPricenum = Number(grossprice);
-      if(grossprice == 0){
-        this.isSubmitting = false;
-      }else{
-        this.isSubmitting = true;
-      }
     } else {
       this.grossPrice = null;
       this.pricedata = [];
-      this.isSubmitting = false;
     }
     this.cd.markForCheck();
   });
@@ -1565,6 +1559,12 @@ private cleanSubchild(fields: any[]): any[] {
 onSubmit(): void {
     if (this.orderForm.invalid) {
       this.markFormGroupTouched(this.orderForm);
+      return;
+    }
+    if (this.grossPricenum <= 0) {
+      this.errorMessage = 'The price could not be calculated. Please review your selections.';
+      this.isSubmitting = false;
+      this.cd.markForCheck();
       return;
     }
     this.jsondata = this.parameters_data.map(t=>{
