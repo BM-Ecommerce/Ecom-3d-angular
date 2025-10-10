@@ -267,7 +267,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   product_img_array: any[] = [];
   product_deafultimage: Record<string, any> = {};
   fabric_linked_color_data: Record<string, any> = {};
-  related_products_list_data: any[] = [];
   productlisting_frame_url = '';
   sample_img_frame_url = '';
   v4_product_visualizer_page = '';
@@ -391,13 +390,6 @@ ngOnInit(): void {
   });
 }
 
-// Optional helper to trigger fetchInitialData logic with token data
-private updatePriceFromData(data: any) {
-  // If your fetchInitialData triggers price calculation, you can call it here
-  // or manually set default values from token data
-}
-
-
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
@@ -408,9 +400,7 @@ private updatePriceFromData(data: any) {
     // We also need to ensure the animation loop in three.service is started.
     // A better place for this might be after the first textures are loaded.
   }
- toggleRotation(): void {
-    this.threeService.toggleRotation();
-  }
+
   private setupVisualizer(productname: string): void {
     if (this.canvasRef && this.containerRef) {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
@@ -1713,27 +1703,6 @@ private getPrice(): Observable<any> {
       }
     });
   }
-
-  public freesample(button: any): void {
-    try {
-      const free_sample_data = JSON.parse(button.getAttribute('data-free_sample_data'));
-      this.apiService.addFreeSample(free_sample_data).pipe(
-        takeUntil(this.destroy$)
-      ).subscribe({
-        next: (response) => {
-          console.log('Free sample request successful', response);
-          // Add success handling (e.g., show confirmation message)
-        },
-        error: (err) => {
-          console.error('Error requesting free sample:', err);
-          // Add error handling
-        }
-      });
-    } catch (err) {
-      console.error('Error parsing free sample data:', err);
-    }
-  }
-
   public get_field_type_name(chosen_field_type_id: any): string {
     const field_types: Record<string, string> = {
       '3': 'list',
@@ -1762,63 +1731,10 @@ private getPrice(): Observable<any> {
     return field_types[chosen_field_type_id] || '';
   }
 
-  public isSelectedFrame(product_img: any): boolean {
-    return product_img?.is_default || false;
-  }
-
-  public getFrameImageUrl(product_img: any): string {
-    return product_img?.image_url || '';
-  }
-
-  onFrameChange(newFrameUrl: string): void {
-    this.mainframe = newFrameUrl;
-
-    this.product_img_array.forEach(img => {
-      img.is_default = (img.image_url === newFrameUrl);
-    });
-
-    if (this.threeService) {
-      this.threeService.updateTextures(this.background_color_image_url);
-    }
-  }
-
-  public getFreeSampleData(related_product: any = null): string {
-    const sample_data = {
-      fabric_id: related_product ? related_product.fd_id : this.fabricid,
-      color_id: related_product ? related_product.cd_id : this.colorid,
-      price_group_id: related_product ? related_product.groupid : this.pricegroup_id,
-      fabricname: related_product ? this.getRelatedProductName(related_product) : this.fabricname,
-      fabric_image_url: related_product ? this.getRelatedProductImageUrl(related_product) : this.background_color_image_url
-    };
-    return JSON.stringify(sample_data);
-  }
-
-  public getRelatedProductLink(related_product: any): string[] {
-    return ['/product', related_product?.slug || ''];
-  }
-
-  public getRelatedProductImageUrl(related_product: any): string {
-    return related_product?.image_url || '';
-  }
-
-  public getRelatedProductName(related_product: any): string {
-    return related_product?.name || '';
-  }
-
-
   trackByFieldId(index: number, field: ProductField): number {
     return field.fieldid;
   }
 
-  // Helper property for template
-  get isBlinds(): boolean {
-    return true; // Update based on actual logic
-  }
-
-  // Helper function for template
-  objectKeys(obj: any): string[] {
-    return Object.keys(obj || {});
-  }
 
   incrementQty(): void {
     const qtyControl = this.orderForm.get('qty');

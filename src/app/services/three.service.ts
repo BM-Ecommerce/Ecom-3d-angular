@@ -22,7 +22,6 @@ export class ThreeService implements OnDestroy {
   private cubeMesh!: THREE.Mesh;
   private initialCameraPosition!: THREE.Vector3;
   private initialControlsTarget!: THREE.Vector3;
-  private isShutterOpen = false;
   
 
   constructor() {}
@@ -32,9 +31,7 @@ export class ThreeService implements OnDestroy {
       this.renderer.dispose();
     }
   }
-  public toggleRotation(): void {
-    this.isShutterOpen = !this.isShutterOpen;
-  }
+
  public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
   const width = container.clientWidth;
   const height = container.clientHeight;
@@ -218,13 +215,6 @@ public getCanvasDataURL(): string | undefined {
   public animate(): void {
     const loop = () => {
       requestAnimationFrame(loop);
-
-      if (this.isShutterOpen) {
-        this.cube5Meshes.forEach(mesh => {
-          mesh.rotation.x -= 0.01; 
-        });
-      }
-
       this.controls.update();
       this.render();
     };
