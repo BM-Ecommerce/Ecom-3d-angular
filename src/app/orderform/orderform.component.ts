@@ -437,7 +437,13 @@ ngOnInit(): void {
       this.threeService.onResize(this.containerRef.nativeElement);
     }
   }
-  
+zoomIn(): void {
+  this.threeService.zoomIn();
+}
+
+zoomOut(): void {
+  this.threeService.zoomOut();
+}
 private fetchInitialData(params: any): void {
   this.isLoading = true;
   this.errorMessage = null;

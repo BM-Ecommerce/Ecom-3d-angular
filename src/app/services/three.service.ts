@@ -97,7 +97,23 @@ export class ThreeService implements OnDestroy {
   this.scene.add(directionalLight);
 }
 
+public zoomIn(): void {
+  if (this.controls) {
+    const factor = 0.9; // <1 to zoom in
+    const camera = this.controls.object;
+    camera.position.multiplyScalar(factor);
+    this.controls.update();
+  }
+}
 
+public zoomOut(): void {
+  if (this.controls) {
+    const factor = 1.1; // >1 to zoom out
+    const camera = this.controls.object;
+    camera.position.multiplyScalar(factor);
+    this.controls.update();
+  }
+}
  public loadGltfModel(gltfUrl: string,type: string): void {
   this.gltfLoader.load(
     gltfUrl,
