@@ -58,6 +58,7 @@
 .visualizer-container {
     display: flex;
     gap: 5px;
+    align-items: stretch;
 }
 
 .visualizer-main {
@@ -65,6 +66,10 @@
     min-width: 300px;
     position: relative;
     border-radius: var(--border-radius);
+    
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--border-color);
 }
 
 .sticky-container {
@@ -474,9 +479,7 @@ textarea {
     cursor: crosshair;
     padding-bottom: unset!important;
     background: var(--card-bg);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius)
 }
 
 .product_preview.zooming {
@@ -526,10 +529,9 @@ canvas {
   gap: 20px;
   padding: 0 10px;
   background: var(--card-bg);
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
-  border: 1px solid var(--border-color);
   margin-bottom: 5px;
+  padding: 1.5rem 1.5rem 0;
+  border-radius: var(--border-radius);
 }
 
 .price-box {
