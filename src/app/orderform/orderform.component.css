@@ -27,11 +27,6 @@
     padding: 1rem;
     background-color: #fff;
 }
-
-.productaname {
-    padding: 1rem 0;
-}
-
 .productaname a {
     text-transform: none;
     font-weight: 600;
@@ -479,7 +474,8 @@ textarea {
     cursor: crosshair;
     padding-bottom: unset!important;
     background: var(--card-bg);
-    border-radius: var(--border-radius)
+    border-radius: var(--border-radius);
+    padding: 25px 0;
 }
 
 .product_preview.zooming {
