@@ -192,6 +192,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   private priceGroupField?: ProductField;
   private supplierField?: ProductField;
   private qtyField?: ProductField;
+  private unitField?: ProductField;
   // Form / UI state
   public productTitle: string = '';
   isLoading = false;
@@ -523,6 +524,7 @@ private fetchInitialData(params: any): void {
         this.qtyField        = this.parameters_data.find(f => f.fieldtypeid === 14);
         this.widthField      = this.parameters_data.find(f => [7, 11, 31].includes(f.fieldtypeid));
         this.dropField       = this.parameters_data.find(f => [9, 12, 32].includes(f.fieldtypeid));
+        this.unitField       = this.parameters_data.find(f => f.fieldtypeid === 34);
 
         return forkJoin({
           optionData: this.loadOptionData(params),
@@ -572,7 +574,13 @@ private fetchInitialData(params: any): void {
             this.inchfraction_array = fraction.inchfraction;
             this.showFractions = true;
           }
-         
+          if(this.unitField && this.unitField.optionsvalue){
+           const selectedunitOption = this.unitField.optionsvalue.find(opt => `${opt.optionid}` === `${this.unittype}`);
+           console.log(selectedunitOption);
+           console.log(this.unitField);
+            console.log('check');
+           this.updateFieldValues(this.unitField, selectedunitOption,'updateunittype');
+          }
         }
       }
     }),
@@ -1325,18 +1333,25 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
 }
   if (currentValue === null || currentValue === undefined || currentValue === '' || 
       (Array.isArray(currentValue) && currentValue.length === 0)) {
-    
-    targetField.value = '';
-    targetField.valueid = '';
-    targetField.optionid = '';
-    targetField.optionvalue = [];
-    targetField.optionquantity = '';
-    
+    if(field.fieldtypeid == 34){
+      targetField.labelname = targetField.fieldname ?? '';
+      targetField.valueid = selectedOption?.fieldoptionlinkid ? String(selectedOption.fieldoptionlinkid): '';
+      targetField.optionid = String(selectedOption.optionid);
+      targetField.value = String(selectedOption.optionid);
+      targetField.optionvalue = [selectedOption];
+      targetField.optionquantity = '1';
+    }else{
+      targetField.value = '';
+      targetField.valueid = '';
+      targetField.optionid = '';
+      targetField.optionvalue = [];
+      targetField.optionquantity = '';
+    }
     
   }else if (selectedOption !== null) {
     if (Array.isArray(selectedOption)) {
       if ([14, 34, 17, 13, 4].includes(field.fieldtypeid)) {
-        
+       
         const ids = selectedOption.map(opt => String(opt.optionid)).join(',');
         targetField.value = ids;
         targetField.optiondefault = ids;
@@ -1420,7 +1435,6 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
       this.dropField.dropfraction = `0_${unitName}_${this.inchfractionselected}_0`;
     }
   }
-
 }
 
   /**
