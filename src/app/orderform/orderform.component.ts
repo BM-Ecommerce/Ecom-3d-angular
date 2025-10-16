@@ -311,6 +311,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   public grossPrice: string | null = null;
   grossPricenum:number = 0;
   private priceUpdate$ = new Subject<void>();
+  private rulesorderitem: any[] = [];
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
@@ -396,6 +397,9 @@ ngOnInit(): void {
   // Price updates remain the same
   this.priceUpdate$.pipe(
     debounceTime(500),
+    tap(() => {
+      this.rulesorderitem = this.orderitemdata(true);
+    }),
     switchMap(() => this.getPrice()),
     takeUntil(this.destroy$)
   ).subscribe(res => {
@@ -1623,42 +1627,7 @@ onSubmit(): void {
       this.cd.markForCheck();
       return;
     }
-    this.jsondata = this.parameters_data.map(t=>{
-        const i={
-            id:+t.fieldid,
-            labelname:t.fieldname,
-            value:t.value||null,
-            valueid:t.valueid||null,
-            type:t.fieldtypeid,
-            optionid:t.optionid||null,
-            optionvalue:t.optionvalue||[],
-            optionquantity:t.optionquantity||null,
-            issubfabric:t.issubfabric??0,
-            labelnamecode:t.labelnamecode,
-            fabricorcolor:t.fabricorcolor||0,
-            widthfraction:t.widthfraction||null,
-            widthfractiontext:t.widthfractiontext||null,
-            dropfraction:t.dropfraction||null,
-            dropfractiontext:t.dropfractiontext||null,
-            showfieldonjob:t.showfieldonjob,
-            subchild:t.subchild||[],
-            showFieldOnCustomerPortal:t.showFieldOnCustomerPortal,
-            globaledit:!1,
-            numberfraction:t.numberfraction||null,
-            numberfractiontext:t.numberfractiontext||null,
-            fieldlevel:t.fieldlevel,
-            mandatory:t.mandatory,
-            fieldInformation:t.fieldInformation||null,
-            ruleoverride:t.ruleoverride,
-            optiondefault:t.optiondefault||t.optionid||null,
-            optionsvalue:t.optionvalue||[],
-            editruleoverride:1===t.editruleoverride?1:0,
-            fieldtypeid:t.fieldtypeid,
-            fieldid:t.fieldid,
-            fieldname:t.fieldname
-        };
-        return i.subchild=this.cleanSubchild(i.subchild),i
-    });
+    this.jsondata = this.orderitemdata(false);
     console.log(this.jsondata);
     if (!this.routeParams || !this.routeParams.site || !this.routeParams.cart_productid) {
       this.errorMessage = 'Missing required route parameters for cart submission.';
@@ -1745,47 +1714,12 @@ private getPrice(): Observable<any> {
       const selectedTax = vatResponse?.taxlist?.find(
         (tax: any) => tax.id === vatResponse?.vatselected
       );
-      const orderitemdata =  this.parameters_data.map(t=>{
-      const isSpecialType = [34, 17, 13].includes(+t.fieldtypeid);
-        const i={
-            id:+t.fieldid,
-            labelname:t.fieldname,
-            value: isSpecialType ? t.valuename || null : t.value || null,
-            valueid:t.valueid||null,
-            type:t.fieldtypeid,
-            optionid:t.optionid||null,
-            optionvalue:t.optionvalue||[],
-            optionquantity:t.optionquantity||null,
-            issubfabric:t.issubfabric??0,
-            labelnamecode:t.labelnamecode,
-            fabricorcolor:t.fabricorcolor||0,
-            widthfraction:t.widthfraction||null,
-            widthfractiontext:t.widthfractiontext||null,
-            dropfraction:t.dropfraction||null,
-            dropfractiontext:t.dropfractiontext||null,
-            showfieldonjob:t.showfieldonjob,
-            subchild:t.subchild||[],
-            showFieldOnCustomerPortal:t.showFieldOnCustomerPortal,
-            globaledit:!1,
-            numberfraction:t.numberfraction||null,
-            numberfractiontext:t.numberfractiontext||null,
-            fieldlevel:t.fieldlevel,
-            mandatory:t.mandatory,
-            fieldInformation:t.fieldInformation||null,
-            ruleoverride:t.ruleoverride,
-            optiondefault:t.optiondefault||t.optionid||null,
-            optionsvalue:t.optionvalue||[],
-            editruleoverride:1===t.editruleoverride?1:0,
-            fieldtypeid:t.fieldtypeid,
-            fieldid:t.fieldid,
-            fieldname:t.fieldname
-        };
-        return i.subchild=this.cleanSubchild(i.subchild),i
-    });
       this.vatpercentage = vatPercentage;
       this.vatname = selectedTax ? selectedTax.name : vatResponse?.defaultsalestaxlabel;
 
       const fetchPrice = (rulesResponse?: any) => {
+       
+
         return this.apiService.getPrice(
           this.routeParams,
           this.width,
@@ -1800,7 +1734,10 @@ private getPrice(): Observable<any> {
           this.fabricid,
           this.colorid,
           this.netpricecomesfrom,
-          this.costpricecomesfrom
+          this.costpricecomesfrom,
+          rulesResponse.productionmaterialcostprice,
+          rulesResponse.productionmaterialnetprice,
+          rulesResponse.productionmaterialnetpricewithdiscount
         );
       };
 
@@ -1818,7 +1755,7 @@ private getPrice(): Observable<any> {
           this.selected_option_data,
           this.fabricid,
           this.colorid,
-          orderitemdata
+          this.rulesorderitem
         ).pipe(
           switchMap(rulesResponse => fetchPrice(rulesResponse))
         );
@@ -1946,5 +1883,49 @@ private markFormGroupTouched(formGroup: FormGroup) {
       }
     });
     this.cd.markForCheck();
+  }
+  private orderitemdata(isForRulesCalculation: boolean = false): any[] {
+    return this.parameters_data.map(t => {
+      const isSpecialType = isForRulesCalculation && [34, 17, 13].includes(+t.fieldtypeid);
+      const i = {
+        id: +t.fieldid,
+        labelname: t.fieldname,
+        value: isSpecialType ? t.valuename || null : t.value || null,
+        valueid: t.valueid || null,
+        type: t.fieldtypeid,
+        optionid: t.optionid || null,
+        optionvalue: t.optionvalue || [],
+        optionquantity: t.optionquantity || null,
+        issubfabric: t.issubfabric ?? 0,
+        labelnamecode: t.labelnamecode,
+        fabricorcolor: t.fabricorcolor || 0,
+        widthfraction: t.widthfraction || null,
+        widthfractiontext: t.widthfractiontext || null,
+        dropfraction: t.dropfraction || null,
+        dropfractiontext: t.dropfractiontext || null,
+        showfieldonjob: t.showfieldonjob,
+        subchild: t.subchild || [],
+        showFieldOnCustomerPortal: t.showFieldOnCustomerPortal,
+        globaledit: !1,
+        numberfraction: t.numberfraction || null,
+        numberfractiontext: t.numberfractiontext || null,
+        fieldlevel: t.fieldlevel,
+        mandatory: t.mandatory,
+        fieldInformation: t.fieldInformation || null,
+        ruleoverride: t.ruleoverride,
+        optiondefault: t.optiondefault || t.optionid || null,
+        optionsvalue: t.optionvalue || [],
+        editruleoverride: 1 === t.editruleoverride ? 1 : 0,
+        fieldtypeid: t.fieldtypeid,
+        fieldid: t.fieldid,
+        fieldname: t.fieldname
+      } as any;;
+    if (isForRulesCalculation) {
+      i.quantity = t.optionquantity || null;
+      i.fractionValue = 0;
+    }
+      i.subchild = this.cleanSubchild(i.subchild);
+      return i;
+    });
   }
 }

@@ -207,7 +207,7 @@ export class ApiService {
     pricegroup: [pricegroup],
     pricegroupdual: "",
     pricegroupmulticurtain: [],
-    customertype: 1,
+    customertype: 4,
     optiondata: optiondata,
     unittype: unittype,
     orderitemqty: 1,
@@ -350,8 +350,10 @@ export class ApiService {
     fabricid:any = "",
     colorid:any = "",
     netpricecomesfrom:any = "",
-    costpricecomesfrom:any = ""
-  
+    costpricecomesfrom:any = "",
+    productionmaterialcostprice:any = "",
+    productionmaterialnetprice:any = "",
+    productionmaterialnetpricewithdiscount:any = "",
     ) {
     const { api_url, api_key, api_name, recipeid,product_id } = params;
     const payload = {
@@ -374,10 +376,10 @@ export class ApiService {
         costpriceoverride: 0,
         costpriceoverrideprice: 0,
         orderitemcostprice: 0,
-        productionmaterialcostprice: "",
+        productionmaterialcostprice: productionmaterialcostprice,
         materialFormulaPrice: 0,
-        productionmaterialnetprice: 0,
-        productionmaterialnetpricewithdiscount: 0,
+        productionmaterialnetprice: productionmaterialnetprice,
+        productionmaterialnetpricewithdiscount: productionmaterialnetpricewithdiscount,
         overridepricevalue: 0,
         getpricegroupprice: 0,
         rulescostpricecomesfrom: costpricecomesfrom,
