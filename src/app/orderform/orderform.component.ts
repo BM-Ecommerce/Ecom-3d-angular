@@ -98,6 +98,7 @@ interface ProductField {
   valueid?: string;
   optionid?: any;
   level?: number;
+  valuename?: string;
   hasprice?:boolean;
   parentFieldId?: number;
   masterparentfieldid?: number;
@@ -1346,13 +1347,14 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
 }
   if (currentValue === null || currentValue === undefined || currentValue === '' || 
       (Array.isArray(currentValue) && currentValue.length === 0)) {
-    if(field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 28){
+    if(field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13){
       targetField.labelname = targetField.fieldname ?? '';
       targetField.valueid = selectedOption?.fieldoptionlinkid ? String(selectedOption.fieldoptionlinkid): '';
       targetField.optionid = String(selectedOption.optionid);
       targetField.value = String(selectedOption.optionid);
       targetField.optionvalue = [selectedOption];
       targetField.optionquantity = '1';
+      targetField.valuename = String(selectedOption.optionname);
     }else{
       targetField.value = '';
       targetField.valueid = '';
@@ -1394,6 +1396,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
       targetField.optionid = String(selectedOption.optionid);
       if ([17, 13].includes(field.fieldtypeid)) {
         targetField.value = String(selectedOption.optionid);
+        targetField.valuename = String(selectedOption.optionname);
       }else{
         targetField.value = String(selectedOption.optionname);
       }
@@ -1743,10 +1746,11 @@ private getPrice(): Observable<any> {
         (tax: any) => tax.id === vatResponse?.vatselected
       );
       const orderitemdata =  this.parameters_data.map(t=>{
+      const isSpecialType = [34, 17, 13].includes(+t.fieldtypeid);
         const i={
             id:+t.fieldid,
             labelname:t.fieldname,
-            value:t.value||null,
+            value: isSpecialType ? t.valuename || null : t.value || null,
             valueid:t.valueid||null,
             type:t.fieldtypeid,
             optionid:t.optionid||null,
