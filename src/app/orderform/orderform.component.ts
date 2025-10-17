@@ -311,7 +311,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   public grossPrice: string | null = null;
   public isCalculatingPrice = true;
   grossPricenum:number = 0;
-  private priceUpdate$ = new Subject<void>();
+  private priceUpdate = new Subject<void>();
   private rulesorderitem: any[] = [];
   constructor(
     private apiService: ApiService,
@@ -392,7 +392,7 @@ ngOnInit(): void {
   }
 
   // Price updates remain the same
-  this.priceUpdate$.pipe(
+  this.priceUpdate.pipe(
     debounceTime(500),
     tap(() => {
       this.grossPrice = null;
@@ -556,6 +556,11 @@ private fetchInitialData(params: any): void {
       if (results) {
         this.parameters_data.forEach(field => {
           const control = this.orderForm.get(`field_${field.fieldid}`);
+           if (control && field.ruleoverride === 0) {
+                control.disable();  
+              } else if(control) {
+                control.enable();  
+              }
           if (control && this.qtyField && field.fieldid === this.qtyField.fieldid) {
             this.updateFieldValues(this.qtyField, 1, 'fetchInitialDataqty');
             control.setValue(1, { emitEvent: false });
@@ -586,9 +591,6 @@ private fetchInitialData(params: any): void {
           }
           if(this.unitField && this.unitField.optionsvalue){
            const selectedunitOption = this.unitField.optionsvalue.find(opt => `${opt.optionid}` === `${this.unittype}`);
-           console.log(selectedunitOption);
-           console.log(this.unitField);
-            console.log('check');
            this.updateFieldValues(this.unitField, selectedunitOption,'updateunittype');
           }
         }
@@ -1509,7 +1511,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     //console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
     }
     this.previousFormValue = { ...values };
-    this.priceUpdate$.next();
+    this.priceUpdate.next();
     this.updateAccordionData();
   }
   private removeSelectedOptionData(fields: ProductField[]): void {
@@ -1713,16 +1715,14 @@ private getVat(): Observable<any> {
 private getPrice(): Observable<any> {
   return this.getVat().pipe(
     switchMap(vatResponse => {
-      const vatPercentage = vatResponse?.data ?? '20.000';
+      const vatPercentage = vatResponse?.data ?? '';
       const selectedTax = vatResponse?.taxlist?.find(
         (tax: any) => tax.id === vatResponse?.vatselected
       );
       this.vatpercentage = vatPercentage;
       this.vatname = selectedTax ? selectedTax.name : vatResponse?.defaultsalestaxlabel;
 
-      const fetchPrice = (rulesResponse?: any) => {
-       
-
+      const fetchPrice = (rulesResponse?: any, formulaResponse?: any) => {
         return this.apiService.getPrice(
           this.routeParams,
           this.width,
@@ -1738,9 +1738,9 @@ private getPrice(): Observable<any> {
           this.colorid,
           this.netpricecomesfrom,
           this.costpricecomesfrom,
-          rulesResponse.productionmaterialcostprice,
-          rulesResponse.productionmaterialnetprice,
-          rulesResponse.productionmaterialnetpricewithdiscount
+          formulaResponse?.productionmaterialcostprice,
+          formulaResponse?.productionmaterialnetprice,
+          formulaResponse?.productionmaterialnetpricewithdiscount
         );
       };
 
@@ -1758,20 +1758,103 @@ private getPrice(): Observable<any> {
           this.selected_option_data,
           this.fabricid,
           this.colorid,
-          this.rulesorderitem
+          this.rulesorderitem,
+          0
         ).pipe(
-          switchMap(rulesResponse => fetchPrice(rulesResponse))
+          switchMap(rulesResponse => {
+            const rulesresponse = rulesResponse as any;
+
+            if (rulesresponse?.ruleresults?.length) {
+              rulesresponse.ruleresults.forEach((ruleObj: any) => {
+                const fieldid = +Object.keys(ruleObj)[0];
+                const ruleArray = ruleObj[fieldid];
+
+                ruleArray.forEach((rule: any) => {
+                  const { optionid, optionvalue } = rule;
+
+                  const control = this.orderForm.get(`field_${fieldid}`);
+                  const field = this.parameters_data.find(f => f.fieldid === fieldid);
+
+                  if (!control || !field) return;
+
+                  if (optionid && optionvalue && this.option_data[field.fieldid]) {
+                    const numericOptionId = Number(optionid);
+                    const options = this.option_data[field.fieldid] || field.optionsvalue || [];
+                    const selectedOption = options.find(
+                      (opt: any) => Number(opt.optionid) === numericOptionId
+                    );
+
+                    if (selectedOption) {
+                      control.setValue(numericOptionId, { emitEvent: false });
+                      this.updateFieldValues(field, selectedOption, 'rules update select');
+                    }
+                  } else if (optionvalue && optionid !== 0) {
+                    control.setValue(optionid, { emitEvent: false });
+                    this.updateFieldValues(field, optionvalue, 'rules update text');
+                  }
+
+                  this.rulesorderitem = this.orderitemdata(true);
+                });
+              });
+            }
+
+            if (this.formulacount > 0) {
+              return this.apiService.calculateRules(
+                this.routeParams,
+                this.width,
+                this.drop,
+                this.unittype,
+                this.supplier_id,
+                this.widthField.fieldtypeid,
+                this.dropField.fieldtypeid,
+                this.pricegroup,
+                vatPercentage,
+                this.selected_option_data,
+                this.fabricid,
+                this.colorid,
+                this.rulesorderitem,
+                1
+              ).pipe(
+                switchMap(formulaResponse => fetchPrice(rulesResponse, formulaResponse))
+              );
+            }
+
+            return fetchPrice(rulesResponse);
+          })
         );
-      } else {
+      }
+
+      else if (this.formulacount > 0) {
+        return this.apiService.calculateRules(
+          this.routeParams,
+          this.width,
+          this.drop,
+          this.unittype,
+          this.supplier_id,
+          this.widthField.fieldtypeid,
+          this.dropField.fieldtypeid,
+          this.pricegroup,
+          vatPercentage,
+          this.selected_option_data,
+          this.fabricid,
+          this.colorid,
+          this.rulesorderitem,
+          1
+        ).pipe(
+          switchMap(formulaResponse => fetchPrice(undefined, formulaResponse))
+        );
+      }
+      else {
         return fetchPrice();
       }
     }),
     catchError(error => {
       console.error('Error getting VAT or Price', error);
-      return of({ price: 0, vat: '20.00' });
+      return of({ price: 0, vat: '' });
     })
   );
 }
+
 
 private markFormGroupTouched(formGroup: FormGroup) {
     Object.values(formGroup.controls).forEach(control => {

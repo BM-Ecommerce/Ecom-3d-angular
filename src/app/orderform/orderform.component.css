@@ -750,3 +750,11 @@ button.mat-raised-button:hover {
 .guides-buttons a {
   text-decoration: none;
 }
+
+input:disabled,
+mat-select:disabled,
+mat-button-toggle-group:disabled {
+    background: rgba(225, 225, 225, 0.5) !important;
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
+}
