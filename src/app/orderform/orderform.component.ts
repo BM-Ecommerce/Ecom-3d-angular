@@ -1793,7 +1793,6 @@ private getPrice(): Observable<any> {
                     this.updateFieldValues(field, optionvalue, 'rules update text');
                   }
 
-                  this.rulesorderitem = this.orderitemdata(true);
                 });
               });
             }
