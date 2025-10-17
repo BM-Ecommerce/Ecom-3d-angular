@@ -1795,7 +1795,7 @@ private getPrice(): Observable<any> {
                     control.setValue(optionid, { emitEvent: false });
                     this.updateFieldValues(field, optionvalue, 'rules update text');
                   }
-
+                  this.updateAccordionData();
                 });
               });
             }
