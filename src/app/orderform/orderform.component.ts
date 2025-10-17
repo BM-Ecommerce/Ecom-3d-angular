@@ -1465,8 +1465,11 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
    * Called on valueChanges; detects changed field_x controls and triggers handlers.
    */
   onFormChanges(values: any, params: any): void {
-    
-    this.isCalculatingPrice = false;
+     if(this.rulescount > 0 ||  this.formulacount > 0){
+       this.isCalculatingPrice = false;
+     }else{
+       this.isCalculatingPrice = true;
+     }
     if (!this.previousFormValue) {
       this.previousFormValue = { ...values };
       return;
