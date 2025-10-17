@@ -309,6 +309,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   unittype: number = 1;
   pricegroup: string = "";
   public grossPrice: string | null = null;
+  public isCalculatingPrice = true;
   grossPricenum:number = 0;
   private priceUpdate$ = new Subject<void>();
   private rulesorderitem: any[] = [];
@@ -332,10 +333,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   
 ngOnInit(): void {
   const queryParams = this.route.snapshot.queryParams;
-  const inputEl = document.getElementById('currency_symbol') as HTMLInputElement;
-    if (inputEl) {
-      this.currencySymbol = inputEl.value;
-    }
   // Check if running on localhost
   const isLocalhost = window.location.hostname === 'localhost';
   const pathParams = this.route.snapshot.params;
@@ -398,17 +395,22 @@ ngOnInit(): void {
   this.priceUpdate$.pipe(
     debounceTime(500),
     tap(() => {
+      this.grossPrice = null;
+      this.cd.markForCheck();
       this.rulesorderitem = this.orderitemdata(true);
     }),
     switchMap(() => this.getPrice()),
     takeUntil(this.destroy$)
   ).subscribe(res => {
     if (res && res.fullpriceobject) {
+      this.isCalculatingPrice = true;
       const { grossprice } = res.fullpriceobject;
       this.pricedata = res.fullpriceobject;
+      this.currencySymbol = res.currencysymbol;
       this.grossPrice = `${this.currencySymbol}${Number(grossprice).toFixed(2)}`;
       this.grossPricenum = Number(grossprice);
     } else {
+      this.isCalculatingPrice = false;
       this.grossPrice = null;
       this.pricedata = [];
       this.grossPricenum = 0;
@@ -1462,6 +1464,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
    */
   onFormChanges(values: any, params: any): void {
     
+    this.isCalculatingPrice = false;
     if (!this.previousFormValue) {
       this.previousFormValue = { ...values };
       return;

@@ -26,7 +26,7 @@
               <span>{{ buildProductTitle(ecomproductname, fabricname, colorname) }}</span>
             </h1>
           </div>
-            <div class="price-box" *ngIf="grossPricenum != 0">
+            <div class="price-box" *ngIf="grossPricenum != 0 && isCalculatingPrice">
               <label class="price-label">Estimated Price:</label>
               <span class="price">{{ grossPrice }}</span>
             </div>
@@ -310,7 +310,7 @@
               </div>
             </div>
 
-            <div class="price_wrapper" *ngIf="grossPricenum != 0">
+            <div class="price_wrapper" *ngIf="grossPricenum != 0 && isCalculatingPrice">
               <div class="price_text">Your Price</div>
               <div class="showprice_wrapper">
                 <span class="price">{{ grossPrice }}</span>
@@ -329,9 +329,10 @@
                        aria-label="Quantity">
                 <button type="button" class="plus" (click)="incrementQty()">+</button>
               </div>
-             <button mat-raised-button color="primary" type="submit" [disabled]="orderForm.invalid || isSubmitting || grossPricenum === 0">
+             <button mat-raised-button color="primary" type="submit" [disabled]="orderForm.invalid || isSubmitting || !isCalculatingPrice || grossPricenum === 0">
                 <mat-icon>shopping_cart</mat-icon>
-                {{ isSubmitting ? 'Adding...' : 'Add to Cart' }}
+                <span *ngIf="isCalculatingPrice">{{ isSubmitting ? 'Adding...' : 'Add to Cart' }}</span>
+                <span *ngIf="!isCalculatingPrice">Calculating price...</span>
               </button>
             </div>
               <mat-accordion>
