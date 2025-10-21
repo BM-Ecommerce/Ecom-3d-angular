@@ -125,6 +125,9 @@ interface ProductField {
   fieldInformation?: any;
   editruleoverride?: any;
   ruleoverride?: any;
+  numeric_setcondition?: any;
+  numeric_minvalue?: any;
+  numeric_maxvalue?: any;
 }
 
 interface ProductOption {
@@ -622,11 +625,24 @@ private fetchInitialData(params: any): void {
 
     this.parameters_data.forEach(field => {
       field.level = 1;
-      // Add only ecom-visible fields initially
       if (field.showfieldecomonjob == 1) {
+        const validators = [];
+        if (field.mandatory == 1) {
+          validators.push(Validators.required);
+        }
+
+        if (this.get_field_type_name(field.fieldtypeid) === 'number' && field.numeric_setcondition == 1) {
+          if (field.numeric_minvalue !== null && field.numeric_minvalue !== undefined) {
+            validators.push(Validators.min(field.numeric_minvalue));
+          }
+          if (field.numeric_maxvalue !== null && field.numeric_maxvalue !== undefined) {
+            validators.push(Validators.max(field.numeric_maxvalue));
+          }
+        }
+
         formControls[`field_${field.fieldid}`] = [
           field.value || '',
-          field.mandatory == 1 ? [Validators.required] : []
+          validators
         ];
       }
     });
