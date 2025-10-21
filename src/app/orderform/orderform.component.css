@@ -750,7 +750,14 @@ button.mat-raised-button:hover {
 .guides-buttons a {
   text-decoration: none;
 }
-
+h1.product-title {
+    display: flex;
+}
+.productaname {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 input:disabled,
 mat-select:disabled,
 mat-button-toggle-group:disabled {
