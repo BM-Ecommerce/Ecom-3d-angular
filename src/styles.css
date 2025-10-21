@@ -2,3 +2,11 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+.mat-input-element {
+    caret-color: #00c2ff !important;
+}
+
+.mat-form-field-required-marker {
+    color: red !important;
+}
