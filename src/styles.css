@@ -10,3 +10,7 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 .mat-form-field-required-marker {
     color: red !important;
 }
+.tooltip-container-sub a{
+    color: blue!important;
+    text-decoration: none;
+}

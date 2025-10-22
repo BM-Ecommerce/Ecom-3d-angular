@@ -5,10 +5,10 @@ import { SafeHtmlPipe } from './safe-html.pipe';
 @Component({
   selector: 'app-html-tooltip',
   template: `
-    <div class="tooltip-container" [innerHTML]="htmlContent | safeHtml"></div>
+    <div class="tooltip-container-sub" [innerHTML]="htmlContent | safeHtml"></div>
   `,
   styles: [`
-    .tooltip-container {
+    .tooltip-container-sub {
       background-color: #333;
       color: #fff;
       padding: 10px;
