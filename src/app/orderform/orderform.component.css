@@ -779,12 +779,20 @@ mat-button-toggle-group:disabled {
   transform: scale(1.1);
 }
 
-:ng-deep .mat-tooltip {
-  background-color: #333 !important;
-  color: #fff !important;
-  z-index: 1000 !important;
-}
 .icon-wrapper {
   display: inline-block;
   pointer-events: auto;
+  margin-left: 4px;
+}
+
+.icon-wrapper .info-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  vertical-align: middle;
+}
+
+.icon-wrapper mat-icon {
+    margin-left: 0;
 }

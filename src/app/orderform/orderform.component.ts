@@ -19,6 +19,7 @@ import {MatTabsModule} from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { HtmlTooltipDirective } from '../html-tooltip.directive';
 
 
 
@@ -179,7 +180,8 @@ interface FractionOption {
     MatButtonModule,
     MatExpansionModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,
+    HtmlTooltipDirective
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

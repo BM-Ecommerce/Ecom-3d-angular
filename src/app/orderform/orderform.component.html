@@ -68,291 +68,292 @@
             <div class="blinds-measurement">
             </div>
 
-    <div *ngFor="let field of parameters_data; trackBy: trackByFieldId" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
-        <div *ngIf="field.showfieldecomonjob == 1">
+       <div *ngFor="let field of parameters_data; trackBy: trackByFieldId" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
+  <div *ngIf="field.showfieldecomonjob == 1">
 
-            <div *ngSwitchCase="'unit_type'">
-              <div class="parameter-wrapper inline-toggle radio">
-                <span class="mat-label" id="example-toggle-group-label">
-                  {{ field.fieldname }}
-                  <span class="icon-wrapper">
-                    <mat-icon
-                      *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
-                      [matTooltip]="field.fieldInformation"
-                      class="info-icon"
-                      [matTooltipPosition]="'above'"
-                      matTooltipHideDelay="100000"
-                      [attr.aria-label]="'Information about ' + field.fieldname">
-                      info_outline
-                    </mat-icon>
-                  </span>
-                </span>
+    <!-- Unit Type -->
+    <div *ngSwitchCase="'unit_type'">
+      <div class="parameter-wrapper inline-toggle radio">
+        <span class="mat-label" id="example-toggle-group-label">
+          {{ field.fieldname }}
+          <span class="icon-wrapper">
+            <mat-icon
+              *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+              [appHtmlTooltip]="field.fieldInformation"
+              [hideDelay]="1000"
+              class="info-icon"
+              [attr.aria-label]="'Information about ' + field.fieldname">
+              info_outline
+            </mat-icon>
+          </span>
+        </span>
 
-                <mat-button-toggle-group
-                  [formControlName]="'field_' + field.fieldid"
-                  aria-labelledby="example-toggle-group-label"
-                  appearance="standard">
+        <mat-button-toggle-group
+          [formControlName]="'field_' + field.fieldid"
+          aria-labelledby="example-toggle-group-label"
+          appearance="standard">
 
-                  <mat-button-toggle
-                    *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
-                    [value]="option.optionid"
-                    [id]="'unittype_'+option.optionid">
-                    {{ option.optionname }}
-                  </mat-button-toggle>
-                </mat-button-toggle-group>
-              </div>
-            </div>
+          <mat-button-toggle
+            *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
+            [value]="option.optionid"
+            [id]="'unittype_'+option.optionid">
+            {{ option.optionname }}
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+    </div>
 
-            <div *ngSwitchCase="'text'">
-              <div class="parameter-wrapper">
-                <mat-form-field>
-                  <mat-label>
-                    {{ field.fieldname }}
-                    <span class="icon-wrapper">
-                      <mat-icon *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''" 
-                                [matTooltip]="field.fieldInformation" 
-                                class="info-icon" 
-                                [matTooltipPosition]="'above'"
-                                matTooltipHideDelay="100000"
-                                [attr.aria-label]="'Information about ' + field.fieldname">
-                        info_outline
-                      </mat-icon>
-                    </span>
-                  </mat-label>
-                  
-                  <input matInput
-                        type="text"
-                        [formControlName]="'field_' + field.fieldid"
-                        [id]="'field_' + field.fieldid"
-                        [attr.aria-label]="field.fieldname"
-                        [required]="field.mandatory == 1">
-                  <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
-                    This field is required.
-                  </mat-error>
-                </mat-form-field>
-              </div>
-            </div>
-
-            <div *ngSwitchCase="'list'">
-              <div class="parameter-wrapper">
-                <mat-form-field>
-                  <mat-label>
-                    {{ field.fieldname }}
-                    <span class="icon-wrapper">
-                      <mat-icon
-                        *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
-                        [matTooltip]="field.fieldInformation"
+    <!-- Text -->
+    <div *ngSwitchCase="'text'">
+      <div class="parameter-wrapper">
+        <mat-form-field>
+          <mat-label>
+            {{ field.fieldname }}
+            <span class="icon-wrapper">
+              <mat-icon *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+                        [appHtmlTooltip]="field.fieldInformation"
+                        [hideDelay]="1000"
                         class="info-icon"
-                        [matTooltipPosition]="'above'"
-                        matTooltipHideDelay="100000"
                         [attr.aria-label]="'Information about ' + field.fieldname">
-                        info_outline
-                      </mat-icon>
-                    </span>
-                  </mat-label>
-                  <mat-select
-                    [formControlName]="'field_' + field.fieldid"
-                    [id]="'field_' + field.fieldid"
-                    [multiple]="field.selection == 1"
-                    [attr.aria-label]="field.fieldname">
-                    <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
-                    <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
-                                [value]="option.optionid">
-                      <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                        <img [src]="apiUrl + '/api/public' + option.optionimage"
-                            alt="{{ option.optionname }}"
-                            width="24"
-                            height="24"
-                            style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
-                      </ng-container>
-                      {{ option.optionname }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
-            </div>
+                info_outline
+              </mat-icon>
+            </span>
+          </mat-label>
+          
+          <input matInput
+                 type="text"
+                 [formControlName]="'field_' + field.fieldid"
+                 [id]="'field_' + field.fieldid"
+                 [attr.aria-label]="field.fieldname"
+                 [required]="field.mandatory == 1">
+          <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
+            This field is required.
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
 
-            <div *ngSwitchCase="'materials'">
-              <div class="parameter-wrapper">
-                <mat-form-field>
-                  <mat-label>
-                    {{ field.fieldname }}
-                    <span class="icon-wrapper">
-                      <mat-icon
-                        *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
-                        [matTooltip]="field.fieldInformation"
-                        class="info-icon"
-                        [matTooltipPosition]="'above'"
-                        matTooltipHideDelay="100000"
-                        [attr.aria-label]="'Information about ' + field.fieldname">
-                        info_outline
-                      </mat-icon>
-                    </span>
-                  </mat-label>
-                  <mat-select
-                    [formControlName]="'field_' + field.fieldid"
-                    [id]="'field_' + field.fieldid"
-                    [multiple]="field.selection == 1"
-                    [attr.aria-label]="field.fieldname">
-                    <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
-                    <mat-option *ngFor="let option of option_data[field.fieldid]"
-                                [value]="option.optionid">
-                      <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                        <img [src]="apiUrl + '/api/public' + option.optionimage"
-                            alt="{{ option.optionname }}"
-                            width="24"
-                            height="24"
-                            style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
-                      </ng-container>
-                      {{ option.optionname }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
-            </div>
+    <!-- List -->
+    <div *ngSwitchCase="'list'">
+      <div class="parameter-wrapper">
+        <mat-form-field>
+          <mat-label>
+            {{ field.fieldname }}
+            <span class="icon-wrapper">
+              <mat-icon
+                *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+                [appHtmlTooltip]="field.fieldInformation"
+                [hideDelay]="1000"
+                class="info-icon"
+                [attr.aria-label]="'Information about ' + field.fieldname">
+                info_outline
+              </mat-icon>
+            </span>
+          </mat-label>
+          <mat-select
+            [formControlName]="'field_' + field.fieldid"
+            [id]="'field_' + field.fieldid"
+            [multiple]="field.selection == 1"
+            [attr.aria-label]="field.fieldname">
+            <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
+            <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
+                        [value]="option.optionid">
+              <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                <img [src]="apiUrl + '/api/public' + option.optionimage"
+                     alt="{{ option.optionname }}"
+                     width="24"
+                     height="24"
+                     style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+              </ng-container>
+              {{ option.optionname }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
 
-            <div *ngSwitchCase="'number'">
-              <div class="parameter-wrapper">
-                <mat-form-field>
-                  <mat-label>
-                    {{ field.fieldname }}
-                    <span class="icon-wrapper">
-                      <mat-icon
-                        *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
-                        [matTooltip]="field.fieldInformation"
-                        class="info-icon"
-                        [matTooltipPosition]="'above'"
-                        matTooltipHideDelay="100000"
-                        [attr.aria-label]="'Information about ' + field.fieldname">
-                        info_outline
-                      </mat-icon>
-                    </span>
-                  </mat-label>
-                  <input matInput
-                        type="number"
-                        [formControlName]="'field_' + field.fieldid"
-                        [id]="'field_' + field.fieldid"
-                        [attr.aria-label]="field.fieldname"
-                        [required]="field.mandatory == 1"
-                        [attr.min]="field.numeric_setcondition == 1 ? field.numeric_minvalue : null"
-                        [attr.max]="field.numeric_setcondition == 1 ? field.numeric_maxvalue : null"
-                        [placeholder]="
-                          field.numeric_setcondition == 1
-                            ? 'Between ' + field.numeric_minvalue + ' and ' + field.numeric_maxvalue
-                            : ''
-                        ">
-                  <mat-hint *ngIf="field.numeric_setcondition == 1">
-                    Min: {{ field.numeric_minvalue }}, Max: {{ field.numeric_maxvalue }}
-                  </mat-hint>
-                  <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
-                    This field is required.
-                  </mat-error>
-                  <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('min')">
-                    Value should be at least {{ field.numeric_minvalue }}.
-                  </mat-error>
-                  <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('max')">
-                    Value should not exceed {{ field.numeric_maxvalue }}.
-                  </mat-error>
-                </mat-form-field>
-              </div>
-            </div>
+    <!-- Materials -->
+    <div *ngSwitchCase="'materials'">
+      <div class="parameter-wrapper">
+        <mat-form-field>
+          <mat-label>
+            {{ field.fieldname }}
+            <span class="icon-wrapper">
+              <mat-icon
+                *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+                [appHtmlTooltip]="field.fieldInformation"
+                [hideDelay]="1000"
+                class="info-icon"
+                [attr.aria-label]="'Information about ' + field.fieldname">
+                info_outline
+              </mat-icon>
+            </span>
+          </mat-label>
+          <mat-select
+            [formControlName]="'field_' + field.fieldid"
+            [id]="'field_' + field.fieldid"
+            [multiple]="field.selection == 1"
+            [attr.aria-label]="field.fieldname">
+            <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
+            <mat-option *ngFor="let option of option_data[field.fieldid]"
+                        [value]="option.optionid">
+              <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                <img [src]="apiUrl + '/api/public' + option.optionimage"
+                     alt="{{ option.optionname }}"
+                     width="24"
+                     height="24"
+                     style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+              </ng-container>
+              {{ option.optionname }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
 
-            <div *ngSwitchCase="'width_with_fraction'">
-              <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
-                <mat-form-field class="fraction-field">
-                  <mat-label>
-                    {{ field.fieldname }}
-                    <span class="icon-wrapper">
-                      <mat-icon
-                        *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
-                        [matTooltip]="field.fieldInformation"
-                        class="info-icon"
-                        [matTooltipPosition]="'above'"
-                        matTooltipHideDelay="100000"
-                        [attr.aria-label]="'Information about ' + field.fieldname">
-                        info_outline
-                      </mat-icon>
-                    </span>
-                  </mat-label>
-                  <input matInput
-                        type="number"
-                        [formControlName]="'field_' + field.fieldid"
-                        [id]="'field_' + field.fieldid"
-                        [min]="min_width"
-                        [attr.max]="max_width > 0 ? max_width : null"
-                        [placeholder]="'Between ' + min_width + ' and ' + max_width"
-                        aria-label="Width">
-                  <mat-hint>Min: {{ min_width }}, Max: {{ max_width }}</mat-hint>
-                </mat-form-field>
+    <!-- Number -->
+    <div *ngSwitchCase="'number'">
+      <div class="parameter-wrapper">
+        <mat-form-field>
+          <mat-label>
+            {{ field.fieldname }}
+            <span class="icon-wrapper">
+              <mat-icon
+                *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+                [appHtmlTooltip]="field.fieldInformation"
+                [hideDelay]="1000"
+                class="info-icon"
+                [attr.aria-label]="'Information about ' + field.fieldname">
+                info_outline
+              </mat-icon>
+            </span>
+          </mat-label>
+          <input matInput
+                 type="number"
+                 [formControlName]="'field_' + field.fieldid"
+                 [id]="'field_' + field.fieldid"
+                 [attr.aria-label]="field.fieldname"
+                 [required]="field.mandatory == 1"
+                 [attr.min]="field.numeric_setcondition == 1 ? field.numeric_minvalue : null"
+                 [attr.max]="field.numeric_setcondition == 1 ? field.numeric_maxvalue : null"
+                 [placeholder]="
+                   field.numeric_setcondition == 1
+                     ? 'Between ' + field.numeric_minvalue + ' and ' + field.numeric_maxvalue
+                     : ''
+                 ">
+          <mat-hint *ngIf="field.numeric_setcondition == 1">
+            Min: {{ field.numeric_minvalue }}, Max: {{ field.numeric_maxvalue }}
+          </mat-hint>
+          <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
+            This field is required.
+          </mat-error>
+          <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('min')">
+            Value should be at least {{ field.numeric_minvalue }}.
+          </mat-error>
+          <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('max')">
+            Value should not exceed {{ field.numeric_maxvalue }}.
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
 
-                <mat-form-field *ngIf="showFractions" class="fraction-select">
-                  <mat-label>Fraction</mat-label>
-                  <mat-select formControlName="widthfraction" id="widthfraction" aria-label="Width fraction">
-                    <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
-                      {{ fraction.name }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
-            </div>
+    <!-- Width with Fraction -->
+    <div *ngSwitchCase="'width_with_fraction'">
+      <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
+        <mat-form-field class="fraction-field">
+          <mat-label>
+            {{ field.fieldname }}
+            <span class="icon-wrapper">
+              <mat-icon
+                *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+                [appHtmlTooltip]="field.fieldInformation"
+                [hideDelay]="1000"
+                class="info-icon"
+                [attr.aria-label]="'Information about ' + field.fieldname">
+                info_outline
+              </mat-icon>
+            </span>
+          </mat-label>
+          <input matInput
+                 type="number"
+                 [formControlName]="'field_' + field.fieldid"
+                 [id]="'field_' + field.fieldid"
+                 [min]="min_width"
+                 [attr.max]="max_width > 0 ? max_width : null"
+                 [placeholder]="'Between ' + min_width + ' and ' + max_width"
+                 aria-label="Width">
+          <mat-hint>Min: {{ min_width }}, Max: {{ max_width }}</mat-hint>
+        </mat-form-field>
 
-            <div *ngSwitchCase="'drop_with_fraction'">
-              <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
-                <mat-form-field class="fraction-field">
-                  <mat-label>
-                    {{ field.fieldname }}
-                    <span class="icon-wrapper">
-                      <mat-icon
-                        *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
-                        [matTooltip]="field.fieldInformation"
-                        class="info-icon"
-                        [matTooltipPosition]="'above'"
-                        matTooltipHideDelay="100000"
-                        [attr.aria-label]="'Information about ' + field.fieldname">
-                        info_outline
-                      </mat-icon>
-                    </span>
-                  </mat-label>
-                  <input matInput
-                        type="number"
-                        [formControlName]="'field_' + field.fieldid"
-                        [id]="'field_' + field.fieldid"
-                        [min]="min_drop"
-                        [attr.max]="max_drop > 0 ? max_drop : null"
-                        [placeholder]="'Between ' + min_drop + ' and ' + max_drop"
-                        aria-label="Drop">
-                  <mat-hint>Min: {{ min_drop }}, Max: {{ max_drop }}</mat-hint>
-                </mat-form-field>
+        <mat-form-field *ngIf="showFractions" class="fraction-select">
+          <mat-label>Fraction</mat-label>
+          <mat-select formControlName="widthfraction" id="widthfraction" aria-label="Width fraction">
+            <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
+              {{ fraction.name }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
 
-                <mat-form-field *ngIf="showFractions" class="fraction-select">
-                  <mat-label>Fraction</mat-label>
-                  <mat-select formControlName="dropfraction" id="dropfraction" aria-label="Drop fraction">
-                    <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
-                      {{ fraction.name }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
-            </div>
+    <!-- Drop with Fraction -->
+    <div *ngSwitchCase="'drop_with_fraction'">
+      <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
+        <mat-form-field class="fraction-field">
+          <mat-label>
+            {{ field.fieldname }}
+            <span class="icon-wrapper">
+              <mat-icon
+                *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+                [appHtmlTooltip]="field.fieldInformation"
+                [hideDelay]="1000"
+                class="info-icon"
+                [attr.aria-label]="'Information about ' + field.fieldname">
+                info_outline
+              </mat-icon>
+            </span>
+          </mat-label>
+          <input matInput
+                 type="number"
+                 [formControlName]="'field_' + field.fieldid"
+                 [id]="'field_' + field.fieldid"
+                 [min]="min_drop"
+                 [attr.max]="max_drop > 0 ? max_drop : null"
+                 [placeholder]="'Between ' + min_drop + ' and ' + max_drop"
+                 aria-label="Drop">
+          <mat-hint>Min: {{ min_drop }}, Max: {{ max_drop }}</mat-hint>
+        </mat-form-field>
 
-            <div *ngSwitchCase="'qty'" style="display:none;">
-              <input matInput type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
-            </div>
+        <mat-form-field *ngIf="showFractions" class="fraction-select">
+          <mat-label>Fraction</mat-label>
+          <mat-select formControlName="dropfraction" id="dropfraction" aria-label="Drop fraction">
+            <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
+              {{ fraction.name }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
 
-            <div *ngSwitchCase="'supplier'" style="display:none;">
-              <input matInput type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
-            </div>
+    <!-- Hidden Fields -->
+    <div *ngSwitchCase="'qty'" style="display:none;">
+      <input matInput type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
+    </div>
 
-            <div *ngSwitchCase="'pricegroup'" style="display:none;">
-              <input matInput type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
-            </div>
+    <div *ngSwitchCase="'supplier'" style="display:none;">
+      <input matInput type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
+    </div>
 
-            <div *ngSwitchCase="'hidden'">
-              <input type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
-            </div>
+    <div *ngSwitchCase="'pricegroup'" style="display:none;">
+      <input matInput type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
+    </div>
 
-          </div>
-        </div>
+    <div *ngSwitchCase="'hidden'">
+      <input type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
+    </div>
+
+  </div>
+</div>
 
 
 
