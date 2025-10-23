@@ -622,8 +622,8 @@ private fetchInitialData(params: any): void {
    
     const formControls: Record<string, any> = {
       unit: ['mm', Validators.required],
-      widthfraction: [''],
-      dropfraction: [''],
+      widthfraction: [0],
+      dropfraction: [0],
       qty: [1, [Validators.required, Validators.min(1)]]
     };
 

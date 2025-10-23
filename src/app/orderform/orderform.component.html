@@ -288,6 +288,7 @@
         <mat-form-field *ngIf="showFractions" class="fraction-select">
           <mat-label>Fraction</mat-label>
           <mat-select formControlName="widthfraction" id="widthfraction" aria-label="Width fraction">
+            <mat-option [value]="0">0</mat-option>
             <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
               {{ fraction.name }}
             </mat-option>
@@ -327,6 +328,7 @@
         <mat-form-field *ngIf="showFractions" class="fraction-select">
           <mat-label>Fraction</mat-label>
           <mat-select formControlName="dropfraction" id="dropfraction" aria-label="Drop fraction">
+            <mat-option [value]="0">0</mat-option>
             <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
               {{ fraction.name }}
             </mat-option>
