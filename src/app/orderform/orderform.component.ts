@@ -1562,6 +1562,17 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
       );
     }
   }
+  hasContent(htmlOrText: string | undefined): boolean {
+    if (!htmlOrText) return false; // empty or undefined
+
+    // Create a temporary div to parse HTML if present
+    const div = document.createElement('div');
+    div.innerHTML = htmlOrText;
+
+    // Get the text content (ignores HTML tags) and trim it
+    const text = div.textContent ?? '';
+    return text.trim().length > 0; // true only if there is real text
+  }
   private handleWidthChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
 

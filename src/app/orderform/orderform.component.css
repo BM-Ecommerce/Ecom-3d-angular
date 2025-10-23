@@ -796,3 +796,8 @@ mat-button-toggle-group:disabled {
 .icon-wrapper mat-icon {
     margin-left: 0;
 }
+
+:ng-deep .tooltip-container-sub {
+  max-width: 300px;
+  word-wrap: break-word;
+}

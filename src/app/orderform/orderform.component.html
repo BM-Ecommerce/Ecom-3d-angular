@@ -52,7 +52,7 @@
           </div>
         </div>
 
-        <div class="product-wrapper">
+        <div  #productWrapper class="product-wrapper">
           <div class="product-from-price">
             <div class="price-container">
               <p [style.visibility]="visualizertagline ? 'visible' : 'hidden'">
@@ -78,7 +78,7 @@
           {{ field.fieldname }}
           <span class="icon-wrapper">
             <mat-icon
-              *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+              *ngIf="hasContent(field.fieldInformation)"
               [appHtmlTooltip]="field.fieldInformation"
               [hideDelay]="1000"
               class="info-icon"
@@ -110,7 +110,7 @@
           <mat-label>
             {{ field.fieldname }}
             <span class="icon-wrapper">
-              <mat-icon *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+              <mat-icon *ngIf="hasContent(field.fieldInformation)"
                         [appHtmlTooltip]="field.fieldInformation"
                         [hideDelay]="1000"
                         class="info-icon"
@@ -141,7 +141,7 @@
             {{ field.fieldname }}
             <span class="icon-wrapper">
               <mat-icon
-                *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+                *ngIf="hasContent(field.fieldInformation)"
                 [appHtmlTooltip]="field.fieldInformation"
                 [hideDelay]="1000"
                 class="info-icon"
@@ -180,7 +180,7 @@
             {{ field.fieldname }}
             <span class="icon-wrapper">
               <mat-icon
-                *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+                *ngIf="hasContent(field.fieldInformation)"
                 [appHtmlTooltip]="field.fieldInformation"
                 [hideDelay]="1000"
                 class="info-icon"
@@ -219,7 +219,7 @@
             {{ field.fieldname }}
             <span class="icon-wrapper">
               <mat-icon
-                *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+                *ngIf="hasContent(field.fieldInformation)"
                 [appHtmlTooltip]="field.fieldInformation"
                 [hideDelay]="1000"
                 class="info-icon"
@@ -265,7 +265,7 @@
             {{ field.fieldname }}
             <span class="icon-wrapper">
               <mat-icon
-                *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+                *ngIf="hasContent(field.fieldInformation)"
                 [appHtmlTooltip]="field.fieldInformation"
                 [hideDelay]="1000"
                 class="info-icon"
@@ -304,7 +304,7 @@
             {{ field.fieldname }}
             <span class="icon-wrapper">
               <mat-icon
-                *ngIf="field.fieldInformation && field.fieldInformation.trim() !== ''"
+                *ngIf="hasContent(field.fieldInformation)"
                 [appHtmlTooltip]="field.fieldInformation"
                 [hideDelay]="1000"
                 class="info-icon"

@@ -15,6 +15,8 @@ import { SafeHtmlPipe } from './safe-html.pipe';
       border-radius: 5px;
       z-index: 1000;
       font-size: 12px;
+      max-width: 300px;
+      word-wrap: break-word;
     }
   `],
   standalone: true,
