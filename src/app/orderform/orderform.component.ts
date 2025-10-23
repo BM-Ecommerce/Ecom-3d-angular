@@ -622,8 +622,8 @@ private fetchInitialData(params: any): void {
    
     const formControls: Record<string, any> = {
       unit: ['mm', Validators.required],
-      widthfraction: [''],
-      dropfraction: [''],
+      widthfraction: [0],
+      dropfraction: [0],
       qty: [1, [Validators.required, Validators.min(1)]]
     };
 
@@ -677,7 +677,7 @@ private fetchInitialData(params: any): void {
 
         this.parameters_data.forEach((field: ProductField) => {
           // top-level select-like fields that need optionlist fetch
-          if ([3, 5, 20].includes(field.fieldtypeid)) {
+          if ([3, 5, 20, 21].includes(field.fieldtypeid)) {
             let matrial = 0;
             let filter = '';
 
@@ -689,6 +689,9 @@ private fetchInitialData(params: any): void {
               filter = filterresponseData.coloridsarray;
             } else if (field.fieldtypeid === 20) {
               matrial = 2;
+              filter = filterresponseData.coloridsarray;
+            }else if (field.fieldtypeid === 21) {
+              matrial = 0;
               filter = filterresponseData.coloridsarray;
             }
 
@@ -1091,13 +1094,10 @@ private processSubfield(
           if (subfield.fieldtypeid === 3) {
             matrial = 0;
             filter = filterresponseData.optionarray[subfield.fieldid];
-          } else if (subfield.fieldtypeid === 5) {
+          } else if (subfield.fieldtypeid === 5 || subfield.fieldtypeid === 20 || subfield.fieldtypeid === 21) {
             matrial = 2;
             filter = filterresponseData.coloridsarray;
-          } else if (subfield.fieldtypeid === 20) {
-            matrial = 2;
-            filter = filterresponseData.coloridsarray;
-          }
+          } 
 
           return this.apiService.getOptionlist(
             params,
@@ -1444,7 +1444,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
   const unitName =
     (this.unitOption && selectedUnitOption?.optionname) || this.unittypename || 'unit';
 
-  if ([7, 11, 31, 34].includes(targetField.fieldtypeid)) {
+  if (this.widthField && [7, 11, 31, 34].includes(targetField.fieldtypeid)) {
     if (this.showFractions) {
       fractionValue = Number(this.orderForm.get('widthfraction')?.value) || 0;
       const selectedInchesOption = this.inchfraction_array.find(
@@ -1462,7 +1462,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     }
   }
 
-  if ([9, 12, 32, 34].includes(targetField.fieldtypeid)) {
+  if (this.dropField && [9, 12, 32, 34].includes(targetField.fieldtypeid)) {
     if (this.showFractions) {
       fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
       const selectedInchesOption = this.inchfraction_array.find(
