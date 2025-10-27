@@ -539,8 +539,8 @@ private fetchInitialData(params: any): void {
         this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
         this.supplierField   = this.parameters_data.find(f => f.fieldtypeid === 17);
         this.qtyField        = this.parameters_data.find(f => f.fieldtypeid === 14);
-        this.widthField      = this.parameters_data.find(f => [7, 11, 31].includes(f.fieldtypeid));
-        this.dropField       = this.parameters_data.find(f => [9, 12, 32].includes(f.fieldtypeid));
+        this.widthField      = this.parameters_data.find(f => [7, 8, 11, 31].includes(f.fieldtypeid));
+        this.dropField       = this.parameters_data.find(f => [9, 10, 12, 32].includes(f.fieldtypeid));
         this.unitField       = this.parameters_data.find(f => f.fieldtypeid === 34);
 
         return forkJoin({
@@ -1444,7 +1444,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
   const unitName =
     (this.unitOption && selectedUnitOption?.optionname) || this.unittypename || 'unit';
 
-  if (this.widthField && [7, 11, 31, 34].includes(targetField.fieldtypeid)) {
+  if (this.widthField && [7,8, 11, 31, 34].includes(targetField.fieldtypeid)) {
     if (this.showFractions) {
       fractionValue = Number(this.orderForm.get('widthfraction')?.value) || 0;
       const selectedInchesOption = this.inchfraction_array.find(
@@ -1462,7 +1462,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     }
   }
 
-  if (this.dropField && [9, 12, 32, 34].includes(targetField.fieldtypeid)) {
+  if (this.dropField && [9,10,12, 32, 34].includes(targetField.fieldtypeid)) {
     if (this.showFractions) {
       fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
       const selectedInchesOption = this.inchfraction_array.find(
@@ -1519,9 +1519,9 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
           this.handleRestOptionChange(params, field, values[key]);
         }else if(field  && [14, 18, 6,29].includes(field.fieldtypeid)){
            this.handleRestChange(params, field, values[key]);
-        }else if(field  && [ 7,11,31].includes(field.fieldtypeid)){
+        }else if(field  && [ 7,8,11,31].includes(field.fieldtypeid)){
            this.handleWidthChange(params, field, values[key]);
-        }else if(field  && [9,12,32].includes(field.fieldtypeid)){
+        }else if(field  && [9,10,12,32].includes(field.fieldtypeid)){
            this.handleDropChange(params, field, values[key]);
         }else if(field) {
          this.handleRestOptionChange(params, field, values[key]);
@@ -1899,18 +1899,18 @@ private markFormGroupTouched(formGroup: FormGroup) {
       '3': 'list',
       '5': 'materials',
       '6': 'number',
-      '7': 'x_footage',
-      '8': 'number',
-      '9': 'y_footage',
-      '10': 'height',
+      '7': 'width_with_fraction',
+      '8': 'width_with_fraction',
+      '9': 'drop_with_fraction',
+      '10': 'drop_with_fraction',
       '11': 'width_with_fraction',
       '12': 'drop_with_fraction',
       '13': 'pricegroup',
       '14': 'qty',
       '17': 'supplier',
       '18': 'text',
-      '31': 'x_square_yard',
-      '32': 'y_square_yard',
+      '31': 'width_with_fraction',
+      '32': 'drop_with_fraction',
       '34': 'unit_type',
       '21': 'materials',
       '25': 'accessories_list',
