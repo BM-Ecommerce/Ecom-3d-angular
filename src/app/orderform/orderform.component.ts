@@ -266,10 +266,10 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ];
   color_arr: Record<string, any> = {};
-  min_width = 0;
-  max_width = 0;
-  min_drop = 0;
-  max_drop = 0;
+  min_width: number | null = null;
+  max_width: number | null = null;
+  min_drop: number | null = null;
+  max_drop: number | null = null; 
   width = 0;
   drop = 0;
   vatpercentage = 0;
@@ -574,13 +574,11 @@ private fetchInitialData(params: any): void {
           }
         });
 
-        if (results.minMaxData?.data) {
-          const minmaxdata = results.minMaxData.data;
-          this.min_width = minmaxdata.widthminmax.min;
-          this.min_drop  = minmaxdata.dropminmax.min;
-          this.max_width = minmaxdata.widthminmax.max;
-          this.max_drop  = minmaxdata.dropminmax.max;
-        }
+        const minmaxdata = results.minMaxData?.data;
+        this.min_width = minmaxdata?.widthminmax?.min ?? null;
+        this.min_drop  = minmaxdata?.dropminmax?.min ?? null;
+        this.max_width = minmaxdata?.widthminmax?.max ?? null;
+        this.max_drop  = minmaxdata?.dropminmax?.max ?? null;
 
         if (results.recipeList?.[0]?.data?.[0]) {
           const recipe = results.recipeList[0].data[0];
@@ -829,9 +827,17 @@ private fetchInitialData(params: any): void {
       if((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1 )){
         this.fabricid  = 0;
         this.colorid = 0;
+        this.min_width = null;
+        this.max_width = null;
+        this.min_drop = null;
+        this.max_drop = null;
       }
       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2 )) {
         this.colorid = 0;
+        this.min_width = null;
+        this.max_width = null;
+        this.min_drop = null;
+        this.max_drop = null;
       }
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
@@ -938,22 +944,29 @@ private fetchInitialData(params: any): void {
   }
 
     private updateMinMaxValidators(): void {
+    this.min_width = null;
+    this.max_width = null;
+    this.min_drop = null;
+    this.max_drop = null;
     this.apiService.getminandmax(this.routeParams, String(this.colorid), this.unittype, Number(this.pricegroup))
       .pipe(takeUntil(this.destroy$))
       .subscribe(minmaxdata => {
-        if (minmaxdata?.data) {
-          this.min_width = minmaxdata.data.widthminmax.min;
-          this.min_drop = minmaxdata.data.dropminmax.min;
-          this.max_width = minmaxdata.data.widthminmax.max;
-          this.max_drop = minmaxdata.data.dropminmax.max;
+             const data = minmaxdata?.data;
+            this.min_width = data?.widthminmax?.min ?? null;
+            this.min_drop = data?.dropminmax?.min ?? null;
+            this.max_width = data?.widthminmax?.max ?? null;
+            this.max_drop = data?.dropminmax?.max ?? null;
           if (this.widthField) {
             const widthControl = this.orderForm.get(`field_${this.widthField.fieldid}`);
             if (widthControl) {
-              widthControl.setValidators([
-                Validators.required,
-                Validators.min(this.min_width),
-                ...(this.max_width != null ? [Validators.max(this.max_width)] : [])
-              ]);
+              const widthValidators = [Validators.required];
+              if (this.min_width != null) {
+                widthValidators.push(Validators.min(this.min_width));
+              }
+              if (this.max_width != null) {
+                widthValidators.push(Validators.max(this.max_width));
+              }
+              widthControl.setValidators(widthValidators);
               widthControl.updateValueAndValidity();
             }
           }
@@ -961,15 +974,17 @@ private fetchInitialData(params: any): void {
           if (this.dropField) {
             const dropControl = this.orderForm.get(`field_${this.dropField.fieldid}`);
             if (dropControl) {
-              dropControl.setValidators([
-                Validators.required,
-                Validators.min(this.min_drop),
-                ...(this.max_drop != null ? [Validators.max(this.max_drop)] : [])
-              ]);
+              const dropValidators = [Validators.required];
+              if (this.min_drop != null) {
+                dropValidators.push(Validators.min(this.min_drop));
+              }
+              if (this.max_drop != null) {
+                dropValidators.push(Validators.max(this.max_drop));
+              }
+              dropControl.setValidators(dropValidators);
               dropControl.updateValueAndValidity();
             }
           }
-        }
       });
   }
   /**

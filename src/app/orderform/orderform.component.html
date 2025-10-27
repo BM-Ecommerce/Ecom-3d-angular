@@ -279,10 +279,12 @@
                  [formControlName]="'field_' + field.fieldid"
                  [id]="'field_' + field.fieldid"
                  [min]="min_width"
-                 [attr.max]="max_width > 0 ? max_width : null"
-                 [placeholder]="'Between ' + min_width + ' and ' + max_width"
+                 [max]="max_width"
+                 [placeholder]="(min_width != null && max_width != null) ? ('Between ' + min_width + ' and ' + max_width) : ''"
                  aria-label="Width">
-          <mat-hint>Min: {{ min_width }}, Max: {{ max_width }}</mat-hint>
+          <mat-hint *ngIf="min_width != null && max_width != null">
+            Min: {{ min_width }}, Max: {{ max_width }}
+          </mat-hint>
         </mat-form-field>
 
         <mat-form-field *ngIf="showFractions" class="fraction-select">
@@ -319,10 +321,12 @@
                  [formControlName]="'field_' + field.fieldid"
                  [id]="'field_' + field.fieldid"
                  [min]="min_drop"
-                 [attr.max]="max_drop > 0 ? max_drop : null"
-                 [placeholder]="'Between ' + min_drop + ' and ' + max_drop"
+                 [max]="max_drop"
+                 [placeholder]="(min_drop != null && max_drop != null) ? ('Between ' + min_drop + ' and ' + max_drop) : ''"
                  aria-label="Drop">
-          <mat-hint>Min: {{ min_drop }}, Max: {{ max_drop }}</mat-hint>
+          <mat-hint *ngIf="min_drop != null && max_drop != null">
+            Min: {{ min_drop }}, Max: {{ max_drop }}
+          </mat-hint>
         </mat-form-field>
 
         <mat-form-field *ngIf="showFractions" class="fraction-select">
