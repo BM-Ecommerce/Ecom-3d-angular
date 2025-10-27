@@ -665,7 +665,7 @@ private fetchInitialData(params: any): void {
    * Load top-level option data for fields that require it (3,5,20 etc.)
    */
   private loadOptionData(params: any): Observable<any> {
-    return this.apiService.filterbasedlist(params, '','','',this.pricegroup,this.colorid,this.fabricid).pipe(
+    return this.apiService.filterbasedlist(params, '','','',this.pricegroup,this.colorid,this.fabricid,this.unittype).pipe(
       takeUntil(this.destroy$),
       switchMap((filterData: any) => {
      
@@ -802,7 +802,7 @@ private fetchInitialData(params: any): void {
         this.parameters_data = this.parameters_data.filter((field: ProductField) => {
           if ([34, 17, 13,4].includes(field.fieldtypeid)) {
             return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
-          } else if ([3, 5, 20].includes(field.fieldtypeid)) {
+          } else if ([3, 5, 20,21].includes(field.fieldtypeid)) {
             return this.option_data[field.fieldid]?.length > 0;
           }
           return true;
@@ -822,14 +822,15 @@ private fetchInitialData(params: any): void {
    * Responsible for clearing existing subfields and re-loading as necessary.
    */
  private handleOptionSelectionChange(params: any, field: ProductField, value: any, isInitial: boolean = false): void {
-    if (!field) return;
+  
+  if (!field) return;
       this.removeSelectedOptionData([field]);
     if (value === null || value === undefined || value === '') {
-      if(field.fieldtypeid === 5 && field.level == 1){
+      if((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1 )){
         this.fabricid  = 0;
         this.colorid = 0;
       }
-      if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
+      if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2 )) {
         this.colorid = 0;
       }
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
@@ -845,7 +846,7 @@ private fetchInitialData(params: any): void {
     if (Array.isArray(value)) {
       const selectedOptions = options.filter(opt => value.includes(opt.optionid));
       if (selectedOptions.length === 0) return;
-
+      
       from(selectedOptions).pipe(
         mergeMap(option => this.processSelectedOption(params, field, option)),
         toArray(),
@@ -880,7 +881,8 @@ private fetchInitialData(params: any): void {
       this.processSelectedOption(params, field, selectedOption).pipe(
         takeUntil(this.destroy$)
       ).subscribe(() => {
-        if ((field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20) {
+        if ((field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 1)) {
+        
           this.pricegroup = selectedOption.pricegroupid;
           if (this.priceGroupField) {
             const control = this.orderForm.get(`field_${this.priceGroupField.fieldid}`);
@@ -896,7 +898,7 @@ private fetchInitialData(params: any): void {
                 }
             }
           }
-          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup,this.colorid,this.fabricid)
+          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup,this.colorid,this.fabricid,this.unittype)
           .pipe(takeUntil(this.destroy$))
           .subscribe((filterData: any) => {
               this.supplier_id = filterData[0].data.selectsupplierid;
@@ -918,12 +920,12 @@ private fetchInitialData(params: any): void {
            this.updateFieldValues(field, selectedOption,'restOption');
         }
        
-        if(field.fieldtypeid === 5 && field.level == 1){
+        if((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1) ){
           this.fabricid  = value;
           this.fabricname = selectedOption.optionname;
           this.updateFieldValues(field, selectedOption,'updatefabric');
         }
-       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20) {
+       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20  || (field.fieldtypeid === 21 && field.level == 2)) {
           this.colorid = value;
           this.colorname = selectedOption.optionname;
           this.updateFieldValues(field, selectedOption,'updatecolor');
@@ -1080,14 +1082,14 @@ private processSubfield(
    * Load options for a subfield using filterbasedlist + getOptionlist
    */
   private loadSubfieldOptions(params: any, subfield: ProductField): Observable<any> {
-    return this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid),this.pricegroup,this.colorid,this.fabricid).pipe(
+    return this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid),this.pricegroup,this.colorid,this.fabricid,this.unittype).pipe(
       takeUntil(this.destroy$),
       switchMap((filterData: any) => {
         if (!filterData?.[0]?.data?.optionarray) return of(null);
 
         const filterresponseData = filterData[0].data;
 
-        if ([3, 5, 20].includes(subfield.fieldtypeid)) {
+        if ([3, 5, 20,21].includes(subfield.fieldtypeid)) {
           let matrial = 0;
           let filter = '';
 
@@ -1511,7 +1513,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
         const fieldId = parseInt(key.replace('field_', ''), 10);
         const field = this.parameters_data.find(f => f.fieldid === fieldId);
 
-        if (field && [3, 5, 20].includes(field.fieldtypeid)) {
+        if (field && [3, 5, 20,21].includes(field.fieldtypeid)) {
           // Trigger selection change handler
           this.handleOptionSelectionChange(params, field, values[key], false);
         } else if (field && field.fieldtypeid === 34) {

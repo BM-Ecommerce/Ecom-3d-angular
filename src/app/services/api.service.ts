@@ -257,7 +257,7 @@ export class ApiService {
    
    
     const passData = `products/get/fabric/options/list/${recipeid}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}/?page=1&perpage=150`;
-
+ console.log(passData);
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 
@@ -268,7 +268,8 @@ export class ApiService {
     fieldid: string = "",
     pricegroup: any = "",
     colorid: any ="",
-    fabricid: any =""
+    fabricid: any ="",
+    unittype:any =""
   ): Observable<ApiResponse> {
     const { api_url, api_key, api_name, product_id,category } = params;
     const payload = {
@@ -295,7 +296,7 @@ export class ApiService {
       subcolorid: "",
       subfabricid: "",
       supplier: "",
-      unittype: 2,
+      unittype: unittype,
       width: null,
       level: level,
       fabriccolor: fabriccolor,
@@ -327,7 +328,7 @@ export class ApiService {
       }
     };
     const passData = `products/fields/list/0/${recipeid}/${level}/${fieldtype}/${masterparentfieldid}`;
-    
+   
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
   getVat( params: ApiCommonParams) {
