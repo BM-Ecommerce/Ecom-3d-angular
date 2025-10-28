@@ -136,7 +136,7 @@ public zoomOut(): void {
               (mesh.material as THREE.Material).needsUpdate = true;
             }
 
-          else if (mesh.name.startsWith("mesh_12_instance_")) {
+          else if (mesh.name.startsWith("Boolean")) {
             this.cube5Meshes.push(mesh);
           }
         }
