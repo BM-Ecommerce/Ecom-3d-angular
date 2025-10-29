@@ -224,6 +224,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   isScrolled = false;
   unittypename = "";
   netpricecomesfrom ="";
+  is3DOn = false;
   costpricecomesfrom ="";
   inchfractionselected:Number = 0;
   inchfraction_array: FractionOption[] = [
@@ -439,19 +440,34 @@ ngOnInit(): void {
   }
 
   private setupVisualizer(productname: string): void {
-    if (this.canvasRef && this.containerRef) {
+    if (!this.canvasRef || !this.containerRef) return;
+
+    if (this.is3DOn) {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
-      if(productname.toLowerCase().includes("roller blinds")){
-        this.threeService.loadGltfModel('assets/rollerblinds.gltf','rollerblinds');
-      }else if(productname.toLowerCase().includes("venetian") || productname.toLowerCase().includes("fauxwood")){
-        this.threeService.loadGltfModel('assets/venetianblinds.gltf','venetian');
-      }else{
-        this.threeService.loadGltfModel('assets/rollerdoor.gltf','rollerdoor');
+
+      if (productname.toLowerCase().includes('roller blinds')) {
+        this.threeService.loadGltfModel('assets/rollerblinds.gltf', 'rollerblinds');
+      } else if (
+        productname.toLowerCase().includes('venetian') ||
+        productname.toLowerCase().includes('fauxwood')
+      ) {
+        this.threeService.loadGltfModel('assets/venetianblinds.gltf', 'venetian');
+      } else {
+        this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'rollerdoor');
       }
-      
+
+    } else {
+      if (this.mainframe && this.background_color_image_url) {
+        this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
+        this.threeService.createObjects(this.mainframe, this.background_color_image_url);
+      }
     }
   }
 
+  toggle3D() {
+    this.is3DOn = !this.is3DOn;
+    this.setupVisualizer(this.productname);
+  }
   @HostListener('window:resize')
   onWindowResize(): void {
     if (this.containerRef) {

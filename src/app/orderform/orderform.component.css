@@ -801,3 +801,21 @@ mat-button-toggle-group:disabled {
   max-width: 300px;
   word-wrap: break-word;
 }
+
+.threeD-btn {
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 0 #888, 0 4px 8px rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #f0f0f0, #dcdcdc);
+}
+
+.threeD-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #666;
+}
+
+.threeD-btn.active3d {
+  background: linear-gradient(145deg, #4caf50, #388e3c);
+  color: white;
+  box-shadow: 0 4px 0 #2e7d32, 0 4px 8px rgba(0, 0, 0, 0.4);
+}

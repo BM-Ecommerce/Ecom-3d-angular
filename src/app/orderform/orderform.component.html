@@ -46,6 +46,16 @@
                   <button type="button" mat-icon-button (click)="zoomOut()" aria-label="Zoom out">
                     <mat-icon>zoom_out</mat-icon>
                   </button>
+                  <button 
+                        type="button"
+                        mat-icon-button
+                        [class.active3d]="is3DOn"
+                        (click)="toggle3D()"
+                        aria-label="Toggle 3D"
+                        class="threeD-btn"
+                      >
+                        <mat-icon>view_in_ar</mat-icon>
+                      </button>
                 </div>
               </div>
             </div>
