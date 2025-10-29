@@ -36,13 +36,13 @@
                 <canvas #visualizerCanvas></canvas>
                 <div #zoomLens class="zoom-lens" [hidden]="!isZooming"></div>
                 <div class="visualizer-controls">
-                 <button type="button" mat-icon-button (click)="resetCamera()" aria-label="Reset view">
+                 <button *ngIf="is3DOn" type="button" mat-icon-button (click)="resetCamera()" aria-label="Reset view">
                     <mat-icon>refresh</mat-icon>
                   </button>
-                  <button type="button" mat-icon-button (click)="zoomIn()" aria-label="Zoom in">
+                  <button *ngIf="is3DOn" type="button" mat-icon-button (click)="zoomIn()" aria-label="Zoom in">
                     <mat-icon>zoom_in</mat-icon>
                   </button>
-                  <button type="button" mat-icon-button (click)="zoomOut()" aria-label="Zoom out">
+                  <button *ngIf="is3DOn" type="button" mat-icon-button (click)="zoomOut()" aria-label="Zoom out">
                     <mat-icon>zoom_out</mat-icon>
                   </button>
                   <button 

@@ -197,6 +197,13 @@ export class ThreeService implements OnDestroy {
             }
           }
         });
+
+        if (this.textureMaterial && this.cube5Meshes.length > 0) {
+          this.cube5Meshes.forEach((mesh) => {
+            mesh.material = this.textureMaterial!;
+            (mesh.material as THREE.Material).needsUpdate = true;
+          });
+        }
       },
       undefined,
       (error) => {
@@ -231,7 +238,7 @@ export class ThreeService implements OnDestroy {
       alpha: true,
       antialias: true
     });
-    this.renderer.setSize(width, height);
+    this.renderer.setSize(width, height, false);
     this.renderer.setPixelRatio(window.devicePixelRatio);
     
     this.animate();
@@ -290,38 +297,56 @@ export class ThreeService implements OnDestroy {
       oldMaterial.dispose();
     }
 
-    if (this.backgroundMesh) {
-      const oldMaterial = this.backgroundMesh.material as THREE.MeshBasicMaterial;
-      if (oldMaterial.map) {
-        oldMaterial.map.dispose();
+    if (backgroundUrl) {
+      if (!this.backgroundMesh) {
+        const width = this.renderer.domElement.clientWidth;
+        const height = this.renderer.domElement.clientHeight;
+        const backgroundGeometry = new THREE.PlaneGeometry(width, height);
+        const backgroundTexture = this.textureLoader.load(backgroundUrl, () => { this.render(); });
+        backgroundTexture.colorSpace = THREE.SRGBColorSpace;
+        const backgroundMaterial = new THREE.MeshBasicMaterial({ map: backgroundTexture, transparent: false });
+        this.backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+        this.backgroundMesh.position.z = -1;
+        this.scene.add(this.backgroundMesh);
+      } else {
+        const oldMaterial = this.backgroundMesh.material as THREE.MeshBasicMaterial;
+        if (oldMaterial.map) {
+          oldMaterial.map.dispose();
+        }
+        const backgroundTexture = this.textureLoader.load(backgroundUrl, () => {
+          this.render();
+        });
+        backgroundTexture.colorSpace = THREE.SRGBColorSpace;
+        const backgroundMaterial = new THREE.MeshBasicMaterial({
+          map: backgroundTexture,
+          transparent: false
+        });
+        this.backgroundMesh.material = backgroundMaterial;
+        oldMaterial.dispose();
       }
-      const backgroundTexture = this.textureLoader.load(backgroundUrl, () => {
-        this.render();
-      });
-      backgroundTexture.colorSpace = THREE.SRGBColorSpace;
-      const backgroundMaterial = new THREE.MeshBasicMaterial({
-        map: backgroundTexture,
-        transparent: false
-      });
-      this.backgroundMesh.material = backgroundMaterial;
-      oldMaterial.dispose();
     }
   }
 
   public updateTextures(backgroundUrl: string): void {
-    if (!backgroundUrl || !this.cube5Meshes.length) return;
+    if (!backgroundUrl) return;
 
     this.textureLoader.load(backgroundUrl, (texture) => {
       texture.colorSpace = THREE.SRGBColorSpace;
+
+      if (this.textureMaterial) {
+        this.textureMaterial.dispose();
+      }
 
       this.textureMaterial = new THREE.MeshStandardMaterial({
         map: texture
       });
 
-      this.cube5Meshes.forEach((mesh) => {
-        mesh.material = this.textureMaterial!;
-        (mesh.material as THREE.Material).needsUpdate = true;
-      });
+      if (this.cube5Meshes.length) {
+        this.cube5Meshes.forEach((mesh) => {
+          mesh.material = this.textureMaterial!;
+          (mesh.material as THREE.Material).needsUpdate = true;
+        });
+      }
     });
   }
 
@@ -369,7 +394,7 @@ export class ThreeService implements OnDestroy {
     const height = container.clientHeight;
     
     if (this.renderer) {
-      this.renderer.setSize(width, height);
+      this.renderer.setSize(width, height, false);
     }
     
     if (this.camera?.isPerspectiveCamera) {

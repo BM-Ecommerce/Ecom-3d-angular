@@ -467,6 +467,9 @@ ngOnInit(): void {
   toggle3D() {
     this.is3DOn = !this.is3DOn;
     this.setupVisualizer(this.productname);
+    if (this.is3DOn && this.background_color_image_url) {
+      this.threeService.updateTextures(this.background_color_image_url);
+    }
   }
   @HostListener('window:resize')
   onWindowResize(): void {
