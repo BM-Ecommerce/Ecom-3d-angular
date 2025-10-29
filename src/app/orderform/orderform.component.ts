@@ -827,17 +827,11 @@ private fetchInitialData(params: any): void {
       if((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1 )){
         this.fabricid  = 0;
         this.colorid = 0;
-        this.min_width = null;
-        this.max_width = null;
-        this.min_drop = null;
-        this.max_drop = null;
+        this.updateMinMaxValidators(false);
       }
       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2 )) {
         this.colorid = 0;
-        this.min_width = null;
-        this.max_width = null;
-        this.min_drop = null;
-        this.max_drop = null;
+        this.updateMinMaxValidators(false);
       }
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
@@ -929,13 +923,14 @@ private fetchInitialData(params: any): void {
         if((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1) ){
           this.fabricid  = value;
           this.fabricname = selectedOption.optionname;
+          this.updateMinMaxValidators(false);
           this.updateFieldValues(field, selectedOption,'updatefabric');
         }
        if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20  || (field.fieldtypeid === 21 && field.level == 2)) {
           this.colorid = value;
           this.colorname = selectedOption.optionname;
           this.updateFieldValues(field, selectedOption,'updatecolor');
-          this.updateMinMaxValidators();
+          this.updateMinMaxValidators(true);
         }
 
         this.cd.markForCheck();
@@ -943,12 +938,17 @@ private fetchInitialData(params: any): void {
     }
   }
 
-    private updateMinMaxValidators(): void {
+    private updateMinMaxValidators(color :boolean): void {
     this.min_width = null;
     this.max_width = null;
     this.min_drop = null;
     this.max_drop = null;
-    this.apiService.getminandmax(this.routeParams, String(this.colorid), this.unittype, Number(this.pricegroup))
+    if(color){
+      var colorid =  String(this.colorid);
+    }else{
+      var colorid =  "";
+    }
+    this.apiService.getminandmax(this.routeParams, colorid, this.unittype, Number(this.pricegroup))
       .pipe(takeUntil(this.destroy$))
       .subscribe(minmaxdata => {
              const data = minmaxdata?.data;
@@ -1634,7 +1634,7 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
     this.unittype =  unitValue;
     this.showFractions = (unitValue === 4);
-    this.updateMinMaxValidators();
+    this.updateMinMaxValidators(true);
     this.apiService.getFractionData(params, unitValue).pipe(
       takeUntil(this.destroy$),
       catchError(err => {
