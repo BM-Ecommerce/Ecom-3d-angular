@@ -1032,6 +1032,24 @@ private fetchInitialData(params: any): void {
           }
       });
   }
+  onFrameChange(newFrameUrl: string): void {
+    this.mainframe = newFrameUrl;
+
+    this.product_img_array.forEach(img => {
+      img.is_default = (img.image_url === newFrameUrl);
+    });
+
+    if (this.threeService) {
+      this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+    }
+  }
+  public getFrameImageUrl(product_img: any): string {
+    return product_img?.image_url || '';
+  }
+  public isSelectedFrame(product_img: any): boolean {
+    return product_img?.is_default || false;
+  }
+
   /**
    * If an option itself has subdata, fetch them (sublist) and add subfields.
    */

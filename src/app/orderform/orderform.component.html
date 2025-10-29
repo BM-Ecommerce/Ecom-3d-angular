@@ -57,6 +57,24 @@
                       </button>
                 </div>
               </div>
+            <div *ngIf="!is3DOn" class="slider-container">
+              <div class="blindmatrix-v4-slider">
+                <div *ngFor="let product_img of product_img_array">
+                  <button type="button" class="multiple-frame-list-button"
+                          [class.selected_frame]="isSelectedFrame(product_img)"
+                          (click)="onFrameChange(getFrameImageUrl(product_img))">
+                    <img [src]="getFrameImageUrl(product_img)" alt="" width="200" height="100" 
+                         [style.background-image]="'url(' + background_color_image_url + ')'">
+                  </button>
+                </div>
+              </div>
+              <div *ngIf="product_img_array.length > 3" class="prev">
+                <span class="glyphicon icon-left" aria-hidden="true">&#11164;</span>
+              </div>
+              <div *ngIf="product_img_array.length > 3" class="next">
+                <span class="glyphicon icon-right" aria-hidden="true">&#11166;</span>
+              </div>
+            </div>
             </div>
           </div>
         </div>
