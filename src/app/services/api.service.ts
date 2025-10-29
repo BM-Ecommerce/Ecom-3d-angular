@@ -191,7 +191,8 @@ export class ApiService {
   fabricid: any = "",
   colorid: any = "",
   orderitemdata: any= "",
-  mode: number = 0
+  mode: number = 0,
+  fabricFieldType: number =0
 ) {
   const { api_url, api_key, api_name, recipeid, product_id } = params;
 
@@ -202,7 +203,7 @@ export class ApiService {
     productid: product_id,
     orderitemdata: orderitemdata,
     supplierid: supplierid,
-    mode: "pricetableprice",
+    mode: fabricFieldType === 21 ? "" : "pricetableprice",
     width: width,
     drop: drop,
     pricegroup: [pricegroup],
@@ -356,13 +357,14 @@ export class ApiService {
     productionmaterialcostprice:any = "",
     productionmaterialnetprice:any = "",
     productionmaterialnetpricewithdiscount:any = "",
+    fabricFieldType: number =0
     ) {
     const { api_url, api_key, api_name, recipeid,product_id } = params;
     const payload = {
         blindopeningwidth: [],
         productid: product_id,
         supplierid: supplierid,
-        mode: "pricetableprice",
+        mode: fabricFieldType === 21 ? "" : "pricetableprice",
         width: width,
         drop: drop,
         pricegroup: [pricegroup],
@@ -386,7 +388,7 @@ export class ApiService {
         getpricegroupprice: 0,
         rulescostpricecomesfrom: costpricecomesfrom,
         rulesnetpricecomesfrom:netpricecomesfrom,
-        fabricfieldtype: "",
+        fabricfieldtype: fabricFieldType,
         widthfieldtypeid: widthfieldtypeid,
         dropfieldtypeid: dropfieldtypeid,
         colorid: colorid,

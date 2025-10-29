@@ -276,6 +276,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   vatname = "";
   widthField: any = 0;
   dropField: any = 0;
+  fabricFieldType: any =0;
   ecomsampleprice = 0;
   ecomFreeSample = '0';
   delivery_duration = '';
@@ -542,6 +543,7 @@ private fetchInitialData(params: any): void {
         this.widthField      = this.parameters_data.find(f => [7, 8, 11, 31].includes(f.fieldtypeid));
         this.dropField       = this.parameters_data.find(f => [9, 10, 12, 32].includes(f.fieldtypeid));
         this.unitField       = this.parameters_data.find(f => f.fieldtypeid === 34);
+        this.fabricFieldType = this.parameters_data.find(f => [20, 21, 5].includes(f.fieldtypeid));
 
         return forkJoin({
           optionData: this.loadOptionData(params),
@@ -1787,7 +1789,8 @@ private getPrice(): Observable<any> {
           this.costpricecomesfrom,
           formulaResponse?.productionmaterialcostprice,
           formulaResponse?.productionmaterialnetprice,
-          formulaResponse?.productionmaterialnetpricewithdiscount
+          formulaResponse?.productionmaterialnetpricewithdiscount,
+          this.fabricFieldType.fieldtypeid
         );
       };
 
@@ -1806,7 +1809,8 @@ private getPrice(): Observable<any> {
           this.fabricid,
           this.colorid,
           this.rulesorderitem,
-          0
+          0,
+          this.fabricFieldType.fieldtypeid
         ).pipe(
           switchMap(rulesResponse => {
             const rulesresponse = rulesResponse as any;
