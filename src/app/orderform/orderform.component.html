@@ -32,8 +32,7 @@
             </div>
         </div>
             <div class="product_preview"
-                 #visualizerContainer>
-              <div id="main-img" class="configuratorpreviewimage" style="height:480px; position: relative;">
+                    #visualizerContainer (mousemove)="onMouseMove($event)" (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">              <div id="main-img" class="configuratorpreviewimage" style="height:480px; position: relative;">
                 <canvas #visualizerCanvas></canvas>
                 <div #zoomLens class="zoom-lens" [hidden]="!isZooming"></div>
                 <div class="visualizer-controls">

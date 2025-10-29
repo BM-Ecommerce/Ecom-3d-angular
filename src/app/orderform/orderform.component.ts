@@ -457,8 +457,8 @@ ngOnInit(): void {
       }
 
     } else {
-      if (this.mainframe && this.background_color_image_url) {
-        this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
+      this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
+      if (this.mainframe) {
         this.threeService.createObjects(this.mainframe, this.background_color_image_url);
       }
     }
@@ -475,12 +475,37 @@ ngOnInit(): void {
     }
   }
 zoomIn(): void {
-  this.threeService.zoomIn();
+  if (this.is3DOn) {
+    this.threeService.zoomIn();
+  }
 }
 
 zoomOut(): void {
-  this.threeService.zoomOut();
-}
+    if (this.is3DOn) {
+      this.threeService.zoomOut();
+    }
+  }
+  
+  onMouseMove(event: MouseEvent): void {
+    if (!this.is3DOn) {
+      const rect = this.containerRef.nativeElement.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      this.threeService.setZoom(x, y);
+    }
+  }
+
+  onMouseEnter(): void {
+    if (!this.is3DOn) {
+      this.threeService.enableZoom(true);
+    }
+  }
+
+  onMouseLeave(): void {
+    if (!this.is3DOn) {
+      this.threeService.enableZoom(false);
+    }
+  }
 private fetchInitialData(params: any): void {
   this.isLoading = true;
   this.errorMessage = null;
@@ -881,11 +906,13 @@ private fetchInitialData(params: any): void {
       
       const canUpdate = !isInitial || (field.optiondefault && params.color_id);
 
-      // Update background image URL if a color/fabric is selected
       if (canUpdate && (field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
-          this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
-         
+        this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
+        if (this.is3DOn) {
           this.threeService.updateTextures(this.background_color_image_url);
+        } else {
+          this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+        }
       }
       
       if (canUpdate && (field.fieldtypeid === 3 && field.fieldname == "Curtain Colour" ) && selectedOption.optionimage) {
@@ -1979,7 +2006,9 @@ private markFormGroupTouched(formGroup: FormGroup) {
   }
 
   resetCamera(): void {
-    this.threeService.resetCamera();
+    if (this.is3DOn) {
+      this.threeService.resetCamera();
+    }
   }
 
   private updateAccordionData(): void {

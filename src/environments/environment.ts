@@ -7,9 +7,9 @@
 // or environment variables to manage these settings securely.
 export const environment = {
   production: false,
-  apiUrl: 'https://curtainmatrix.co.uk/devsource',
+ apiUrl: 'https://blindmatrix.software',
   apiKey: '0d5b2abe-d707-4eb3-a7cb-3f05a5e5d3fb',
-  apiName: 'ECOMMERCELATEST',
+  apiName: 'ECOMMERCE',
   site: 'https://visualizer.blindssoftware.com'
 };
 
