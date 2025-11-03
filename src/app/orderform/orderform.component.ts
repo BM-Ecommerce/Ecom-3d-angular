@@ -462,6 +462,7 @@ ngOnInit(): void {
         this.threeService.createObjects(this.mainframe, this.background_color_image_url);
       }
     }
+        setTimeout(() => this.onWindowResize(), 0);
   }
 
   toggle3D() {
@@ -500,12 +501,14 @@ zoomOut(): void {
 
   onMouseEnter(): void {
     if (!this.is3DOn) {
+      this.isZooming = true;
       this.threeService.enableZoom(true);
     }
   }
 
   onMouseLeave(): void {
     if (!this.is3DOn) {
+      this.isZooming = false;
       this.threeService.enableZoom(false);
     }
   }
