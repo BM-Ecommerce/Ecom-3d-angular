@@ -465,8 +465,11 @@ export class ThreeService implements OnDestroy {
         this.zoomCamera.bottom = worldY - (zoomSize / 2);
         this.zoomCamera.updateProjectionMatrix();
 
-        this.renderer.setViewport(lensX - lensRadius, height - lensY - lensRadius, lensRadius * 2, lensRadius * 2);
-        this.renderer.setScissor(lensX - lensRadius, height - lensY - lensRadius, lensRadius * 2, lensRadius * 2);
+        const viewportX = lensX - lensRadius;
+        const viewportY = height - lensY - lensRadius;
+
+        this.renderer.setViewport(viewportX, viewportY, lensRadius * 2, lensRadius * 2);
+        this.renderer.setScissor(viewportX, viewportY, lensRadius * 2, lensRadius * 2);
         this.renderer.setScissorTest(true);
 
         this.renderer.render(this.scene, this.zoomCamera);
