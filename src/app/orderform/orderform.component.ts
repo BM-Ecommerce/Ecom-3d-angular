@@ -471,6 +471,7 @@ ngOnInit(): void {
     if (this.is3DOn && this.background_color_image_url) {
       this.threeService.updateTextures(this.background_color_image_url);
     }
+    setTimeout(() => this.onWindowResize(), 0);
   }
   @HostListener('window:resize')
   onWindowResize(): void {

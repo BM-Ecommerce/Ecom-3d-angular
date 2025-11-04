@@ -12,6 +12,20 @@ export class ThreeService implements OnDestroy {
   private camera2d!: THREE.OrthographicCamera;
   private renderer!: THREE.WebGLRenderer;
   private controls!: OrbitControls;
+  private canvasEl: HTMLCanvasElement | null = null;
+
+  private readonly onCanvasMouseDown = () => {
+    this.canvasEl?.classList.remove('grab');
+    this.canvasEl?.classList.add('grabbing');
+  };
+  private readonly onCanvasMouseUp = () => {
+    this.canvasEl?.classList.remove('grabbing');
+    this.canvasEl?.classList.add('grab');
+  };
+  private readonly onCanvasMouseLeave = () => {
+    this.canvasEl?.classList.remove('grabbing');
+    this.canvasEl?.classList.add('grab');
+  };
   private textureLoader = new THREE.TextureLoader();
   private gltfLoader = new GLTFLoader();
   private cube2Mesh!: THREE.Mesh;
@@ -50,11 +64,37 @@ export class ThreeService implements OnDestroy {
     if (this.renderer) {
       this.renderer.dispose();
     }
+    if (this.textureMaterial) {
+      this.textureMaterial.dispose();
+    }
+    if (this.controls) {
+      this.controls.dispose();
+    }
+    if (this.canvasEl) {
+      this.canvasEl.removeEventListener('mousedown', this.onCanvasMouseDown);
+      this.canvasEl.removeEventListener('mouseup', this.onCanvasMouseUp);
+      this.canvasEl.removeEventListener('mouseleave', this.onCanvasMouseLeave);
+      this.canvasEl.classList.remove('grab', 'grabbing');
+      this.canvasEl = null;
+    }
     this.scene = new THREE.Scene();
     this.camera = null!;
     this.camera2d = null!;
     this.zoomCamera = null!;
     this.controls = null!;
+    this.cube2Mesh = null!;
+    this.frameMesh = null!;
+    this.cube4Mesh = null!;
+    this.cube5Meshes = [];
+    this.cube3Mesh = null!;
+    this.backgroundMesh = null!;
+    this.textureMaterial = undefined;
+    this.cubeMesh = null!;
+    this.initialCameraPosition = null!;
+    this.initialControlsTarget = null!;
+    this.mouseX = 0;
+    this.mouseY = 0;
+    this.isZooming = false;
   }
 
   public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
@@ -68,27 +108,16 @@ export class ThreeService implements OnDestroy {
     this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     this.camera.position.z = 5;
 
-    const canvasEl = canvas.nativeElement;
+    this.canvasEl = canvas.nativeElement;
 
-    canvasEl.classList.add('grab');
+    this.canvasEl.classList.add('grab');
 
-    canvasEl.addEventListener('mousedown', () => {
-      canvasEl.classList.remove('grab');
-      canvasEl.classList.add('grabbing');
-    });
-
-    canvasEl.addEventListener('mouseup', () => {
-      canvasEl.classList.remove('grabbing');
-      canvasEl.classList.add('grab');
-    });
-
-    canvasEl.addEventListener('mouseleave', () => {
-      canvasEl.classList.remove('grabbing');
-      canvasEl.classList.add('grab');
-    });
+    this.canvasEl.addEventListener('mousedown', this.onCanvasMouseDown);
+    this.canvasEl.addEventListener('mouseup', this.onCanvasMouseUp);
+    this.canvasEl.addEventListener('mouseleave', this.onCanvasMouseLeave);
 
     this.renderer = new THREE.WebGLRenderer({
-      canvas: canvasEl,
+      canvas: this.canvasEl,
       alpha: true,
       antialias: true,
       preserveDrawingBuffer: true
@@ -105,15 +134,9 @@ export class ThreeService implements OnDestroy {
     this.initialCameraPosition = this.camera.position.clone();
     this.initialControlsTarget = this.controls.target.clone();
 
-    this.controls.addEventListener('start', () => {
-      canvasEl.classList.remove('grab');
-      canvasEl.classList.add('grabbing');
-    });
+    this.controls.addEventListener('start', this.onCanvasMouseDown);
 
-    this.controls.addEventListener('end', () => {
-      canvasEl.classList.remove('grabbing');
-      canvasEl.classList.add('grab');
-    });
+    this.controls.addEventListener('end', this.onCanvasMouseUp);
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
@@ -212,60 +235,72 @@ export class ThreeService implements OnDestroy {
     );
   }
 
-  public getCanvasDataURL(): string | undefined {
-    if (!this.renderer) {
-      return undefined;
-    }
-    this.render(); // Ensure the scene is rendered before capturing
-    return this.renderer.domElement.toDataURL('image/png');
+public getCanvasDataURL(): string | undefined {
+  if (!this.renderer) {
+    return undefined;
   }
+  this.render(); 
+  return this.renderer.domElement.toDataURL('image/png');
+}
+public initialize2d(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
+  this.resetState();
 
-  public initialize2d(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
-    this.resetState();
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+  const width = container.clientWidth;
+  const height = container.clientHeight;
 
-    this.scene = new THREE.Scene();
+  this.scene = new THREE.Scene();
 
-    this.camera2d = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-    this.camera2d.position.z = 10;
+  const left = width / -2;
+  const right = width / 2;
+  const top = height / 2;
+  const bottom = height / -2;
 
-    this.zoomCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-    this.zoomCamera.position.z = 10;
+  this.camera2d = new THREE.OrthographicCamera(left, right, top, bottom, 0.1, 1000);
+  this.camera2d.position.z = 10;
 
-    this.renderer = new THREE.WebGLRenderer({
-      canvas: canvas.nativeElement,
-      alpha: true,
-      antialias: true
-    });
-    this.renderer.setSize(width, height, false);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    
-    this.animate();
-  }
+  this.zoomCamera = this.camera2d.clone();
 
-  public createObjects(frameUrl: string, backgroundUrl: string): void {
-    const width = this.renderer.domElement.clientWidth;
-    const height = this.renderer.domElement.clientHeight;
+  this.renderer = new THREE.WebGLRenderer({
+    canvas: canvas.nativeElement,
+    alpha: true,
+    antialias: true,
+    preserveDrawingBuffer: true 
+  });
+  this.renderer.setSize(width, height);
+  this.renderer.setPixelRatio(window.devicePixelRatio);
 
-    if (backgroundUrl) {
-      const backgroundGeometry = new THREE.PlaneGeometry(width, height);
-      const backgroundTexture = this.textureLoader.load(backgroundUrl);
-      backgroundTexture.colorSpace = THREE.SRGBColorSpace;
-      const backgroundMaterial = new THREE.MeshBasicMaterial({
-        map: backgroundTexture,
-        transparent: false
-      });
-      this.backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
-      this.backgroundMesh.position.z = -1;
-      this.scene.add(this.backgroundMesh);
-    }
+  this.animate();
+}
 
-    const frameGeometry = new THREE.PlaneGeometry(width, height);
-    const frameTexture = this.textureLoader.load(frameUrl, () => {
-      this.render();
-    });
+public createObjects(frameUrl: string, backgroundUrl: string): void {
+  if (this.frameMesh) this.scene.remove(this.frameMesh);
+  if (this.backgroundMesh) this.scene.remove(this.backgroundMesh);
+
+  const textureLoader = new THREE.TextureLoader();
+
+  textureLoader.load(frameUrl, (frameTexture) => {
     frameTexture.colorSpace = THREE.SRGBColorSpace;
+
+    const imgWidth = frameTexture.image.width;
+    const imgHeight = frameTexture.image.height;
+    const aspect = imgWidth / imgHeight;
+
+    const canvas = this.renderer.domElement;
+    const canvasAspect = canvas.clientWidth / canvas.clientHeight;
+    
+    let viewWidth: number, viewHeight: number;
+
+    if (aspect > canvasAspect) {
+      // Texture is wider than the canvas, so fit to width
+      viewWidth = canvas.clientWidth;
+      viewHeight = viewWidth / aspect;
+    } else {
+      // Texture is taller than or equal to the canvas aspect ratio, so fit to height
+      viewHeight = canvas.clientHeight;
+      viewWidth = viewHeight * aspect;
+    }
+
+    const frameGeometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
     const frameMaterial = new THREE.MeshBasicMaterial({
       map: frameTexture,
       transparent: true,
@@ -275,57 +310,145 @@ export class ThreeService implements OnDestroy {
     this.frameMesh = new THREE.Mesh(frameGeometry, frameMaterial);
     this.frameMesh.position.z = 0;
     this.scene.add(this.frameMesh);
-  }
-
-  public updateTextures2d(frameUrl: string, backgroundUrl: string): void {
-    if (this.frameMesh) {
-      const oldMaterial = this.frameMesh.material as THREE.MeshBasicMaterial;
-      if (oldMaterial.map) {
-        oldMaterial.map.dispose();
-      }
-      const frameTexture = this.textureLoader.load(frameUrl, () => {
-        this.render();
-      });
-      frameTexture.colorSpace = THREE.SRGBColorSpace;
-      const frameMaterial = new THREE.MeshBasicMaterial({
-        map: frameTexture,
-        transparent: true,
-        alphaTest: 0.1,
-        depthWrite: false
-      });
-      this.frameMesh.material = frameMaterial;
-      oldMaterial.dispose();
-    }
 
     if (backgroundUrl) {
-      if (!this.backgroundMesh) {
-        const width = this.renderer.domElement.clientWidth;
-        const height = this.renderer.domElement.clientHeight;
-        const backgroundGeometry = new THREE.PlaneGeometry(width, height);
-        const backgroundTexture = this.textureLoader.load(backgroundUrl, () => { this.render(); });
-        backgroundTexture.colorSpace = THREE.SRGBColorSpace;
-        const backgroundMaterial = new THREE.MeshBasicMaterial({ map: backgroundTexture, transparent: false });
-        this.backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
-        this.backgroundMesh.position.z = -1;
-        this.scene.add(this.backgroundMesh);
-      } else {
-        const oldMaterial = this.backgroundMesh.material as THREE.MeshBasicMaterial;
-        if (oldMaterial.map) {
-          oldMaterial.map.dispose();
+      const bgTexture = textureLoader.load(backgroundUrl, () => this.render());
+      bgTexture.colorSpace = THREE.SRGBColorSpace;
+
+      const bgGeometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
+      const bgMaterial = new THREE.MeshBasicMaterial({
+        map: bgTexture,
+        transparent: false
+      });
+      this.backgroundMesh = new THREE.Mesh(bgGeometry, bgMaterial);
+      this.backgroundMesh.position.z = -1;
+      this.scene.add(this.backgroundMesh);
+    }
+
+    this.render();
+  });
+}
+
+public updateTextures2d(frameUrl: string, backgroundUrl: string): void {
+  const textureLoader = new THREE.TextureLoader();
+
+  textureLoader.load(frameUrl, (frameTexture) => {
+    frameTexture.colorSpace = THREE.SRGBColorSpace;
+
+    const imgWidth = frameTexture.image.width;
+    const imgHeight = frameTexture.image.height;
+    const aspect = imgWidth / imgHeight;
+
+    const canvas = this.renderer.domElement;
+    const canvasAspect = canvas.clientWidth / canvas.clientHeight;
+    
+    let viewWidth: number, viewHeight: number;
+
+    if (aspect > canvasAspect) {
+      viewWidth = canvas.clientWidth;
+      viewHeight = viewWidth / aspect;
+    } else {
+      viewHeight = canvas.clientHeight;
+      viewWidth = viewHeight * aspect;
+    }
+    
+    if (this.frameMesh) {
+      this.scene.remove(this.frameMesh);
+      this.frameMesh.geometry.dispose();
+      (this.frameMesh.material as THREE.Material).dispose();
+    }
+
+    const frameGeometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
+    const frameMaterial = new THREE.MeshBasicMaterial({
+      map: frameTexture,
+      transparent: true,
+      alphaTest: 0.1,
+      depthWrite: false
+    });
+    this.frameMesh = new THREE.Mesh(frameGeometry, frameMaterial);
+    this.frameMesh.position.z = 0;
+    this.scene.add(this.frameMesh);
+
+    if (backgroundUrl) {
+      textureLoader.load(backgroundUrl, (bgTexture) => {
+        bgTexture.colorSpace = THREE.SRGBColorSpace;
+
+        if (this.backgroundMesh) {
+          this.scene.remove(this.backgroundMesh);
+          this.backgroundMesh.geometry.dispose();
+          (this.backgroundMesh.material as THREE.Material).dispose();
         }
-        const backgroundTexture = this.textureLoader.load(backgroundUrl, () => {
-          this.render();
-        });
-        backgroundTexture.colorSpace = THREE.SRGBColorSpace;
-        const backgroundMaterial = new THREE.MeshBasicMaterial({
-          map: backgroundTexture,
+
+        const bgGeometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
+        const bgMaterial = new THREE.MeshBasicMaterial({
+          map: bgTexture,
           transparent: false
         });
-        this.backgroundMesh.material = backgroundMaterial;
-        oldMaterial.dispose();
-      }
+        this.backgroundMesh = new THREE.Mesh(bgGeometry, bgMaterial);
+        this.backgroundMesh.position.z = -1;
+        this.scene.add(this.backgroundMesh);
+
+        this.render();
+      });
+    } else {
+      this.render();
     }
+  });
+}
+
+public onResize(container: HTMLElement): void {
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+
+  if (this.renderer) {
+    this.renderer.setSize(width, height, false);
   }
+
+  if (this.camera?.isPerspectiveCamera) {
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+  }
+
+  if (this.camera2d?.isOrthographicCamera) {
+    this.camera2d.left = width / -2;
+    this.camera2d.right = width / 2;
+    this.camera2d.top = height / 2;
+    this.camera2d.bottom = height / -2;
+    this.camera2d.updateProjectionMatrix();
+  }
+
+  const resizeMesh = (mesh: THREE.Mesh | undefined) => {
+    if (!mesh) return;
+    const mat = mesh.material as THREE.MeshBasicMaterial;
+    const tex = mat.map;
+    if (!tex || !tex.image) return;
+
+    const imgWidth = tex.image.width;
+    const imgHeight = tex.image.height;
+    const aspect = imgWidth / imgHeight;
+
+    const canvasAspect = width / height;
+    
+    let viewWidth: number, viewHeight: number;
+
+    if (aspect > canvasAspect) {
+      viewWidth = width;
+      viewHeight = viewWidth / aspect;
+    } else {
+      viewHeight = height;
+      viewWidth = viewHeight * aspect;
+    }
+
+    mesh.geometry.dispose();
+    mesh.geometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
+  };
+
+  resizeMesh(this.frameMesh);
+  resizeMesh(this.backgroundMesh);
+
+  this.render();
+}
+
 
   public updateTextures(backgroundUrl: string): void {
     if (!backgroundUrl) return;
@@ -389,37 +512,7 @@ export class ThreeService implements OnDestroy {
     loop();
   }
 
-  public onResize(container: HTMLElement): void {
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    
-    if (this.renderer) {
-      this.renderer.setSize(width, height, false);
-    }
-    
-    if (this.camera?.isPerspectiveCamera) {
-      this.camera.aspect = width / height;
-      this.camera.updateProjectionMatrix();
-    }
-    
-    if (this.camera2d?.isOrthographicCamera) {
-      this.camera2d.left = width / -2;
-      this.camera2d.right = width / 2;
-      this.camera2d.top = height / 2;
-      this.camera2d.bottom = height / -2;
-      this.camera2d.updateProjectionMatrix();
 
-      if (this.frameMesh) {
-        this.frameMesh.geometry.dispose();
-        this.frameMesh.geometry = new THREE.PlaneGeometry(width, height);
-      }
-      if (this.backgroundMesh) {
-        this.backgroundMesh.geometry.dispose();
-        this.backgroundMesh.geometry = new THREE.PlaneGeometry(width, height);
-      }
-      this.render();
-    }
-}
 
 
   public setZoom(x: number, y: number): void {

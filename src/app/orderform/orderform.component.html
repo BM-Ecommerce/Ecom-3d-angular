@@ -70,7 +70,7 @@
                   <button type="button" class="multiple-frame-list-button"
                           [class.selected_frame]="isSelectedFrame(product_img)"
                           (click)="onFrameChange(getFrameImageUrl(product_img))">
-                    <img [src]="getFrameImageUrl(product_img)" alt="" width="200" height="100" 
+                    <img [src]="getFrameImageUrl(product_img)" alt="" width="auto" height="100" 
                          [style.background-image]="'url(' + background_color_image_url + ')'">
                   </button>
                 </div>
