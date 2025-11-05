@@ -193,7 +193,7 @@
             <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
                         [value]="option.optionid">
               <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                <img [src]="apiUrl + '/api/public' + option.optionimage"
+                <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
                      alt="{{ option.optionname }}"
                      width="24"
                      height="24"
@@ -232,7 +232,7 @@
             <mat-option *ngFor="let option of option_data[field.fieldid]"
                         [value]="option.optionid">
               <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                <img [src]="apiUrl + '/api/public' + option.optionimage"
+                <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
                      alt="{{ option.optionname }}"
                      width="24"
                      height="24"

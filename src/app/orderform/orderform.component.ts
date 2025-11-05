@@ -989,7 +989,10 @@ private fetchInitialData(params: any): void {
       });
     }
   }
-
+    onImageError(event: Event) {
+      const img = event.target as HTMLImageElement;
+      img.src = 'assets/no-image.jpg'; 
+    }
     private updateMinMaxValidators(color :boolean): void {
     this.min_width = null;
     this.max_width = null;
