@@ -534,6 +534,8 @@ private fetchInitialData(params: any): void {
           this.fabricFieldType == 20;
         }else if(category == 3){
           this.fabricFieldType == 5;
+        }else{
+          this.fabricFieldType == 0;
         }
         this.recipeid = data.recipeid;
 
