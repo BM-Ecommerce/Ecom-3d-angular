@@ -441,10 +441,10 @@ public onResize(container: HTMLElement): void {
     mesh.geometry.dispose();
     mesh.geometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
   };
-
-  resizeMesh(this.frameMesh);
-  resizeMesh(this.backgroundMesh);
-
+   if (!this.camera2d) {
+     resizeMesh(this.frameMesh);
+      resizeMesh(this.backgroundMesh);
+   }
   this.render();
 }
 
