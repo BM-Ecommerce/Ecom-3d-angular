@@ -24,7 +24,7 @@ interface ApiResponse {
 export class ApiService {
   private apiUrl = 'http://localhost/wordpress/wp-content/plugins/blindmatrix-v4-api/api.php';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   private constructUrl(base: string, endpoint: string): string {
     return `${base.replace(/\/+$/, '')}/${endpoint.replace(/^\/+/, '')}`;
@@ -96,7 +96,7 @@ export class ApiService {
     console.error('API Error:', error);
     return throwError(() => new Error('An error occurred. Please try again later.'));
   }
-  
+
   getProductData(params: ApiCommonParams): Observable<ApiResponse> {
     const { api_url, api_key, api_name, product_id, ...payload } = params;
     const passData = `getproductsdetails/${product_id}`;
@@ -115,7 +115,7 @@ export class ApiService {
     return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
   }
 
-  getProductParameters(params: ApiCommonParams,recipeId:number): Observable<ApiResponse> {
+  getProductParameters(params: ApiCommonParams, recipeId: number): Observable<ApiResponse> {
     const { api_url, api_key, api_name, ...payload } = params;
     if (!recipeId) {
       return throwError(() => new Error('recipeid is required'));
@@ -123,8 +123,8 @@ export class ApiService {
     const passData = `products/fields/withdefault/list/${recipeId}/1/0`;
     return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
   }
-  getminandmax(params: ApiCommonParams,colorid:string,unittype:number,pricegroup:number,fabricFieldType:number): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, product_id,category } = params;
+  getminandmax(params: ApiCommonParams, colorid: string, unittype: number, pricegroup: number, fabricFieldType: number): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, product_id, category } = params;
     const payload = {
       width: "0",
       drop: "0",
@@ -142,17 +142,14 @@ export class ApiService {
     const passData = `orderitems/check/widthdrop/minandmax/`;
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
-  getFractionData(params: ApiCommonParams,faction_value: any): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, recipeid,product_id, ...payload } = params;
-    if (!recipeid) {
-      return throwError(() => new Error('recipeid is required'));
-    }
+  getFractionData(params: ApiCommonParams, faction_value: any): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, product_id, ...payload } = params;
     const passData = `appSetup/fractionlist/${product_id}/-1/${faction_value}`;
     return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
   }
-  addToCart(formData: any, productId: string, apiUrl: string, cartproductName: string,priceData: any,vatpercentage: number, vatName: string,currenturl: string,productName: string,categoryId: number,visualizerImage?: string): Observable<ApiResponse> {
+  addToCart(formData: any, productId: string, apiUrl: string, cartproductName: string, priceData: any, vatpercentage: number, vatName: string, currenturl: string, productName: string, categoryId: number, visualizerImage?: string, action: string = "add_to_cart"): Observable<ApiResponse> {
     let body = new HttpParams()
-      .set('action', 'add_to_cart')
+      .set('action', action)
       .set('product_id', productId)
       .set('form_data', JSON.stringify(formData))
       .set('cart_product_name', cartproductName)
@@ -174,64 +171,64 @@ export class ApiService {
       catchError(this.handleError)
     );
   }
- calculateRules(
-  params: ApiCommonParams,
-  width: any = "",
-  drop: any = "",
-  unittype: any,
-  supplierid: any,
-  widthfieldtypeid: any,
-  dropfieldtypeid: any,
-  pricegroup: any,
-  vatprice: any,
-  optiondata: any,
-  fabricid: any = "",
-  colorid: any = "",
-  orderitemdata: any= "",
-  mode: number = 0,
-  fabricFieldType: number =0,
-  recipeId: number
-) {
-  const { api_url, api_key, api_name, recipeid, product_id } = params;
+  calculateRules(
+    params: ApiCommonParams,
+    width: any = "",
+    drop: any = "",
+    unittype: any,
+    supplierid: any,
+    widthfieldtypeid: any,
+    dropfieldtypeid: any,
+    pricegroup: any,
+    vatprice: any,
+    optiondata: any,
+    fabricid: any = "",
+    colorid: any = "",
+    orderitemdata: any = "",
+    mode: number = 0,
+    fabricFieldType: number = 0,
+    recipeId: number
+  ) {
+    const { api_url, api_key, api_name, recipeid, product_id } = params;
 
-  const payload = {
-    vatpercentage: vatprice,
-    blindopeningwidth: [],
-    recipeid: recipeId,
-    productid: product_id,
-    orderitemdata: orderitemdata,
-    supplierid: supplierid,
-    mode: fabricFieldType === 21 ? "" : "pricetableprice",
-    width: width,
-    drop: drop,
-    pricegroup: [pricegroup],
-    pricegroupdual: "",
-    pricegroupmulticurtain: [],
-    customertype: 4,
-    optiondata: optiondata,
-    unittype: unittype,
-    orderitemqty: 1,
-    jobid: null,
-    customerid: "",
-    rulemode: mode,
-    productionoveridedata: [],
-    widthfieldtypeid: widthfieldtypeid,
-    dropfieldtypeid: dropfieldtypeid,
-    overridetype: 1,
-    overrideprice: "",
-    fabricid: fabricid,
-    fabriciddual: "",
-    colorid: colorid,
-    coloriddual: "",
-    subfabricid: "",
-    subcolorid: "",
-    fabricmulticurtain: [],
-    colormulticurtain: []
-  };
+    const payload = {
+      vatpercentage: vatprice,
+      blindopeningwidth: [],
+      recipeid: recipeId,
+      productid: product_id,
+      orderitemdata: orderitemdata,
+      supplierid: supplierid,
+      mode: fabricFieldType === 21 ? "" : "pricetableprice",
+      width: width,
+      drop: drop,
+      pricegroup: [pricegroup],
+      pricegroupdual: "",
+      pricegroupmulticurtain: [],
+      customertype: 4,
+      optiondata: optiondata,
+      unittype: unittype,
+      orderitemqty: 1,
+      jobid: null,
+      customerid: "",
+      rulemode: mode,
+      productionoveridedata: [],
+      widthfieldtypeid: widthfieldtypeid,
+      dropfieldtypeid: dropfieldtypeid,
+      overridetype: 1,
+      overrideprice: "",
+      fabricid: fabricid,
+      fabriciddual: "",
+      colorid: colorid,
+      coloriddual: "",
+      subfabricid: "",
+      subcolorid: "",
+      fabricmulticurtain: [],
+      colormulticurtain: []
+    };
 
-  const passData = `orderitems/calculate/rules`;
-  return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
-}
+    const passData = `orderitems/calculate/rules`;
+    return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+  }
 
   getOptionlist(
     params: ApiCommonParams,
@@ -240,7 +237,7 @@ export class ApiService {
     fabriccolor: number = 0,
     fieldid: number,
     filter: any,
-    recipeId:number
+    recipeId: number
   ): Observable<ApiResponse> {
     const { api_url, api_key, api_name, product_id, ...rest } = params;
 
@@ -253,11 +250,11 @@ export class ApiService {
       productionformulalist: [],
       productid: product_id || null,
     };
-   
-   
-   
+
+
+
     const passData = `products/get/fabric/options/list/${recipeId}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}/?page=1&perpage=150`;
- 
+
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 
@@ -267,12 +264,12 @@ export class ApiService {
     fabriccolor: string = "",
     fieldid: string = "",
     pricegroup: any = "",
-    colorid: any ="",
-    fabricid: any ="",
-    unittype:any ="",
-    fabricFieldType:number
+    colorid: any = "",
+    fabricid: any = "",
+    unittype: any = "",
+    fabricFieldType: number
   ): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, product_id,category } = params;
+    const { api_url, api_key, api_name, product_id, category } = params;
     const payload = {
       changedfieldtypeid: "",
       colorid: colorid,
@@ -303,25 +300,25 @@ export class ApiService {
       fabriccolor: fabriccolor,
       fieldid: fieldid
     };
-   
+
     const passData = `products/fields/filterbasedongeneraldata`;
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
-  
+
   sublist(
     params: ApiCommonParams,
     level: number = 2,
     fieldtype: number,
-    optionlinkid:any,
-    selectedvalue:any,
+    optionlinkid: any,
+    selectedvalue: any,
     masterparentfieldid: any,
     supplierid: any,
     recipeId: number
   ): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, recipeid,product_id } = params;
-      const payload = {
+    const { api_url, api_key, api_name, recipeid, product_id } = params;
+    const payload = {
       supplierid: supplierid,
-      productid:product_id, 
+      productid: product_id,
       optionid: [selectedvalue],
       subfieldoptionlinkid: [optionlinkid],
       productionformulalist: [],
@@ -329,84 +326,84 @@ export class ApiService {
         [masterparentfieldid]: [selectedvalue]
       }
     };
-    
+
     const passData = `products/fields/list/0/${recipeId}/${level}/${fieldtype}/${masterparentfieldid}`;
 
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
-  getVat( params: ApiCommonParams) {
-      const { api_url, api_key, api_name, recipeid,product_id } = params;
-      const payload = {
-          productid: product_id,
-          };
-      const passData = `/job/get/vat/percentage/orderitem`;
-      return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
-    }
-  getPrice( params: ApiCommonParams ,
-    width:any ="",
-    drop:any = "",
-    unittype:any,
-    supplierid:any,
-    widthfieldtypeid:any,
-    dropfieldtypeid:any,
-    pricegroup:any,
-    vatprice:any,
-    optiondata:any,
-    fabricid:any = "",
-    colorid:any = "",
-    netpricecomesfrom:any = "",
-    costpricecomesfrom:any = "",
-    productionmaterialcostprice:any = "",
-    productionmaterialnetprice:any = "",
-    productionmaterialnetpricewithdiscount:any = "",
-    fabricFieldType: number =0
-    ) {
-    const { api_url, api_key, api_name, recipeid,product_id } = params;
+  getVat(params: ApiCommonParams) {
+    const { api_url, api_key, api_name, recipeid, product_id } = params;
     const payload = {
-        blindopeningwidth: [],
-        productid: product_id,
-        supplierid: supplierid,
-        mode: fabricFieldType === 21 ? "" : "pricetableprice",
-        width: width,
-        drop: drop,
-        pricegroup: [pricegroup],
-        customertype: 4,
-        optiondata: optiondata,
-        unittype: unittype,
-        orderitemqty: 1,
-        jobid: null,
-        overridetype: 1,
-        overrideprice: "",
-        overridevalue: null,
-        vatpercentage: vatprice,
-        costpriceoverride: 0,
-        costpriceoverrideprice: 0,
-        orderitemcostprice: 0,
-        productionmaterialcostprice: productionmaterialcostprice,
-        materialFormulaPrice: 0,
-        productionmaterialnetprice: productionmaterialnetprice,
-        productionmaterialnetpricewithdiscount: productionmaterialnetpricewithdiscount,
-        overridepricevalue: 0,
-        getpricegroupprice: 0,
-        rulescostpricecomesfrom: costpricecomesfrom,
-        rulesnetpricecomesfrom:netpricecomesfrom,
-        fabricfieldtype: fabricFieldType,
-        widthfieldtypeid: widthfieldtypeid,
-        dropfieldtypeid: dropfieldtypeid,
-        colorid: colorid,
-        reportpriceresults: [],
-        fabricid: fabricid,
-        orderid: "",
-        customerid: "",
-        fabriciddual: [],
-        fabricmulticurtain: [],
-        coloriddual: [],
-        subfabricid: "",
-        subcolorid: "",
-        pricegroupdual: "",
-        pricegroupmulticurtain: []
-      };
-     const passData = `orderitems/calculate/option/price`;
-     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+      productid: product_id,
+    };
+    const passData = `/job/get/vat/percentage/orderitem`;
+    return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+  }
+  getPrice(params: ApiCommonParams,
+    width: any = "",
+    drop: any = "",
+    unittype: any,
+    supplierid: any,
+    widthfieldtypeid: any,
+    dropfieldtypeid: any,
+    pricegroup: any,
+    vatprice: any,
+    optiondata: any,
+    fabricid: any = "",
+    colorid: any = "",
+    netpricecomesfrom: any = "",
+    costpricecomesfrom: any = "",
+    productionmaterialcostprice: any = "",
+    productionmaterialnetprice: any = "",
+    productionmaterialnetpricewithdiscount: any = "",
+    fabricFieldType: number = 0
+  ) {
+    const { api_url, api_key, api_name, recipeid, product_id } = params;
+    const payload = {
+      blindopeningwidth: [],
+      productid: product_id,
+      supplierid: supplierid,
+      mode: fabricFieldType === 21 ? "" : "pricetableprice",
+      width: width,
+      drop: drop,
+      pricegroup: [pricegroup],
+      customertype: 4,
+      optiondata: optiondata,
+      unittype: unittype,
+      orderitemqty: 1,
+      jobid: null,
+      overridetype: 1,
+      overrideprice: "",
+      overridevalue: null,
+      vatpercentage: vatprice,
+      costpriceoverride: 0,
+      costpriceoverrideprice: 0,
+      orderitemcostprice: 0,
+      productionmaterialcostprice: productionmaterialcostprice,
+      materialFormulaPrice: 0,
+      productionmaterialnetprice: productionmaterialnetprice,
+      productionmaterialnetpricewithdiscount: productionmaterialnetpricewithdiscount,
+      overridepricevalue: 0,
+      getpricegroupprice: 0,
+      rulescostpricecomesfrom: costpricecomesfrom,
+      rulesnetpricecomesfrom: netpricecomesfrom,
+      fabricfieldtype: fabricFieldType,
+      widthfieldtypeid: widthfieldtypeid,
+      dropfieldtypeid: dropfieldtypeid,
+      colorid: colorid,
+      reportpriceresults: [],
+      fabricid: fabricid,
+      orderid: "",
+      customerid: "",
+      fabriciddual: [],
+      fabricmulticurtain: [],
+      coloriddual: [],
+      subfabricid: "",
+      subcolorid: "",
+      pricegroupdual: "",
+      pricegroupmulticurtain: []
+    };
+    const passData = `orderitems/calculate/option/price`;
+    return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 }

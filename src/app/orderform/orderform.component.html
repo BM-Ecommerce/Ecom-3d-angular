@@ -1,4 +1,5 @@
-<form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="tooltip-container blindmatrix-v4-parameters-form cart angularbody">
+<form [formGroup]="orderForm" (ngSubmit)="onSubmit()"
+  class="tooltip-container blindmatrix-v4-parameters-form cart angularbody">
   <div class="blinds container">
     <!-- Loading indicator -->
     <div *ngIf="isLoading" class="loading-overlay">
@@ -14,30 +15,30 @@
 
 
     <div id="configurator-root" class="product_visualizer_wrapper">
-      
+
       <div class="visualizer-container">
-        
+
         <div class="visualizer-main">
-       
+
           <div #stickyEl class="sticky-container" [class.scrolled]="isScrolled">
-       <div class="product-header">
-          <div class="productaname">
-            <h1 class="product-title">
-              <span>{{ buildProductTitle(ecomproductname, fabricname, colorname) }}</span>
-            </h1>
-          </div>
-            <div class="price-box" *ngIf="grossPricenum != 0 && isCalculatingPrice">
-              <label class="price-label">Estimated Price:</label>
-              <span class="price">{{ grossPrice }}</span>
+            <div class="product-header">
+              <div class="productaname">
+                <h1 class="product-title">
+                  <span>{{ buildProductTitle(ecomproductname, fabricname, colorname) }}</span>
+                </h1>
+              </div>
+              <div class="price-box" *ngIf="grossPricenum != 0 && isCalculatingPrice">
+                <label class="price-label">Estimated Price:</label>
+                <span class="price">{{ grossPrice }}</span>
+              </div>
             </div>
-        </div>
-            <div class="product_preview"
-                    #visualizerContainer (mousemove)="onMouseMove($event)" (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">              
-                    <div id="main-img" class="configuratorpreviewimage" style="height:480px; position: relative;">
+            <div class="product_preview" #visualizerContainer (mousemove)="onMouseMove($event)"
+              (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">
+              <div id="main-img" class="configuratorpreviewimage" style="height:480px; position: relative;">
                 <canvas #visualizerCanvas></canvas>
                 <div #zoomLens class="zoom-lens" [hidden]="!isZooming"></div>
                 <div class="visualizer-controls">
-                 <button *ngIf="is3DOn" type="button" mat-icon-button (click)="resetCamera()" aria-label="Reset view">
+                  <button *ngIf="is3DOn" type="button" mat-icon-button (click)="resetCamera()" aria-label="Reset view">
                     <mat-icon>refresh</mat-icon>
                   </button>
                   <button *ngIf="is3DOn" type="button" mat-icon-button (click)="zoomIn()" aria-label="Zoom in">
@@ -48,12 +49,8 @@
                   </button>
                 </div>
                 <div class="visualizer-view-controls">
-                  <mat-button-toggle-group
-                    name="viewMode"
-                    [value]="is3DOn ? '3d' : '2d'"
-                    (change)="toggle3D()"
-                   appearance="standard"
-                  >
+                  <mat-button-toggle-group name="viewMode" [value]="is3DOn ? '3d' : '2d'" (change)="toggle3D()"
+                    appearance="standard">
                     <mat-button-toggle value="2d" aria-label="2D View">
                       <mat-icon>grid_on</mat-icon>
                     </mat-button-toggle>
@@ -65,14 +62,14 @@
                 </div>
               </div>
             </div>
-              <div *ngIf="!is3DOn" class="slider-container">
+            <div *ngIf="!is3DOn" class="slider-container">
               <div class="blindmatrix-v4-slider">
                 <div *ngFor="let product_img of product_img_array">
                   <button type="button" class="multiple-frame-list-button"
-                          [class.selected_frame]="isSelectedFrame(product_img)"
-                          (click)="onFrameChange(getFrameImageUrl(product_img))">
-                    <img [src]="getFrameImageUrl(product_img)" alt="" width="auto" height="100" 
-                         [style.background-image]="'url(' + background_color_image_url + ')'">
+                    [class.selected_frame]="isSelectedFrame(product_img)"
+                    (click)="onFrameChange(getFrameImageUrl(product_img))">
+                    <img [src]="getFrameImageUrl(product_img)" alt="" width="auto" height="100"
+                      [style.background-image]="'url(' + background_color_image_url + ')'">
                   </button>
                 </div>
               </div>
@@ -86,7 +83,7 @@
           </div>
         </div>
 
-        <div  #productWrapper class="product-wrapper">
+        <div #productWrapper class="product-wrapper">
           <div class="product-from-price">
             <div class="price-container">
               <p [style.visibility]="visualizertagline ? 'visible' : 'hidden'">
@@ -98,302 +95,256 @@
           <div class="product-info">
             <div class='blindmatrix-v4-error-messages-wrapper'></div>
             <h3>Please enter your measurements</h3>
-            
+
             <div class="blinds-measurement">
             </div>
 
-       <div *ngFor="let field of parameters_data; trackBy: trackByFieldId" [ngSwitch]="get_field_type_name(field.fieldtypeid)">
-  <div *ngIf="field.showfieldecomonjob == 1">
+            <div *ngFor="let field of parameters_data; trackBy: trackByFieldId"
+              [ngSwitch]="get_field_type_name(field.fieldtypeid)">
+              <div *ngIf="field.showfieldecomonjob == 1">
 
-    <!-- Unit Type -->
-    <div *ngSwitchCase="'unit_type'">
-      <div class="parameter-wrapper inline-toggle radio">
-        <span class="mat-label" id="example-toggle-group-label">
-          {{ field.fieldname }}
-          <span class="icon-wrapper">
-            <mat-icon
-              *ngIf="hasContent(field.fieldInformation)"
-              [appHtmlTooltip]="field.fieldInformation"
-              [hideDelay]="1000"
-              class="info-icon"
-              [attr.aria-label]="'Information about ' + field.fieldname">
-              info_outline
-            </mat-icon>
-          </span>
-        </span>
+                <!-- Unit Type -->
+                <div *ngSwitchCase="'unit_type'">
+                  <div class="parameter-wrapper inline-toggle radio">
+                    <span class="mat-label" id="example-toggle-group-label">
+                      {{ field.fieldname }}
+                      <span class="icon-wrapper">
+                        <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
+                          [hideDelay]="1000" class="info-icon"
+                          [attr.aria-label]="'Information about ' + field.fieldname">
+                          info_outline
+                        </mat-icon>
+                      </span>
+                    </span>
 
-        <mat-button-toggle-group
-          [formControlName]="'field_' + field.fieldid"
-          aria-labelledby="example-toggle-group-label"
-          appearance="standard">
+                    <mat-button-toggle-group [formControlName]="'field_' + field.fieldid"
+                      aria-labelledby="example-toggle-group-label" appearance="standard">
 
-          <mat-button-toggle
-            *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
-            [value]="option.optionid"
-            [id]="'unittype_'+option.optionid">
-            {{ option.optionname }}
-          </mat-button-toggle>
-        </mat-button-toggle-group>
-      </div>
-    </div>
+                      <mat-button-toggle *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
+                        [value]="option.optionid" [id]="'unittype_'+option.optionid">
+                        {{ option.optionname }}
+                      </mat-button-toggle>
+                    </mat-button-toggle-group>
+                  </div>
+                </div>
 
-    <!-- Text -->
-    <div *ngSwitchCase="'text'">
-      <div class="parameter-wrapper">
-        <mat-form-field>
-          <mat-label>
-            {{ field.fieldname }}
-            <span class="icon-wrapper">
-              <mat-icon *ngIf="hasContent(field.fieldInformation)"
-                        [appHtmlTooltip]="field.fieldInformation"
-                        [hideDelay]="1000"
-                        class="info-icon"
-                        [attr.aria-label]="'Information about ' + field.fieldname">
-                info_outline
-              </mat-icon>
-            </span>
-          </mat-label>
-          
-          <input matInput
-                 type="text"
-                 [formControlName]="'field_' + field.fieldid"
-                 [id]="'field_' + field.fieldid"
-                 [attr.aria-label]="field.fieldname"
-                 [required]="field.mandatory == 1">
-          <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
-            This field is required.
-          </mat-error>
-        </mat-form-field>
-      </div>
-    </div>
+                <!-- Text -->
+                <div *ngSwitchCase="'text'">
+                  <div class="parameter-wrapper">
+                    <mat-form-field>
+                      <mat-label>
+                        {{ field.fieldname }}
+                        <span class="icon-wrapper">
+                          <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
+                            [hideDelay]="1000" class="info-icon"
+                            [attr.aria-label]="'Information about ' + field.fieldname">
+                            info_outline
+                          </mat-icon>
+                        </span>
+                      </mat-label>
 
-    <!-- List -->
-    <div *ngSwitchCase="'list'">
-      <div class="parameter-wrapper">
-        <mat-form-field>
-          <mat-label>
-            {{ field.fieldname }}
-            <span class="icon-wrapper">
-              <mat-icon
-                *ngIf="hasContent(field.fieldInformation)"
-                [appHtmlTooltip]="field.fieldInformation"
-                [hideDelay]="1000"
-                class="info-icon"
-                [attr.aria-label]="'Information about ' + field.fieldname">
-                info_outline
-              </mat-icon>
-            </span>
-          </mat-label>
-          <mat-select
-            [formControlName]="'field_' + field.fieldid"
-            [id]="'field_' + field.fieldid"
-            [multiple]="field.selection == 1"
-            [attr.aria-label]="field.fieldname">
-            <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
-            <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
-                        [value]="option.optionid">
-              <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
-                     alt="{{ option.optionname }}"
-                     width="24"
-                     height="24"
-                     style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
-              </ng-container>
-              {{ option.optionname }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-      </div>
-    </div>
+                      <input matInput type="text" [formControlName]="'field_' + field.fieldid"
+                        [id]="'field_' + field.fieldid" [attr.aria-label]="field.fieldname"
+                        [required]="field.mandatory == 1">
+                      <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
+                        This field is required.
+                      </mat-error>
+                    </mat-form-field>
+                  </div>
+                </div>
 
-    <!-- Materials -->
-    <div *ngSwitchCase="'materials'">
-      <div class="parameter-wrapper">
-        <mat-form-field>
-          <mat-label>
-            {{ field.fieldname }}
-            <span class="icon-wrapper">
-              <mat-icon
-                *ngIf="hasContent(field.fieldInformation)"
-                [appHtmlTooltip]="field.fieldInformation"
-                [hideDelay]="1000"
-                class="info-icon"
-                [attr.aria-label]="'Information about ' + field.fieldname">
-                info_outline
-              </mat-icon>
-            </span>
-          </mat-label>
-          <mat-select
-            [formControlName]="'field_' + field.fieldid"
-            [id]="'field_' + field.fieldid"
-            [multiple]="field.selection == 1"
-            [attr.aria-label]="field.fieldname">
-            <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
-            <mat-option *ngFor="let option of option_data[field.fieldid]"
-                        [value]="option.optionid">
-              <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
-                     alt="{{ option.optionname }}"
-                     width="24"
-                     height="24"
-                     style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
-              </ng-container>
-              {{ option.optionname }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-      </div>
-    </div>
+                <!-- List -->
+                <div *ngSwitchCase="'list'">
+                  <div class="parameter-wrapper">
+                    <mat-form-field>
+                      <mat-label>
+                        {{ field.fieldname }}
+                        <span class="icon-wrapper">
+                          <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
+                            [hideDelay]="1000" class="info-icon"
+                            [attr.aria-label]="'Information about ' + field.fieldname">
+                            info_outline
+                          </mat-icon>
+                        </span>
+                      </mat-label>
+                      <mat-select [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid"
+                        [multiple]="field.selection == 1" [attr.aria-label]="field.fieldname">
+                        <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
+                        <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
+                          [value]="option.optionid">
+                          <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                            <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
+                              alt="{{ option.optionname }}" width="24" height="24"
+                              style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                          </ng-container>
+                          {{ option.optionname }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
 
-    <!-- Number -->
-    <div *ngSwitchCase="'number'">
-      <div class="parameter-wrapper">
-        <mat-form-field>
-          <mat-label>
-            {{ field.fieldname }}
-            <span class="icon-wrapper">
-              <mat-icon
-                *ngIf="hasContent(field.fieldInformation)"
-                [appHtmlTooltip]="field.fieldInformation"
-                [hideDelay]="1000"
-                class="info-icon"
-                [attr.aria-label]="'Information about ' + field.fieldname">
-                info_outline
-              </mat-icon>
-            </span>
-          </mat-label>
-          <input matInput
-                 type="number"
-                 [formControlName]="'field_' + field.fieldid"
-                 [id]="'field_' + field.fieldid"
-                 [attr.aria-label]="field.fieldname"
-                 [required]="field.mandatory == 1"
-                 [attr.min]="field.numeric_setcondition == 1 ? field.numeric_minvalue : null"
-                 [attr.max]="field.numeric_setcondition == 1 ? field.numeric_maxvalue : null"
-                 [placeholder]="
+                <!-- Materials -->
+                <div *ngSwitchCase="'materials'">
+                  <div class="parameter-wrapper">
+                    <mat-form-field>
+                      <mat-label>
+                        {{ field.fieldname }}
+                        <span class="icon-wrapper">
+                          <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
+                            [hideDelay]="1000" class="info-icon"
+                            [attr.aria-label]="'Information about ' + field.fieldname">
+                            info_outline
+                          </mat-icon>
+                        </span>
+                      </mat-label>
+                      <mat-select [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid"
+                        [multiple]="field.selection == 1" [attr.aria-label]="field.fieldname">
+                        <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
+                        <mat-option *ngFor="let option of option_data[field.fieldid]" [value]="option.optionid">
+                          <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                            <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
+                              alt="{{ option.optionname }}" width="24" height="24"
+                              style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                          </ng-container>
+                          {{ option.optionname }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+
+                <!-- Number -->
+                <div *ngSwitchCase="'number'">
+                  <div class="parameter-wrapper">
+                    <mat-form-field>
+                      <mat-label>
+                        {{ field.fieldname }}
+                        <span class="icon-wrapper">
+                          <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
+                            [hideDelay]="1000" class="info-icon"
+                            [attr.aria-label]="'Information about ' + field.fieldname">
+                            info_outline
+                          </mat-icon>
+                        </span>
+                      </mat-label>
+                      <input matInput type="number" [formControlName]="'field_' + field.fieldid"
+                        [id]="'field_' + field.fieldid" [attr.aria-label]="field.fieldname"
+                        [required]="field.mandatory == 1"
+                        [attr.min]="field.numeric_setcondition == 1 ? field.numeric_minvalue : null"
+                        [attr.max]="field.numeric_setcondition == 1 ? field.numeric_maxvalue : null" [placeholder]="
                    field.numeric_setcondition == 1
                      ? 'Between ' + field.numeric_minvalue + ' and ' + field.numeric_maxvalue
                      : ''
                  ">
-          <mat-hint *ngIf="field.numeric_setcondition == 1">
-            Min: {{ field.numeric_minvalue }}, Max: {{ field.numeric_maxvalue }}
-          </mat-hint>
-          <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
-            This field is required.
-          </mat-error>
-          <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('min')">
-            Value should be at least {{ field.numeric_minvalue }}.
-          </mat-error>
-          <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('max')">
-            Value should not exceed {{ field.numeric_maxvalue }}.
-          </mat-error>
-        </mat-form-field>
-      </div>
-    </div>
+                      <mat-hint *ngIf="field.numeric_setcondition == 1">
+                        Min: {{ field.numeric_minvalue }}, Max: {{ field.numeric_maxvalue }}
+                      </mat-hint>
+                      <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
+                        This field is required.
+                      </mat-error>
+                      <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('min')">
+                        Value should be at least {{ field.numeric_minvalue }}.
+                      </mat-error>
+                      <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('max')">
+                        Value should not exceed {{ field.numeric_maxvalue }}.
+                      </mat-error>
+                    </mat-form-field>
+                  </div>
+                </div>
 
-    <!-- Width with Fraction -->
-    <div *ngSwitchCase="'width_with_fraction'">
-      <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
-        <mat-form-field class="fraction-field">
-          <mat-label>
-            {{ field.fieldname }}
-            <span class="icon-wrapper">
-              <mat-icon
-                *ngIf="hasContent(field.fieldInformation)"
-                [appHtmlTooltip]="field.fieldInformation"
-                [hideDelay]="1000"
-                class="info-icon"
-                [attr.aria-label]="'Information about ' + field.fieldname">
-                info_outline
-              </mat-icon>
-            </span>
-          </mat-label>
-          <input matInput
-                 type="number"
-                 [formControlName]="'field_' + field.fieldid"
-                 [id]="'field_' + field.fieldid"
-                 [min]="min_width"
-                 [max]="max_width"
-                 [placeholder]="(min_width != null && max_width != null) ? ('Between ' + min_width + ' and ' + max_width) : ''"
-                 aria-label="Width">
-          <mat-hint *ngIf="min_width != null && max_width != null">
-            Min: {{ min_width }}, Max: {{ max_width }}
-          </mat-hint>
-        </mat-form-field>
+                <!-- Width with Fraction -->
+                <div *ngSwitchCase="'width_with_fraction'">
+                  <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
+                    <mat-form-field class="fraction-field">
+                      <mat-label>
+                        {{ field.fieldname }}
+                        <span class="icon-wrapper">
+                          <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
+                            [hideDelay]="1000" class="info-icon"
+                            [attr.aria-label]="'Information about ' + field.fieldname">
+                            info_outline
+                          </mat-icon>
+                        </span>
+                      </mat-label>
+                      <input matInput type="number" [formControlName]="'field_' + field.fieldid"
+                        [id]="'field_' + field.fieldid" [min]="min_width" [max]="max_width"
+                        [placeholder]="(min_width != null && max_width != null) ? ('Between ' + min_width + ' and ' + max_width) : ''"
+                        aria-label="Width">
+                      <mat-hint *ngIf="min_width != null && max_width != null">
+                        Min: {{ min_width }}, Max: {{ max_width }}
+                      </mat-hint>
+                    </mat-form-field>
 
-        <mat-form-field *ngIf="showFractions" class="fraction-select">
-          <mat-label>Fraction</mat-label>
-          <mat-select formControlName="widthfraction" id="widthfraction" aria-label="Width fraction">
-            <mat-option [value]="0">0</mat-option>
-            <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
-              {{ fraction.name }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-      </div>
-    </div>
+                    <mat-form-field *ngIf="showFractions" class="fraction-select">
+                      <mat-label>Fraction</mat-label>
+                      <mat-select formControlName="widthfraction" id="widthfraction" aria-label="Width fraction">
+                        <mat-option [value]="0">0</mat-option>
+                        <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
+                          {{ fraction.name }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
 
-    <!-- Drop with Fraction -->
-    <div *ngSwitchCase="'drop_with_fraction'">
-      <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
-        <mat-form-field class="fraction-field">
-          <mat-label>
-            {{ field.fieldname }}
-            <span class="icon-wrapper">
-              <mat-icon
-                *ngIf="hasContent(field.fieldInformation)"
-                [appHtmlTooltip]="field.fieldInformation"
-                [hideDelay]="1000"
-                class="info-icon"
-                [attr.aria-label]="'Information about ' + field.fieldname">
-                info_outline
-              </mat-icon>
-            </span>
-          </mat-label>
-          <input matInput
-                 type="number"
-                 [formControlName]="'field_' + field.fieldid"
-                 [id]="'field_' + field.fieldid"
-                 [min]="min_drop"
-                 [max]="max_drop"
-                 [placeholder]="(min_drop != null && max_drop != null) ? ('Between ' + min_drop + ' and ' + max_drop) : ''"
-                 aria-label="Drop">
-          <mat-hint *ngIf="min_drop != null && max_drop != null">
-            Min: {{ min_drop }}, Max: {{ max_drop }}
-          </mat-hint>
-        </mat-form-field>
+                <!-- Drop with Fraction -->
+                <div *ngSwitchCase="'drop_with_fraction'">
+                  <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
+                    <mat-form-field class="fraction-field">
+                      <mat-label>
+                        {{ field.fieldname }}
+                        <span class="icon-wrapper">
+                          <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
+                            [hideDelay]="1000" class="info-icon"
+                            [attr.aria-label]="'Information about ' + field.fieldname">
+                            info_outline
+                          </mat-icon>
+                        </span>
+                      </mat-label>
+                      <input matInput type="number" [formControlName]="'field_' + field.fieldid"
+                        [id]="'field_' + field.fieldid" [min]="min_drop" [max]="max_drop"
+                        [placeholder]="(min_drop != null && max_drop != null) ? ('Between ' + min_drop + ' and ' + max_drop) : ''"
+                        aria-label="Drop">
+                      <mat-hint *ngIf="min_drop != null && max_drop != null">
+                        Min: {{ min_drop }}, Max: {{ max_drop }}
+                      </mat-hint>
+                    </mat-form-field>
 
-        <mat-form-field *ngIf="showFractions" class="fraction-select">
-          <mat-label>Fraction</mat-label>
-          <mat-select formControlName="dropfraction" id="dropfraction" aria-label="Drop fraction">
-            <mat-option [value]="0">0</mat-option>
-            <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
-              {{ fraction.name }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-      </div>
-    </div>
+                    <mat-form-field *ngIf="showFractions" class="fraction-select">
+                      <mat-label>Fraction</mat-label>
+                      <mat-select formControlName="dropfraction" id="dropfraction" aria-label="Drop fraction">
+                        <mat-option [value]="0">0</mat-option>
+                        <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
+                          {{ fraction.name }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
 
-    <!-- Hidden Fields -->
-    <div *ngSwitchCase="'qty'" style="display:none;">
-      <input matInput type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
-    </div>
+                <!-- Hidden Fields -->
+                <div *ngSwitchCase="'qty'" style="display:none;">
+                  <input matInput type="hidden" [formControlName]="'field_' + field.fieldid"
+                    [id]="'field_' + field.fieldid">
+                </div>
 
-    <div *ngSwitchCase="'supplier'" style="display:none;">
-      <input matInput type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
-    </div>
+                <div *ngSwitchCase="'supplier'" style="display:none;">
+                  <input matInput type="hidden" [formControlName]="'field_' + field.fieldid"
+                    [id]="'field_' + field.fieldid">
+                </div>
 
-    <div *ngSwitchCase="'pricegroup'" style="display:none;">
-      <input matInput type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
-    </div>
+                <div *ngSwitchCase="'pricegroup'" style="display:none;">
+                  <input matInput type="hidden" [formControlName]="'field_' + field.fieldid"
+                    [id]="'field_' + field.fieldid">
+                </div>
 
-    <div *ngSwitchCase="'hidden'">
-      <input type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
-    </div>
+                <div *ngSwitchCase="'hidden'">
+                  <input type="hidden" [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid">
+                </div>
 
-  </div>
-</div>
+              </div>
+            </div>
 
 
 
@@ -407,53 +358,51 @@
             <div class="variations_button">
               <div class="quantity">
                 <button type="button" class="minus" (click)="decrementQty()">-</button>
-                <input type="number" 
-                       formControlName="qty" 
-                       title="Qty" 
-                       size="4" 
-                       inputmode="numeric"
-                       min="1"
-                       aria-label="Quantity">
+                <input type="number" formControlName="qty" title="Qty" size="4" inputmode="numeric" min="1"
+                  aria-label="Quantity">
                 <button type="button" class="plus" (click)="incrementQty()">+</button>
               </div>
-             <button mat-raised-button color="primary" type="submit" [disabled]="orderForm.invalid || isSubmitting || !isCalculatingPrice || grossPricenum === 0">
+              <button mat-raised-button color="primary" type="submit"
+                [disabled]="orderForm.invalid || isSubmitting || !isCalculatingPrice || grossPricenum === 0">
                 <mat-icon>shopping_cart</mat-icon>
                 <span *ngIf="isCalculatingPrice">{{ isSubmitting ? 'Adding...' : 'Add to Cart' }}</span>
                 <span *ngIf="!isCalculatingPrice">Calculating price...</span>
               </button>
             </div>
-              <mat-accordion>
-                <mat-expansion-panel>
-                  <mat-expansion-panel-header>
-                    <mat-panel-title>
-                      Show Order Details
-                    </mat-panel-title>
-                  </mat-expansion-panel-header>
-                  <div id="allparametervalue">
-                    <table class="show-order-details-contents">
-                      <tbody>
-                        <tr *ngFor="let item of accordionData">
-                          <td><strong>{{ item.label }}:</strong></td>
-                          <td>{{ item.value }}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </mat-expansion-panel>
-              </mat-accordion>
-              <div class="guides-buttons">
-                <a mat-stroked-button color="primary" target="_blank" href="/measuring-guide/">
-                  Measuring Guide
-                </a>
-                <a mat-stroked-button color="primary" target="_blank" href="/fitting-guide/">
-                  Fitting Guide
-                </a>
-              </div>
+            <mat-accordion>
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    Show Order Details
+                  </mat-panel-title>
+                </mat-expansion-panel-header>
+                <div id="allparametervalue">
+                  <table class="show-order-details-contents">
+                    <tbody>
+                      <tr *ngFor="let item of accordionData">
+                        <td><strong>{{ item.label }}:</strong></td>
+                        <td>{{ item.value }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </mat-expansion-panel>
+            </mat-accordion>
+            <app-freesample [freesampledata]="freesample"
+              *ngIf="freesample?.status == 1 && freesample?.color_id !=0 "></app-freesample>
+            <div class="guides-buttons">
+              <a mat-stroked-button color="primary" target="_blank" href="/measuring-guide/">
+                Measuring Guide
+              </a>
+              <a mat-stroked-button color="primary" target="_blank" href="/fitting-guide/">
+                Fitting Guide
+              </a>
+            </div>
           </div>
         </div>
       </div>
     </div>
-   <mat-tab-group dynamicHeight>
+    <mat-tab-group dynamicHeight>
       <mat-tab label="Product Specification">
         <div class="tabsproduct" [innerHTML]="pei_prospec"></div>
       </mat-tab>
