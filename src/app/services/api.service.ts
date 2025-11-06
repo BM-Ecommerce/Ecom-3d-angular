@@ -143,16 +143,13 @@ export class ApiService {
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
   getFractionData(params: ApiCommonParams, faction_value: any): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, recipeid, product_id, ...payload } = params;
-    if (!recipeid) {
-      return throwError(() => new Error('recipeid is required'));
-    }
+    const { api_url, api_key, api_name, product_id, ...payload } = params;
     const passData = `appSetup/fractionlist/${product_id}/-1/${faction_value}`;
     return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
   }
-  addToCart(formData: any, productId: string, apiUrl: string, cartproductName: string, priceData: any, vatpercentage: number, vatName: string, currenturl: string, productName: string, categoryId: number, visualizerImage?: string): Observable<ApiResponse> {
+  addToCart(formData: any, productId: string, apiUrl: string, cartproductName: string, priceData: any, vatpercentage: number, vatName: string, currenturl: string, productName: string, categoryId: number, visualizerImage?: string, action: string = "add_to_cart"): Observable<ApiResponse> {
     let body = new HttpParams()
-      .set('action', 'add_to_cart')
+      .set('action', action)
       .set('product_id', productId)
       .set('form_data', JSON.stringify(formData))
       .set('cart_product_name', cartproductName)
