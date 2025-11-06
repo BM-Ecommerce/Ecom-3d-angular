@@ -24,14 +24,9 @@ export class FreesampleComponent implements OnInit, OnChanges {
   ) { }
 
   ngOnInit(): void {
-    console.log("freesampledata", this.freesampledata);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['freesampledata']) {
-
-      console.log('Updated image URL:', this.freesampledata);
-    }
     this.cdr.detectChanges();
   }
 

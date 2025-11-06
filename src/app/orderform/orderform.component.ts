@@ -236,7 +236,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   freesample_price!: number | string;
 
   get_freesample() {
-
     this.freesample = {
       "status": this?.freesameple_status,
       "product_id": this?.product_id,
@@ -245,12 +244,12 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       "form_data": this?.orderitemdata(false, true),
       "cartproductName": this?.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname),
       "priceData": this?.pricedata,
-      "vatpercentage": this?.vatpercentage,
-      "vatname": this?.vatname,
+      "vatpercentage": this?.vatpercentage ?? "",
+      "vatname": this?.vatname ?? "",
       "api_url": this?.routeParams?.site,
       "current_url": window?.location.href,
       "productname": this?.productname,
-      "catagory_id": this?.routeParams?.category,
+      "catagory_id": this.fabricFieldType,
       "color_id": this.colorid,
       "fabricid": this.fabricid,
       "pei_ecomImage": this.background_color_image_url,
@@ -561,11 +560,11 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           this.pei_prospec = data.pei_prospec;
           const category = Number(data.pi_category);
           if (category == 5) {
-            this.fabricFieldType == 21
+            this.fabricFieldType = 21
           } else if (category == 4) {
-            this.fabricFieldType == 20;
+            this.fabricFieldType = 20;
           } else if (category == 3) {
-            this.fabricFieldType == 5;
+            this.fabricFieldType = 5;
           }
           this.recipeid = data.recipeid;
           this.freesameple_status = data?.pei_ecomFreeSample ?? 0;
@@ -1812,7 +1811,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
     this.jsondata = this.orderitemdata(false);
-    console.log(this.jsondata);
     if (!this.routeParams || !this.routeParams.site || !this.routeParams.cart_productid) {
       this.errorMessage = 'Missing required route parameters for cart submission.';
       this.isSubmitting = false;
@@ -1822,7 +1820,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.isSubmitting = true;
     this.errorMessage = null;
-    console.log(this.pricedata);
     const visualizerImage = this.threeService.getCanvasDataURL();
 
     this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site,
