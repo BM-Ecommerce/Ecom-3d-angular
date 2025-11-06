@@ -15,11 +15,12 @@ import Swal from 'sweetalert2';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
 import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime } from 'rxjs/operators';
-import {MatTabsModule} from '@angular/material/tabs';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { HtmlTooltipDirective } from '../html-tooltip.directive';
+import { FreesampleComponent } from "../freesample/freesample.component";
 
 
 
@@ -50,7 +51,7 @@ interface JsonDataItem {
   numberfractiontext: any;
   fieldInformation: any;
   editruleoverride: any;
-  ruleoverride:any;
+  ruleoverride: any;
   fieldid: number;
   mandatory: number;
   fieldlevel?: number;
@@ -101,7 +102,7 @@ interface ProductField {
   optionid?: any;
   level?: number;
   valuename?: string;
-  hasprice?:boolean;
+  hasprice?: boolean;
   parentFieldId?: number;
   masterparentfieldid?: number;
   allparentFieldId?: string;
@@ -141,8 +142,8 @@ interface ProductOption {
   fieldoptionlinkid: number;
   availableForEcommerce?: number;
   pricegroups: string;
-  optionid_pricegroupid:string;
-  pricegroupid:string;
+  optionid_pricegroupid: string;
+  pricegroupid: string;
   optioncode?: string;
   optionquantity?: any;
   forchildfieldoptionlinkid?: string;
@@ -158,7 +159,7 @@ interface FractionOption {
   decimalvalue: string;
   name: string;
   id: number;
-  frac_decimalvalue:string;
+  frac_decimalvalue: string;
 }
 
 @Component({
@@ -181,7 +182,8 @@ interface FractionOption {
     MatExpansionModule,
     MatIconModule,
     MatTooltipModule,
-    HtmlTooltipDirective
+    HtmlTooltipDirective,
+    FreesampleComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -206,78 +208,107 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   isLoading = false;
   isSubmitting = false;
   errorMessage: string | null = null;
-  jsondata: JsonDataItem[] = [];  
+  jsondata: JsonDataItem[] = [];
   // Product data
   showFractions = false;
   product_details_arr: Record<string, string> = {};
   product_specs = '';
-  ecomproductname ='';
+  ecomproductname = '';
   product_description = '';
   unit_type_data: any[] = [];
   parameters_arr: any[] = [];
-  pricedata:any[] = [];
+  pricedata: any[] = [];
   supplierOption: any;
   priceGroupOption: any;
   unitOption: any;
-  productdescription:string = "";
-  pei_prospec:string = "";
+  productdescription: string = "";
+  pei_prospec: string = "";
   isScrolled = false;
   unittypename = "";
-  netpricecomesfrom ="";
+  netpricecomesfrom = "";
   is3DOn = false;
-  costpricecomesfrom ="";
-  inchfractionselected:Number = 0;
-  inchfraction_array: FractionOption[] = [
-  {
-    "name": "1/32",
-    "id": 1,
-    "decimalvalue": "0.03125",
-    "frac_decimalvalue": "0.03125"
-  },
-  {
-    "name": "1/16",
-    "id": 2,
-    "decimalvalue": "0.0625",
-    "frac_decimalvalue": "0.0625"
-  },
-  {
-    "name": "3/32",
-    "id": 3,
-    "decimalvalue": "0.09375",
-    "frac_decimalvalue": "0.09375"
-  },
-  {
-    "name": "1/8",
-    "id": 4,
-    "decimalvalue": "0.125",
-    "frac_decimalvalue": "0.125"
-  },
-  {
-    "name": "5/32",
-    "id": 5,
-    "decimalvalue": "0.15625",
-    "frac_decimalvalue": "0.15625"
-  },
-  {
-    "name": "3/16",
-    "id": 6,
-    "decimalvalue": "0.1875",
-    "frac_decimalvalue": "0.1875"
+  costpricecomesfrom = "";
+  inchfractionselected: Number = 0;
+  freesample: any;
+  freesameple_status!: number | boolean;
+  product_id!: number | string;
+  freesample_price!: number | string;
+
+  get_freesample() {
+
+    this.freesample = {
+      "status": this?.freesameple_status,
+      "product_id": this?.product_id,
+      "type": "free_sample",
+      "free_sample_price": this?.freesample_price,
+      "form_data": this?.orderitemdata(false, true),
+      "cartproductName": this?.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname),
+      "priceData": this?.pricedata,
+      "vatpercentage": this?.vatpercentage,
+      "vatname": this?.vatname,
+      "api_url": this?.routeParams?.site,
+      "current_url": window?.location.href,
+      "productname": this?.productname,
+      "catagory_id": this?.routeParams?.category,
+      "color_id": this.colorid,
+      "fabricid": this.fabricid,
+      "pei_ecomImage": this.background_color_image_url,
+      "currencySymbol": this.currencySymbol
+    }
   }
+
+
+  inchfraction_array: FractionOption[] = [
+    {
+      "name": "1/32",
+      "id": 1,
+      "decimalvalue": "0.03125",
+      "frac_decimalvalue": "0.03125"
+    },
+    {
+      "name": "1/16",
+      "id": 2,
+      "decimalvalue": "0.0625",
+      "frac_decimalvalue": "0.0625"
+    },
+    {
+      "name": "3/32",
+      "id": 3,
+      "decimalvalue": "0.09375",
+      "frac_decimalvalue": "0.09375"
+    },
+    {
+      "name": "1/8",
+      "id": 4,
+      "decimalvalue": "0.125",
+      "frac_decimalvalue": "0.125"
+    },
+    {
+      "name": "5/32",
+      "id": 5,
+      "decimalvalue": "0.15625",
+      "frac_decimalvalue": "0.15625"
+    },
+    {
+      "name": "3/16",
+      "id": 6,
+      "decimalvalue": "0.1875",
+      "frac_decimalvalue": "0.1875"
+    }
 
   ];
   color_arr: Record<string, any> = {};
   min_width: number | null = null;
   max_width: number | null = null;
   min_drop: number | null = null;
-  max_drop: number | null = null; 
+  max_drop: number | null = null;
   width = 0;
   drop = 0;
   vatpercentage = 0;
   vatname = "";
   widthField: any = 0;
   dropField: any = 0;
-  fabricFieldType: any =0;
+  fabricFieldType: any = 0;
   ecomsampleprice = 0;
   ecomFreeSample = '0';
   delivery_duration = '';
@@ -285,8 +316,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   productname = '';
   product_list_page_link = '';
   fabricname = '';
-  colorname ='';
-  frame_default_url ="";
+  colorname = '';
+  frame_default_url = "";
   hide_frame = false;
   product_img_array: any[] = [];
   product_deafultimage: Record<string, any> = {};
@@ -300,7 +331,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   colorid = 0;
   matmapid = 0;
   rulescount = 0;
-  formulacount  = 0;
+  formulacount = 0;
   pricegroup_id = 0;
   supplier_id: number | null = null;
   currencySymbol: string = '£';
@@ -319,7 +350,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   pricegroup: string = "";
   public grossPrice: string | null = null;
   public isCalculatingPrice = true;
-  grossPricenum:number = 0;
+  grossPricenum: number = 0;
   private priceUpdate = new Subject<void>();
   private rulesorderitem: any[] = [];
   constructor(
@@ -332,101 +363,107 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   ) {
     // initial minimal group; will be replaced in initializeFormControls
     this.orderForm = this.fb.group({
-        unit: ['', Validators.required],
-        widthfraction: [''],
-        dropfraction: [''],
-        qty: [1, [Validators.required, Validators.min(1)]]
-      });
+      unit: ['', Validators.required],
+      widthfraction: [''],
+      dropfraction: [''],
+      qty: [1, [Validators.required, Validators.min(1)]]
+    });
     this.previousFormValue = this.orderForm.value;
   }
-  
-ngOnInit(): void {
-  const queryParams = this.route.snapshot.queryParams;
-  // Check if running on localhost
-  const isLocalhost = window.location.hostname === 'localhost';
-  const pathParams = this.route.snapshot.params;
+
+
+  ngOnInit(): void {
+
+
+    const queryParams = this.route.snapshot.queryParams;
+    // Check if running on localhost
+    const isLocalhost = window.location.hostname === 'localhost';
+    const pathParams = this.route.snapshot.params;
 
     if (pathParams && pathParams['product_id']) {
-        // WordPress path-based integration
-        this.img_file_path_url = environment.apiUrl + '/api/public/';
-        this.route.params.pipe(
-            takeUntil(this.destroy$)
-        ).subscribe(paramsFromRoute => {
-            const params = {
-                ...paramsFromRoute,
-                api_url: environment.apiUrl,
-                api_key: environment.apiKey,
-                api_name: environment.apiName,
-                site: environment.site
-            };
-            this.fetchInitialData(params);
-        });
-    } else if (isLocalhost) {
-     this.img_file_path_url = environment.apiUrl + '/api/public/';
-    this.route.queryParams.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(queryParams => {
+      // WordPress path-based integration
+      this.img_file_path_url = environment.apiUrl + '/api/public/';
+      this.route.params.pipe(
+        takeUntil(this.destroy$)
+      ).subscribe(paramsFromRoute => {
         const params = {
-            ...queryParams,
-            api_url: environment.apiUrl,
-            api_key: environment.apiKey,
-            api_name: environment.apiName,
-            site: environment.site
+          ...paramsFromRoute,
+          api_url: environment.apiUrl,
+          api_key: environment.apiKey,
+          api_name: environment.apiName,
+          site: environment.site
         };
         this.fetchInitialData(params);
-    });
-
- 
-  } else {
-    // Production: get token from query param and call API
-    const token = queryParams['token'];
-    if (!token) {
-      console.error('Visualizer token is missing');
-      return;
-    }
-
-    const apiUrl = window.location.origin;
-
-    this.http.get(`${apiUrl}/wp-json/blindmatrix/v1/get_visualizer_data?token=${token}`)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data: any) => {
-          this.img_file_path_url = data.api_url + '/api/public/';
-          this.fetchInitialData(data);
-        },
-        error: (err) => {
-          console.error('Invalid or expired visualizer token', err);
-        }
       });
-  }
+    } else if (isLocalhost) {
+      this.img_file_path_url = environment.apiUrl + '/api/public/';
+      this.route.queryParams.pipe(
+        takeUntil(this.destroy$)
+      ).subscribe(queryParams => {
+        const params = {
+          ...queryParams,
+          api_url: environment.apiUrl,
+          api_key: environment.apiKey,
+          api_name: environment.apiName,
+          site: environment.site
+        };
+        this.fetchInitialData(params);
+      });
 
-  // Price updates remain the same
-  this.priceUpdate.pipe(
-    debounceTime(500),
-    tap(() => {
-      this.grossPrice = null;
-      this.cd.markForCheck();
-      this.rulesorderitem = this.orderitemdata(true);
-    }),
-    switchMap(() => this.getPrice()),
-    takeUntil(this.destroy$)
-  ).subscribe(res => {
-    if (res && res.fullpriceobject) {
-      this.isCalculatingPrice = true;
-      const { grossprice } = res.fullpriceobject;
-      this.pricedata = res.fullpriceobject;
-      this.currencySymbol = res.currencysymbol;
-      this.grossPrice = `${this.currencySymbol}${Number(grossprice).toFixed(2)}`;
-      this.grossPricenum = Number(grossprice);
+
     } else {
-      this.isCalculatingPrice = false;
-      this.grossPrice = null;
-      this.pricedata = [];
-      this.grossPricenum = 0;
+      // Production: get token from query param and call API
+      const token = queryParams['token'];
+      if (!token) {
+        console.error('Visualizer token is missing');
+        return;
+      }
+
+      const apiUrl = window.location.origin;
+
+      this.http.get(`${apiUrl}/wp-json/blindmatrix/v1/get_visualizer_data?token=${token}`)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (data: any) => {
+            this.img_file_path_url = data.api_url + '/api/public/';
+            this.fetchInitialData(data);
+          },
+          error: (err) => {
+            console.error('Invalid or expired visualizer token', err);
+          }
+        });
     }
-    this.cd.markForCheck();
-  });
-}
+
+
+
+    // Price updates remain the same
+    this.priceUpdate.pipe(
+      debounceTime(500),
+      tap(() => {
+        this.grossPrice = null;
+        this.cd.markForCheck();
+        this.rulesorderitem = this.orderitemdata(true);
+      }),
+      switchMap(() => this.getPrice()),
+      takeUntil(this.destroy$)
+    ).subscribe(res => {
+      if (res && res.fullpriceobject) {
+        this.isCalculatingPrice = true;
+        const { grossprice } = res.fullpriceobject;
+        this.pricedata = res.fullpriceobject;
+        this.currencySymbol = res.currencysymbol;
+        this.grossPrice = `${this.currencySymbol}${Number(grossprice).toFixed(2)}`;
+        this.grossPricenum = Number(grossprice);
+      } else {
+        this.isCalculatingPrice = false;
+        this.grossPrice = null;
+        this.pricedata = [];
+        this.grossPricenum = 0;
+      }
+      this.cd.markForCheck();
+    });
+    this.get_freesample();
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -477,18 +514,18 @@ ngOnInit(): void {
       this.threeService.onResize(this.containerRef.nativeElement);
     }
   }
-zoomIn(): void {
-  if (this.is3DOn) {
-    this.threeService.zoomIn();
+  zoomIn(): void {
+    if (this.is3DOn) {
+      this.threeService.zoomIn();
+    }
   }
-}
 
-zoomOut(): void {
+  zoomOut(): void {
     if (this.is3DOn) {
       this.threeService.zoomOut();
     }
   }
-  
+
   onMouseMove(event: MouseEvent): void {
     if (!this.is3DOn) {
       const rect = this.containerRef.nativeElement.getBoundingClientRect();
@@ -509,161 +546,182 @@ zoomOut(): void {
       this.threeService.enableZoom(false);
     }
   }
-private fetchInitialData(params: any): void {
-  this.isLoading = true;
-  this.errorMessage = null;
+  private fetchInitialData(params: any): void {
+    this.isLoading = true;
+    this.errorMessage = null;
 
-  this.apiService.getProductData(params).pipe(
-    takeUntil(this.destroy$),
-    switchMap((productData: any) => {
-      if (productData.result?.EcomProductlist?.length > 0) {
-        const data: ProductDetails = productData.result.EcomProductlist[0];
-        this.ecomproductname = data.pei_ecomProductName;
-        this.productname = data.label;
-        this.productdescription = data.pi_productdescription;
-        this.pei_prospec = data.pei_prospec;
 
-        let productBgImages: string[] = [];
-        try {
-          productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
-        } catch (e) {
-          console.error('Error parsing pi_backgroundimage:', e);
-          productBgImages = [];
-        }
 
-        let productDefaultImage: any = {};
-        let ecomProductName = '';
-        try {
-          productDefaultImage = JSON.parse(data.pi_deafultimage || '{}');
-          ecomProductName = data.pei_ecomProductName;
-        } catch (e) {
-          console.error('Error parsing pi_deafultimage:', e);
-          productDefaultImage = {};
-          ecomProductName = "";
-        }
+    this.apiService.getProductData(params).pipe(
+      takeUntil(this.destroy$),
+      switchMap((productData: any) => {
+        if (productData.result?.EcomProductlist?.length > 0) {
+          const data: ProductDetails = productData.result.EcomProductlist[0];
+          this.ecomproductname = data.pei_ecomProductName;
+          this.productname = data.label;
+          this.productdescription = data.pi_productdescription;
+          this.pei_prospec = data.pei_prospec;
 
-        const defaultImageSettings = productDefaultImage?.defaultimage || {};
-        const defaultFrameFilename = defaultImageSettings?.backgrounddefault || '';
+          this.freesameple_status = data?.pei_ecomFreeSample ?? 0;
+          this.product_id = params?.product_id ?? this.route.snapshot.params['product_id'],
+            this.freesample_price = data?.pei_ecomsampleprice ?? 0;
 
-        this.product_img_array = productBgImages.map(imgFilename => {
-          const isDefault = defaultFrameFilename && imgFilename.includes(defaultFrameFilename);
-          const pathParts = imgFilename.split('/');
-          const filename = pathParts.pop() || '';
-          const encodedFilename = encodeURIComponent(filename);
-          const encodedImgPath = [...pathParts, encodedFilename].join('/');
-          const imageUrl = this.img_file_path_url + encodedImgPath;
+          this.get_freesample();
 
-          if (isDefault) {
-            this.frame_default_url = imageUrl;
-            this.mainframe = imageUrl;
+          let productBgImages: string[] = [];
+          try {
+            productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
+          } catch (e) {
+            console.error('Error parsing pi_backgroundimage:', e);
+            productBgImages = [];
           }
 
-          return { image_url: imageUrl, is_default: isDefault };
-        });
+          let productDefaultImage: any = {};
+          let ecomProductName = '';
+          try {
+            productDefaultImage = JSON.parse(data.pi_deafultimage || '{}');
+            ecomProductName = data.pei_ecomProductName;
+          } catch (e) {
+            console.error('Error parsing pi_deafultimage:', e);
+            productDefaultImage = {};
+            ecomProductName = "";
+          }
 
-        if (!this.mainframe && this.product_img_array.length > 0) {
-          const firstImage = this.product_img_array[0];
-          this.frame_default_url = firstImage.image_url;
-          this.mainframe = firstImage.image_url;
-          firstImage.is_default = true;
+          const defaultImageSettings = productDefaultImage?.defaultimage || {};
+          const defaultFrameFilename = defaultImageSettings?.backgrounddefault || '';
+
+          this.product_img_array = productBgImages.map(imgFilename => {
+
+            const isDefault = defaultFrameFilename && imgFilename.includes(defaultFrameFilename);
+            const pathParts = imgFilename.split('/');
+            const filename = pathParts.pop() || '';
+            const encodedFilename = encodeURIComponent(filename);
+            const encodedImgPath = [...pathParts, encodedFilename].join('/');
+            const imageUrl = this.img_file_path_url + encodedImgPath;
+
+            if (isDefault) {
+              this.frame_default_url = imageUrl;
+              this.mainframe = imageUrl;
+            }
+
+            return { image_url: imageUrl, is_default: isDefault };
+          });
+
+
+          if (!this.mainframe && this.product_img_array.length > 0) {
+            const firstImage = this.product_img_array[0];
+            this.frame_default_url = firstImage.image_url;
+            this.mainframe = firstImage.image_url;
+            firstImage.is_default = true;
+          }
+
+          this.setupVisualizer(ecomProductName);
+        }
+        return this.apiService.getProductParameters(params);
+      }),
+      tap(productData => {
+        console.log("productDataproductData", productData);
+      }),
+      switchMap((data: any) => {
+        if (data && data[0]) {
+          const response = data[0];
+          this.parameters_data = response.data || [];
+          this.apiUrl = params.api_url;
+          this.routeParams = params;
+          this.netpricecomesfrom = response.netpricecomesfrom;
+          this.costpricecomesfrom = response.costpricecomesfrom;
+          this.initializeFormControls();
+          this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
+          this.supplierField = this.parameters_data.find(f => f.fieldtypeid === 17);
+
+
+          this.qtyField = this.parameters_data.find(f => f.fieldtypeid === 14);
+          this.widthField = this.parameters_data.find(f => [7, 8, 11, 31].includes(f.fieldtypeid));
+          this.dropField = this.parameters_data.find(f => [9, 10, 12, 32].includes(f.fieldtypeid));
+          this.unitField = this.parameters_data.find(f => f.fieldtypeid === 34);
+          this.fabricFieldType = this.parameters_data.find(f => [20, 21, 5].includes(f.fieldtypeid));
+          // this.freesample.api_url = this.routeParams.site;
+          // this.freesample.catagory_id = this?.routeParams?.category;
+          this.get_freesample();
+
+          return forkJoin({
+            optionData: this.loadOptionData(params),
+            minMaxData: this.apiService.getminandmax(
+              this.routeParams,
+              this.routeParams.color_id,
+              this.unittype,
+              this.routeParams.pricing_group
+            ),
+            recipeList: this.apiService.getRecipeList(params),
+            FractionList: this.apiService.getFractionList(params)
+          });
         }
 
-        this.setupVisualizer(ecomProductName);
-      }
-      return this.apiService.getProductParameters(params);
-    }),
-    switchMap((data: any) => {
-      if (data && data[0]) {
-        const response = data[0];
-        this.parameters_data = response.data || [];
-        this.apiUrl = params.api_url;
-        this.routeParams = params;
-        this.netpricecomesfrom = response.netpricecomesfrom;
-        this.costpricecomesfrom = response.costpricecomesfrom;
-        this.initializeFormControls();
-        this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
-        this.supplierField   = this.parameters_data.find(f => f.fieldtypeid === 17);
-        this.qtyField        = this.parameters_data.find(f => f.fieldtypeid === 14);
-        this.widthField      = this.parameters_data.find(f => [7, 8, 11, 31].includes(f.fieldtypeid));
-        this.dropField       = this.parameters_data.find(f => [9, 10, 12, 32].includes(f.fieldtypeid));
-        this.unitField       = this.parameters_data.find(f => f.fieldtypeid === 34);
-        this.fabricFieldType = this.parameters_data.find(f => [20, 21, 5].includes(f.fieldtypeid));
+        this.errorMessage = 'Invalid product data received';
+        return of(null);
+      }),
+      tap((results: any) => {
 
-        return forkJoin({
-          optionData: this.loadOptionData(params),
-          minMaxData: this.apiService.getminandmax(
-            this.routeParams,
-            this.routeParams.color_id,
-            this.unittype,
-            this.routeParams.pricing_group
-          ),
-          recipeList: this.apiService.getRecipeList(params),
-          FractionList: this.apiService.getFractionList(params)
-        });
-      }
 
-      this.errorMessage = 'Invalid product data received';
-      return of(null);
-    }),
-    tap((results: any) => {
-      if (results) {
-        this.parameters_data.forEach(field => {
-          const control = this.orderForm.get(`field_${field.fieldid}`);
-           if (control && field.ruleoverride === 0) {
-                control.disable();  
-              } else if(control) {
-                control.enable();  
-              }
-          if (control && this.qtyField && field.fieldid === this.qtyField.fieldid) {
-            this.updateFieldValues(this.qtyField, 1, 'fetchInitialDataqty');
-            control.setValue(1, { emitEvent: false });
+
+        if (results) {
+          this.parameters_data.forEach(field => {
+            const control = this.orderForm.get(`field_${field.fieldid}`);
+            if (control && field.ruleoverride === 0) {
+              control.disable();
+            } else if (control) {
+              control.enable();
+            }
+            if (control && this.qtyField && field.fieldid === this.qtyField.fieldid) {
+              this.updateFieldValues(this.qtyField, 1, 'fetchInitialDataqty');
+              control.setValue(1, { emitEvent: false });
+            }
+          });
+
+          const minmaxdata = results.minMaxData?.data;
+          this.min_width = minmaxdata?.widthminmax?.min ?? null;
+          this.min_drop = minmaxdata?.dropminmax?.min ?? null;
+          this.max_width = minmaxdata?.widthminmax?.max ?? null;
+          this.max_drop = minmaxdata?.dropminmax?.max ?? null;
+
+          if (results.recipeList?.[0]?.data?.[0]) {
+            const recipe = results.recipeList[0].data[0];
+            this.rulescount = recipe.rulescount;
+            this.formulacount = recipe.formulacount;
           }
-        });
-
-        const minmaxdata = results.minMaxData?.data;
-        this.min_width = minmaxdata?.widthminmax?.min ?? null;
-        this.min_drop  = minmaxdata?.dropminmax?.min ?? null;
-        this.max_width = minmaxdata?.widthminmax?.max ?? null;
-        this.max_drop  = minmaxdata?.dropminmax?.max ?? null;
-
-        if (results.recipeList?.[0]?.data?.[0]) {
-          const recipe = results.recipeList[0].data[0];
-          this.rulescount = recipe.rulescount;
-          this.formulacount = recipe.formulacount;
-        }
-       if (results.FractionList?.result) {
-          const fraction = results.FractionList.result;
-          this.unittypename = fraction.fractioname;
-          this.inchfractionselected = fraction.inchfractionselected;
-          this.unittype  = fraction.unitypeid;
-          if(fraction.inchfraction){
-            this.inchfraction_array = fraction.inchfraction;
-            this.showFractions = true;
-          }
-          if(this.unitField && this.unitField.optionsvalue){
-           const selectedunitOption = this.unitField.optionsvalue.find(opt => `${opt.optionid}` === `${this.unittype}`);
-           this.updateFieldValues(this.unitField, selectedunitOption,'updateunittype');
+          if (results.FractionList?.result) {
+            const fraction = results.FractionList.result;
+            this.unittypename = fraction.fractioname;
+            this.inchfractionselected = fraction.inchfractionselected;
+            this.unittype = fraction.unitypeid;
+            if (fraction.inchfraction) {
+              this.inchfraction_array = fraction.inchfraction;
+              this.showFractions = true;
+            }
+            if (this.unitField && this.unitField.optionsvalue) {
+              const selectedunitOption = this.unitField.optionsvalue.find(opt => `${opt.optionid}` === `${this.unittype}`);
+              this.updateFieldValues(this.unitField, selectedunitOption, 'updateunittype');
+            }
           }
         }
-      }
-    }),
-    catchError(err => {
-      console.error('Error fetching product data:', err);
-      this.errorMessage = 'Failed to load product data. Please try again.';
-      return of(null);
-    }),
-    finalize(() => {
-      this.isLoading = false;
-      this.cd.markForCheck();
-    })
-  ).subscribe();
-}
+      }),
+      catchError(err => {
+        console.error('Error fetching product data:', err);
+        this.errorMessage = 'Failed to load product data. Please try again.';
+        return of(null);
+      }),
+      finalize(() => {
+        this.isLoading = false;
+        this.cd.markForCheck();
+      })
+    ).subscribe();
+  }
 
 
 
 
   private initializeFormControls(): void {
-   
+
     const formControls: Record<string, any> = {
       unit: ['mm', Validators.required],
       widthfraction: [0],
@@ -709,10 +767,10 @@ private fetchInitialData(params: any): void {
    * Load top-level option data for fields that require it (3,5,20 etc.)
    */
   private loadOptionData(params: any): Observable<any> {
-    return this.apiService.filterbasedlist(params, '','','',this.pricegroup,this.colorid,this.fabricid,this.unittype).pipe(
+    return this.apiService.filterbasedlist(params, '', '', '', this.pricegroup, this.colorid, this.fabricid, this.unittype).pipe(
       takeUntil(this.destroy$),
       switchMap((filterData: any) => {
-     
+
         // if no optionarray, return empty responses
         if (!filterData?.[0]?.data?.optionarray) return of([]);
 
@@ -734,7 +792,7 @@ private fetchInitialData(params: any): void {
             } else if (field.fieldtypeid === 20) {
               matrial = 2;
               filter = filterresponseData.coloridsarray;
-            }else if (field.fieldtypeid === 21) {
+            } else if (field.fieldtypeid === 21) {
               matrial = 0;
               filter = filterresponseData.coloridsarray;
             }
@@ -755,7 +813,7 @@ private fetchInitialData(params: any): void {
                 })
               )
             );
-          } else if ([14, 34, 17, 13,4].includes(field.fieldtypeid)) {
+          } else if ([14, 34, 17, 13, 4].includes(field.fieldtypeid)) {
             // fields that don't need external option fetch but need default value set
             const control = this.orderForm.get(`field_${field.fieldid}`);
             if (control) {
@@ -767,6 +825,7 @@ private fetchInitialData(params: any): void {
                 this.supplier_id = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')
                   ? Number(field.optiondefault)
                   : (Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0 ? Number(field.optionsvalue[0].id || field.optionsvalue[0].optionid || 0) : null);
+
                 valueToSet = this.supplier_id ?? '';
               } else {
                 valueToSet = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')
@@ -776,20 +835,21 @@ private fetchInitialData(params: any): void {
 
               control.setValue(valueToSet, { emitEvent: false });
               if (field.fieldtypeid === 34) {
-                 this.unittype = valueToSet;
-              }else if(field.fieldtypeid === 13){
+                this.unittype = valueToSet;
+              } else if (field.fieldtypeid === 13) {
                 this.pricegroup = valueToSet;
+
               }
-              if(field.fieldtypeid === 17){
+              if (field.fieldtypeid === 17) {
                 this.supplierOption = field.optionsvalue;
-              }else if(field.fieldtypeid === 13){
-                 this.priceGroupOption =field.optionsvalue;
-              }else if(field.fieldtypeid === 34){
-                  this.unitOption =field.optionsvalue;
+              } else if (field.fieldtypeid === 13) {
+                this.priceGroupOption = field.optionsvalue;
+              } else if (field.fieldtypeid === 34) {
+                this.unitOption = field.optionsvalue;
               }
-              if(field && field.optionsvalue){
+              if (field && field.optionsvalue) {
                 const selectedOption = field.optionsvalue.find(opt => `${opt.optionid}` === `${valueToSet}`);
-                this.updateFieldValues(field, selectedOption,' defaultunittpyeprictypesupplier');
+                this.updateFieldValues(field, selectedOption, ' defaultunittpyeprictypesupplier');
               }
             }
           }
@@ -837,16 +897,16 @@ private fetchInitialData(params: any): void {
                 : '';
             }
             control.setValue(valueToSet, { emitEvent: false });
-             if (valueToSet !== null && valueToSet !== '' && valueToSet !== undefined) {
+            if (valueToSet !== null && valueToSet !== '' && valueToSet !== undefined) {
               setTimeout(() => this.handleOptionSelectionChange(params, field, valueToSet, true), 0);
             }
           }
         });
 
         this.parameters_data = this.parameters_data.filter((field: ProductField) => {
-          if ([34, 17, 13,4].includes(field.fieldtypeid)) {
+          if ([34, 17, 13, 4].includes(field.fieldtypeid)) {
             return Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0;
-          } else if ([3, 5, 20,21].includes(field.fieldtypeid)) {
+          } else if ([3, 5, 20, 21].includes(field.fieldtypeid)) {
             return this.option_data[field.fieldid]?.length > 0;
           }
           return true;
@@ -865,22 +925,26 @@ private fetchInitialData(params: any): void {
    * Called whenever a field's option selection changes (top-level or subfield).
    * Responsible for clearing existing subfields and re-loading as necessary.
    */
- private handleOptionSelectionChange(params: any, field: ProductField, value: any, isInitial: boolean = false): void {
-  
-  if (!field) return;
-      this.removeSelectedOptionData([field]);
+  private handleOptionSelectionChange(params: any, field: ProductField, value: any, isInitial: boolean = false): void {
+
+    if (!field) return;
+    this.removeSelectedOptionData([field]);
     if (value === null || value === undefined || value === '') {
-      if((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1 )){
-        this.fabricid  = 0;
+      if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
+        this.fabricid = 0;
         this.colorid = 0;
+
         this.updateMinMaxValidators(false);
       }
-      if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2 )) {
+      if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
         this.colorid = 0;
         this.updateMinMaxValidators(false);
       }
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
+      this.get_freesample();
+
+
       return;
     }
 
@@ -892,147 +956,154 @@ private fetchInitialData(params: any): void {
     if (Array.isArray(value)) {
       const selectedOptions = options.filter(opt => value.includes(opt.optionid));
       if (selectedOptions.length === 0) return;
-      
+
       from(selectedOptions).pipe(
         mergeMap(option => this.processSelectedOption(params, field, option)),
         toArray(),
         takeUntil(this.destroy$)
       ).subscribe(() => {
-    
-        this.updateFieldValues(field, selectedOptions,'Array.isArrayOptions');
+
+        this.updateFieldValues(field, selectedOptions, 'Array.isArrayOptions');
         this.cd.markForCheck();
       });
 
     } else {
       const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
       if (!selectedOption) return;
-      
+
       const canUpdate = !isInitial || (field.optiondefault && params.color_id);
 
       if (canUpdate && (field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
         this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
+
+        this.get_freesample();
         if (this.is3DOn) {
           this.threeService.updateTextures(this.background_color_image_url);
         } else {
           this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
         }
       }
-      
-      if (canUpdate && (field.fieldtypeid === 3 && field.fieldname == "Curtain Colour" ) && selectedOption.optionimage) {
-            
-          this.threeService.updateTextures(this.apiUrl + '/api/public' + selectedOption.optionimage);
+
+      if (canUpdate && (field.fieldtypeid === 3 && field.fieldname == "Curtain Colour") && selectedOption.optionimage) {
+
+        this.threeService.updateTextures(this.apiUrl + '/api/public' + selectedOption.optionimage);
       }
-      if (canUpdate && (field.fieldtypeid === 3 && field.fieldname == "Frame Colour" ) && selectedOption.optionimage) {
-            
-          this.threeService.updateFrame(this.apiUrl + '/api/public' + selectedOption.optionimage);
+      if (canUpdate && (field.fieldtypeid === 3 && field.fieldname == "Frame Colour") && selectedOption.optionimage) {
+
+        this.threeService.updateFrame(this.apiUrl + '/api/public' + selectedOption.optionimage);
       }
       this.processSelectedOption(params, field, selectedOption).pipe(
         takeUntil(this.destroy$)
       ).subscribe(() => {
         if ((field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 1)) {
-        
+
           this.pricegroup = selectedOption.pricegroupid;
+
           if (this.priceGroupField) {
             const control = this.orderForm.get(`field_${this.priceGroupField.fieldid}`);
             if (control) {
-               control.setValue(this.pricegroup, { emitEvent: false});
-             
+              control.setValue(this.pricegroup, { emitEvent: false });
+
               const selectedOption = this.priceGroupOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.pricegroup}`);
-              this.updateFieldValues(this.priceGroupField, selectedOption,'pricegrouponColor');
-            }else{
-                if( this.priceGroupField.optionsvalue){
-                  const selectedOption =   this.priceGroupField.optionsvalue.find(opt => `${opt.optionid}` === `${this.pricegroup}`)
-                  this.updateFieldValues(this.priceGroupField, selectedOption,'pricegrouponColor');
-                }
+              this.updateFieldValues(this.priceGroupField, selectedOption, 'pricegrouponColor');
+            } else {
+              if (this.priceGroupField.optionsvalue) {
+                const selectedOption = this.priceGroupField.optionsvalue.find(opt => `${opt.optionid}` === `${this.pricegroup}`)
+                this.updateFieldValues(this.priceGroupField, selectedOption, 'pricegrouponColor');
+              }
             }
           }
-          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup,this.colorid,this.fabricid,this.unittype)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe((filterData: any) => {
+          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid), this.pricegroup, this.colorid, this.fabricid, this.unittype)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((filterData: any) => {
               this.supplier_id = filterData[0].data.selectsupplierid;
+
+
               if (this.supplierField) {
                 const control = this.orderForm.get(`field_${this.supplierField.fieldid}`);
                 if (control) {
                   control.setValue(Number(this.supplier_id), { emitEvent: false });
                   const selectedOption = this.supplierOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.supplier_id}`);
-                  this.updateFieldValues(this.supplierField, selectedOption,'suppieronColor');
-                }else{
-                  if( this.supplierField.optionsvalue){
-                    const selectedOption =   this.supplierField.optionsvalue.find(opt => `${opt.optionid}` === `${this.supplier_id}`)
-                    this.updateFieldValues(this.supplierField, selectedOption,'suppieronColor');
+                  this.updateFieldValues(this.supplierField, selectedOption, 'suppieronColor');
+                } else {
+                  if (this.supplierField.optionsvalue) {
+                    const selectedOption = this.supplierField.optionsvalue.find(opt => `${opt.optionid}` === `${this.supplier_id}`)
+                    this.updateFieldValues(this.supplierField, selectedOption, 'suppieronColor');
                   }
                 }
               }
-          });
-        }else{
-           this.updateFieldValues(field, selectedOption,'restOption');
+            });
+        } else {
+          this.updateFieldValues(field, selectedOption, 'restOption');
         }
-       
-        if((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1) ){
-          this.fabricid  = value;
+
+        if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
+          this.fabricid = value;
           this.fabricname = selectedOption.optionname;
           this.updateMinMaxValidators(false);
-          this.updateFieldValues(field, selectedOption,'updatefabric');
+          this.updateFieldValues(field, selectedOption, 'updatefabric');
         }
-       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20  || (field.fieldtypeid === 21 && field.level == 2)) {
+        if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
           this.colorid = value;
           this.colorname = selectedOption.optionname;
-          this.updateFieldValues(field, selectedOption,'updatecolor');
+          this.updateFieldValues(field, selectedOption, 'updatecolor');
           this.updateMinMaxValidators(true);
         }
+
+        this.freesample = { ...this.freesample, fabricid: this.fabricid, color_id: this.colorid };
 
         this.cd.markForCheck();
       });
     }
   }
 
-    private updateMinMaxValidators(color :boolean): void {
+  private updateMinMaxValidators(color: boolean): void {
     this.min_width = null;
     this.max_width = null;
     this.min_drop = null;
     this.max_drop = null;
-    if(color){
-      var colorid =  String(this.colorid);
-    }else{
-      var colorid =  "";
+    if (color) {
+      var colorid = String(this.colorid);
+    } else {
+      var colorid = "";
     }
     this.apiService.getminandmax(this.routeParams, colorid, this.unittype, Number(this.pricegroup))
       .pipe(takeUntil(this.destroy$))
       .subscribe(minmaxdata => {
-             const data = minmaxdata?.data;
-            this.min_width = data?.widthminmax?.min ?? null;
-            this.min_drop = data?.dropminmax?.min ?? null;
-            this.max_width = data?.widthminmax?.max ?? null;
-            this.max_drop = data?.dropminmax?.max ?? null;
-          if (this.widthField) {
-            const widthControl = this.orderForm.get(`field_${this.widthField.fieldid}`);
-            if (widthControl) {
-              const widthValidators = [Validators.required];
-              if (this.min_width != null) {
-                widthValidators.push(Validators.min(this.min_width));
-              }
-              if (this.max_width != null) {
-                widthValidators.push(Validators.max(this.max_width));
-              }
-              widthControl.setValidators(widthValidators);
-              widthControl.updateValueAndValidity();
+        const data = minmaxdata?.data;
+        this.min_width = data?.widthminmax?.min ?? null;
+        this.min_drop = data?.dropminmax?.min ?? null;
+        this.max_width = data?.widthminmax?.max ?? null;
+        this.max_drop = data?.dropminmax?.max ?? null;
+        if (this.widthField) {
+          const widthControl = this.orderForm.get(`field_${this.widthField.fieldid}`);
+          if (widthControl) {
+            const widthValidators = [Validators.required];
+            if (this.min_width != null) {
+              widthValidators.push(Validators.min(this.min_width));
             }
+            if (this.max_width != null) {
+              widthValidators.push(Validators.max(this.max_width));
+            }
+            widthControl.setValidators(widthValidators);
+            widthControl.updateValueAndValidity();
           }
+        }
 
-          if (this.dropField) {
-            const dropControl = this.orderForm.get(`field_${this.dropField.fieldid}`);
-            if (dropControl) {
-              const dropValidators = [Validators.required];
-              if (this.min_drop != null) {
-                dropValidators.push(Validators.min(this.min_drop));
-              }
-              if (this.max_drop != null) {
-                dropValidators.push(Validators.max(this.max_drop));
-              }
-              dropControl.setValidators(dropValidators);
-              dropControl.updateValueAndValidity();
+        if (this.dropField) {
+          const dropControl = this.orderForm.get(`field_${this.dropField.fieldid}`);
+          if (dropControl) {
+            const dropValidators = [Validators.required];
+            if (this.min_drop != null) {
+              dropValidators.push(Validators.min(this.min_drop));
             }
+            if (this.max_drop != null) {
+              dropValidators.push(Validators.max(this.max_drop));
+            }
+            dropControl.setValidators(dropValidators);
+            dropControl.updateValueAndValidity();
           }
+        }
       });
   }
   onFrameChange(newFrameUrl: string): void {
@@ -1078,7 +1149,7 @@ private fetchInitialData(params: any): void {
 
         // filter to only fields that we know how to handle
         const relevant = sublist.filter((subfield: ProductField) =>
-          [3, 5, 20, 21,18,6].includes(subfield.fieldtypeid)
+          [3, 5, 20, 21, 18, 6].includes(subfield.fieldtypeid)
         );
 
         if (relevant.length === 0) return of(null);
@@ -1098,79 +1169,79 @@ private fetchInitialData(params: any): void {
   /**
    * Insert subfield into parameters_data (if not already present), add form control, and load its options.
    */
-private processSubfield(
-  params: any,
-  subfield: ProductField,
-  parentField: ProductField,
-  level: number
-): Observable<any> {
-  const apiChildren = subfield.subchild;
-  const subfieldForState = { ...subfield, subchild: [] as ProductField[] };
+  private processSubfield(
+    params: any,
+    subfield: ProductField,
+    parentField: ProductField,
+    level: number
+  ): Observable<any> {
+    const apiChildren = subfield.subchild;
+    const subfieldForState = { ...subfield, subchild: [] as ProductField[] };
 
-  subfieldForState.parentFieldId = parentField.fieldid;
-  subfieldForState.level = level;
-  subfieldForState.masterparentfieldid = parentField.masterparentfieldid || parentField.fieldid;
-  subfieldForState.allparentFieldId = parentField.allparentFieldId
-    ? `${parentField.allparentFieldId},${subfieldForState.fieldid}`
-    : `${parentField.fieldid},${subfieldForState.fieldid}`;
+    subfieldForState.parentFieldId = parentField.fieldid;
+    subfieldForState.level = level;
+    subfieldForState.masterparentfieldid = parentField.masterparentfieldid || parentField.fieldid;
+    subfieldForState.allparentFieldId = parentField.allparentFieldId
+      ? `${parentField.allparentFieldId},${subfieldForState.fieldid}`
+      : `${parentField.fieldid},${subfieldForState.fieldid}`;
 
-  const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
-  if (alreadyExistsFlat) {
-    return of(null); // Do not process or add if it already exists in the flat list
-  }
+    const alreadyExistsFlat = this.parameters_data.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
+    if (alreadyExistsFlat) {
+      return of(null); // Do not process or add if it already exists in the flat list
+    }
 
-  // Add to the flat list
-  const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid && f.allparentFieldId === parentField.allparentFieldId);
-  if (parentIndex !== -1) {
-    this.parameters_data.splice(parentIndex + 1, 0, subfieldForState);
-  } else {
-    this.parameters_data.push(subfieldForState);
-  }
+    // Add to the flat list
+    const parentIndex = this.parameters_data.findIndex(f => f.fieldid === parentField.fieldid && f.allparentFieldId === parentField.allparentFieldId);
+    if (parentIndex !== -1) {
+      this.parameters_data.splice(parentIndex + 1, 0, subfieldForState);
+    } else {
+      this.parameters_data.push(subfieldForState);
+    }
 
-  // Add to the nested subchild array of the parent, only if not already present
-  if (!parentField.subchild) {
-    parentField.subchild = [];
-  }
-  const alreadyExistsNested = parentField.subchild.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
-  if (!alreadyExistsNested) {
-    parentField.subchild.push(subfieldForState);
-  }
+    // Add to the nested subchild array of the parent, only if not already present
+    if (!parentField.subchild) {
+      parentField.subchild = [];
+    }
+    const alreadyExistsNested = parentField.subchild.some(f => f.fieldid === subfieldForState.fieldid && f.allparentFieldId === subfieldForState.allparentFieldId);
+    if (!alreadyExistsNested) {
+      parentField.subchild.push(subfieldForState);
+    }
 
-  this.addSubfieldFormControlSafe(subfieldForState);
+    this.addSubfieldFormControlSafe(subfieldForState);
 
-  const children$: Observable<any> = (Array.isArray(apiChildren) && apiChildren.length > 0)
-    ? from(apiChildren).pipe(
+    const children$: Observable<any> = (Array.isArray(apiChildren) && apiChildren.length > 0)
+      ? from(apiChildren).pipe(
         concatMap((child: ProductField) => this.processSubfield(params, child, subfieldForState, level + 1)),
         toArray()
       )
-    : of(null);
+      : of(null);
 
-  const options$: Observable<any> = subfieldForState.field_has_sub_option
-    ? this.loadSubfieldOptions(params, subfieldForState)
-    : of(null);
+    const options$: Observable<any> = subfieldForState.field_has_sub_option
+      ? this.loadSubfieldOptions(params, subfieldForState)
+      : of(null);
 
-  return children$.pipe(
-    switchMap(() => options$),
-    catchError(err => {
-      console.error('Error in processSubfield:', err);
-      this.removeFieldSafely(subfieldForState.fieldid, subfieldForState.allparentFieldId);
-      return of(null);
-    })
-  );
-}
+    return children$.pipe(
+      switchMap(() => options$),
+      catchError(err => {
+        console.error('Error in processSubfield:', err);
+        this.removeFieldSafely(subfieldForState.fieldid, subfieldForState.allparentFieldId);
+        return of(null);
+      })
+    );
+  }
 
   /**
    * Load options for a subfield using filterbasedlist + getOptionlist
    */
   private loadSubfieldOptions(params: any, subfield: ProductField): Observable<any> {
-    return this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid),this.pricegroup,this.colorid,this.fabricid,this.unittype).pipe(
+    return this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid), this.pricegroup, this.colorid, this.fabricid, this.unittype).pipe(
       takeUntil(this.destroy$),
       switchMap((filterData: any) => {
         if (!filterData?.[0]?.data?.optionarray) return of(null);
 
         const filterresponseData = filterData[0].data;
 
-        if ([3, 5, 20,21].includes(subfield.fieldtypeid)) {
+        if ([3, 5, 20, 21].includes(subfield.fieldtypeid)) {
           let matrial = 0;
           let filter = '';
 
@@ -1180,7 +1251,7 @@ private processSubfield(
           } else if (subfield.fieldtypeid === 5 || subfield.fieldtypeid === 20 || subfield.fieldtypeid === 21) {
             matrial = 2;
             filter = filterresponseData.coloridsarray;
-          } 
+          }
 
           return this.apiService.getOptionlist(
             params,
@@ -1195,8 +1266,8 @@ private processSubfield(
               const options = optionData?.[0]?.data?.[0]?.optionsvalue || [];
               const filteredOptions = Array.isArray(options)
                 ? options.filter((opt: any) =>
-                    opt.availableForEcommerce === undefined || opt.availableForEcommerce === 1
-                  )
+                  opt.availableForEcommerce === undefined || opt.availableForEcommerce === 1
+                )
                 : [];
 
               if (filteredOptions.length === 0) {
@@ -1269,11 +1340,11 @@ private processSubfield(
 
     this.orderForm.addControl(controlName, formControl);
   }
-   @HostListener('window:scroll', [])
+  @HostListener('window:scroll', [])
   onWindowScroll() {
     this.checkScroll();
   }
-   private checkScroll() {
+  private checkScroll() {
     if (!this.stickyEl) return;
     // true when the top of the element is at or above the viewport top
     this.isScrolled = this.stickyEl.nativeElement.getBoundingClientRect().top <= 0;
@@ -1281,294 +1352,295 @@ private processSubfield(
   /**
    * Remove a field from parameters_data and the form safely.
    */
-private removeFieldSafely(fieldId: number, fieldPath?: string): void {
-  if (!fieldPath) {
-    const field = this.parameters_data.find(f => f.fieldid === fieldId);
-    if (!field) return;
-    fieldPath = field.allparentFieldId || fieldId.toString();
-  }
-
-  this.parameters_data = this.parameters_data.filter(
-    f => !(f.fieldid === fieldId && f.allparentFieldId === fieldPath)
-  );
-
-  const controlName = `field_${fieldId}`;
-  if (this.orderForm.contains(controlName)) {
-    this.orderForm.removeControl(controlName);
-  }
-
-  if (this.option_data[fieldId]) {
-    delete this.option_data[fieldId];
-  }
-
-  this.cd.markForCheck();
-}
-
-private clearExistingSubfields(parentFieldId: number, parentPath?: string): void {
-  // 1. Determine the parent path
-  if (!parentPath) {
-    const parent = this.parameters_data.find(f => f.fieldid === parentFieldId);
-    if (!parent) return;
-    parentPath = parent.allparentFieldId || parent.fieldid.toString();
-  }
-
-  // 2. Special handling for main field (has no parentFieldId)
-  const isMainField = !this.parameters_data.some(f => 
-    f.fieldid === parentFieldId && f.parentFieldId
-  );
-
-  // 3. Find fields to remove - different matching for main vs nested fields
-  const fieldsToRemove = this.parameters_data.filter(f => {
-    if (!f.allparentFieldId) return false;
-    
-    if (isMainField) {
-      // For main field, match either:
-      // - Direct children: allparentFieldId === "mainId"
-      // - Descendants: allparentFieldId.startsWith("mainId,")
-      return f.allparentFieldId === parentPath || 
-             f.allparentFieldId.startsWith(`${parentPath},`);
-    } else {
-      // For nested fields, only match proper descendants
-      return f.allparentFieldId.startsWith(`${parentPath},`);
+  private removeFieldSafely(fieldId: number, fieldPath?: string): void {
+    if (!fieldPath) {
+      const field = this.parameters_data.find(f => f.fieldid === fieldId);
+      if (!field) return;
+      fieldPath = field.allparentFieldId || fieldId.toString();
     }
-  });
 
-  if (fieldsToRemove.length === 0) return;
+    this.parameters_data = this.parameters_data.filter(
+      f => !(f.fieldid === fieldId && f.allparentFieldId === fieldPath)
+    );
 
-  this.removeSelectedOptionData(fieldsToRemove);
-
-  // 4. Remove from flat list
-  this.parameters_data = this.parameters_data.filter(f => 
-    !fieldsToRemove.some(toRemove => 
-      toRemove.fieldid === f.fieldid && 
-      toRemove.allparentFieldId === f.allparentFieldId
-    )
-  );
-
-  // 5. Clean nested structure
-  this.cleanNestedStructure(parentFieldId, fieldsToRemove, isMainField);
-
-  // 6. Remove form controls and clean up
-  fieldsToRemove.forEach(field => {
-    const controlName = `field_${field.fieldid}`;
+    const controlName = `field_${fieldId}`;
     if (this.orderForm.contains(controlName)) {
       this.orderForm.removeControl(controlName);
     }
-    delete this.option_data[field.fieldid];
-  });
 
-  this.cd.markForCheck();
-}
-
-private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField[], isMainField: boolean) {
-  const fieldsToRemoveSet = new Set(fieldsToRemove.map(f => f.fieldid));
-
-  // Handle main field specially
-  if (isMainField) {
-    const mainField = this.parameters_data.find(f => f.fieldid === parentFieldId);
-    if (mainField?.subchild) {
-      mainField.subchild = mainField.subchild.filter(child => 
-        !fieldsToRemoveSet.has(child.fieldid)
-      );
+    if (this.option_data[fieldId]) {
+      delete this.option_data[fieldId];
     }
-    return;
+
+    this.cd.markForCheck();
   }
 
-  // Recursive cleaner for nested fields
-  const cleanSubchild = (field: ProductField) => {
-    if (!field.subchild) return;
-    
-    field.subchild = field.subchild.filter(child => 
-      !fieldsToRemoveSet.has(child.fieldid)
-    );
-    
-    field.subchild.forEach(cleanSubchild);
-  };
+  private clearExistingSubfields(parentFieldId: number, parentPath?: string): void {
+    // 1. Determine the parent path
+    if (!parentPath) {
+      const parent = this.parameters_data.find(f => f.fieldid === parentFieldId);
+      if (!parent) return;
+      parentPath = parent.allparentFieldId || parent.fieldid.toString();
+    }
 
-  this.parameters_data.forEach(cleanSubchild);
-}
+    // 2. Special handling for main field (has no parentFieldId)
+    const isMainField = !this.parameters_data.some(f =>
+      f.fieldid === parentFieldId && f.parentFieldId
+    );
+
+    // 3. Find fields to remove - different matching for main vs nested fields
+    const fieldsToRemove = this.parameters_data.filter(f => {
+      if (!f.allparentFieldId) return false;
+
+      if (isMainField) {
+        // For main field, match either:
+        // - Direct children: allparentFieldId === "mainId"
+        // - Descendants: allparentFieldId.startsWith("mainId,")
+        return f.allparentFieldId === parentPath ||
+          f.allparentFieldId.startsWith(`${parentPath},`);
+      } else {
+        // For nested fields, only match proper descendants
+        return f.allparentFieldId.startsWith(`${parentPath},`);
+      }
+    });
+
+    if (fieldsToRemove.length === 0) return;
+
+    this.removeSelectedOptionData(fieldsToRemove);
+
+    // 4. Remove from flat list
+    this.parameters_data = this.parameters_data.filter(f =>
+      !fieldsToRemove.some(toRemove =>
+        toRemove.fieldid === f.fieldid &&
+        toRemove.allparentFieldId === f.allparentFieldId
+      )
+    );
+
+    // 5. Clean nested structure
+    this.cleanNestedStructure(parentFieldId, fieldsToRemove, isMainField);
+
+    // 6. Remove form controls and clean up
+    fieldsToRemove.forEach(field => {
+      const controlName = `field_${field.fieldid}`;
+      if (this.orderForm.contains(controlName)) {
+        this.orderForm.removeControl(controlName);
+      }
+      delete this.option_data[field.fieldid];
+    });
+
+    this.cd.markForCheck();
+  }
+
+  private cleanNestedStructure(parentFieldId: number, fieldsToRemove: ProductField[], isMainField: boolean) {
+    const fieldsToRemoveSet = new Set(fieldsToRemove.map(f => f.fieldid));
+
+    // Handle main field specially
+    if (isMainField) {
+      const mainField = this.parameters_data.find(f => f.fieldid === parentFieldId);
+      if (mainField?.subchild) {
+        mainField.subchild = mainField.subchild.filter(child =>
+          !fieldsToRemoveSet.has(child.fieldid)
+        );
+      }
+      return;
+    }
+
+    // Recursive cleaner for nested fields
+    const cleanSubchild = (field: ProductField) => {
+      if (!field.subchild) return;
+
+      field.subchild = field.subchild.filter(child =>
+        !fieldsToRemoveSet.has(child.fieldid)
+      );
+
+      field.subchild.forEach(cleanSubchild);
+    };
+
+    this.parameters_data.forEach(cleanSubchild);
+  }
 
   /**
    * Update field's value, valueid and optionsvalue, used after selection processing.
    */
 
-private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug: string = ""): void {
-  const fieldInState = this.parameters_data.find(
-    f => f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
-  );
-
-  const targetField = fieldInState || field;
-  const control = this.orderForm.get(`field_${targetField.fieldid}`);
-  const currentValue = control ? control.value : null;
-
-  const resetDefaults = () => {
-    targetField.id = targetField.fieldid ?? '';
-    targetField.labelname = targetField.fieldname ?? '';
-    targetField.type = targetField.fieldtypeid ?? '';
-    targetField.optionid = '';
-    targetField.optionvalue = [];
-    targetField.optionquantity = '';
-    targetField.valueid = '';
-    targetField.optiondefault = targetField.optiondefault ?? '';
-    targetField.issubfabric = targetField.issubfabric ?? '';
-    targetField.labelnamecode = targetField.labelnamecode ?? '';
-    targetField.fabricorcolor = targetField.fabricorcolor ?? '';
-    targetField.widthfraction = '';
-    targetField.widthfractiontext = '';
-    targetField.dropfraction = '';
-    targetField.dropfractiontext = '';
-    targetField.showfieldonjob = targetField.showfieldonjob ?? '';
-    targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
-    targetField.globaledit = false;
-    targetField.numberfraction = targetField.numberfraction ?? '';
-    targetField.numberfractiontext = '';
-    targetField.mandatory = targetField.mandatory ?? '';
-    targetField.fieldInformation = targetField.fieldInformation ?? '';
-    targetField.editruleoverride = targetField.editruleoverride ?? '';
-  };
-
-  resetDefaults();
-  if ( selectedOption ) {
-  const processOption = (opt: any) => {
-   
-    const transformedOption = {
-      optionvalue: Number(opt.optionid),
-      fieldtypeid: field.fieldtypeid,
-      optionqty: field.optionquantity || 1,
-      fieldoptionlinkid: opt.fieldoptionlinkid,
-      fieldid:field.fieldid
-    };
-
-    const index = this.selected_option_data.findIndex(
-      o => o.fieldoptionlinkid === transformedOption.fieldoptionlinkid
+  private updateFieldValues(field: ProductField, selectedOption: any = [], fundebug: string = ""): void {
+    const fieldInState = this.parameters_data.find(
+      f => f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
     );
 
-    if (index > -1) {
-      this.selected_option_data[index] = transformedOption;
-    } else {
-      this.selected_option_data.push(transformedOption);
-    }
-  };
+    const targetField = fieldInState || field;
+    const control = this.orderForm.get(`field_${targetField.fieldid}`);
+    const currentValue = control ? control.value : null;
 
-  if (Array.isArray(selectedOption)) {
-    selectedOption.forEach(opt => processOption(opt)); 
-  } else {
-    processOption(selectedOption); 
-  }
-}
-  if (currentValue === null || currentValue === undefined || currentValue === '' || 
-      (Array.isArray(currentValue) && currentValue.length === 0)) {
-    if(field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13){
+    const resetDefaults = () => {
+      targetField.id = targetField.fieldid ?? '';
       targetField.labelname = targetField.fieldname ?? '';
-      targetField.valueid = selectedOption?.fieldoptionlinkid ? String(selectedOption.fieldoptionlinkid): '';
-      targetField.optionid = String(selectedOption.optionid);
-      targetField.value = String(selectedOption.optionid);
-      targetField.optionvalue = [selectedOption];
-      targetField.optionquantity = '1';
-      targetField.valuename = String(selectedOption.optionname);
-    }else{
-      targetField.value = '';
-      targetField.valueid = '';
+      targetField.type = targetField.fieldtypeid ?? '';
       targetField.optionid = '';
       targetField.optionvalue = [];
       targetField.optionquantity = '';
-    }
-    
-  }else if (selectedOption !== null) {
-    if (Array.isArray(selectedOption)) {
-      if ([14, 34, 17, 13, 4].includes(field.fieldtypeid)) {
-       
-        const ids = selectedOption.map(opt => String(opt.optionid)).join(',');
-        targetField.value = ids;
-        targetField.optiondefault = ids;
-        targetField.optionquantity = '';
-        targetField.valueid =
-          field.fieldtypeid === 13
-            ? selectedOption.map(opt => String(opt.id)).join(',')
-            : field.fieldtypeid === 34
-            ? ids
-            : '';
+      targetField.valueid = '';
+      targetField.optiondefault = targetField.optiondefault ?? '';
+      targetField.issubfabric = targetField.issubfabric ?? '';
+      targetField.labelnamecode = targetField.labelnamecode ?? '';
+      targetField.fabricorcolor = targetField.fabricorcolor ?? '';
+      targetField.widthfraction = '';
+      targetField.widthfractiontext = '';
+      targetField.dropfraction = '';
+      targetField.dropfractiontext = '';
+      targetField.showfieldonjob = targetField.showfieldonjob ?? '';
+      targetField.showFieldOnCustomerPortal = targetField.showFieldOnCustomerPortal ?? '';
+      targetField.globaledit = false;
+      targetField.numberfraction = targetField.numberfraction ?? '';
+      targetField.numberfractiontext = '';
+      targetField.mandatory = targetField.mandatory ?? '';
+      targetField.fieldInformation = targetField.fieldInformation ?? '';
+      targetField.editruleoverride = targetField.editruleoverride ?? '';
+    };
+
+    resetDefaults();
+    if (selectedOption) {
+      const processOption = (opt: any) => {
+
+        const transformedOption = {
+          optionvalue: Number(opt.optionid),
+          fieldtypeid: field.fieldtypeid,
+          optionqty: field.optionquantity || 1,
+          fieldoptionlinkid: opt.fieldoptionlinkid,
+          fieldid: field.fieldid
+        };
+
+        const index = this.selected_option_data.findIndex(
+          o => o.fieldoptionlinkid === transformedOption.fieldoptionlinkid
+        );
+
+        if (index > -1) {
+          this.selected_option_data[index] = transformedOption;
+        } else {
+          this.selected_option_data.push(transformedOption);
+        }
+      };
+
+      if (Array.isArray(selectedOption)) {
+        selectedOption.forEach(opt => processOption(opt));
       } else {
-        targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
-        targetField.valueid = selectedOption.map(opt => String(opt.fieldoptionlinkid)).join(',');
-        targetField.optionquantity = selectedOption.map(() => '1').join(',');
+        processOption(selectedOption);
       }
-
-      targetField.labelname = selectedOption.map(opt => opt.optionname).join(', ');
-      targetField.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
-      targetField.optionvalue = selectedOption;
     }
-
-    else if (selectedOption && selectedOption.optionname) {
-      targetField.labelname = targetField.fieldname ?? '';
-      
-      targetField.valueid = selectedOption?.fieldoptionlinkid ? String(selectedOption.fieldoptionlinkid): '';
-
-      targetField.optionid = String(selectedOption.optionid);
-      if ([17, 13].includes(field.fieldtypeid)) {
+    if (currentValue === null || currentValue === undefined || currentValue === '' ||
+      (Array.isArray(currentValue) && currentValue.length === 0)) {
+      if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
+        targetField.labelname = targetField.fieldname ?? '';
+        targetField.valueid = selectedOption?.fieldoptionlinkid ? String(selectedOption.fieldoptionlinkid) : '';
+        targetField.optionid = String(selectedOption.optionid);
         targetField.value = String(selectedOption.optionid);
+        targetField.optionvalue = [selectedOption];
+        targetField.optionquantity = '1';
         targetField.valuename = String(selectedOption.optionname);
-      }else{
-        targetField.value = String(selectedOption.optionname);
+      } else {
+        targetField.value = '';
+        targetField.valueid = '';
+        targetField.optionid = '';
+        targetField.optionvalue = [];
+        targetField.optionquantity = '';
       }
-      targetField.optionvalue = [selectedOption];
-      targetField.optionquantity = '1';
-    }
-    else {
-      targetField.value = String(selectedOption) ?? '';
-    }
-  };
-  
-   let fractionValue: any;
+
+    } else if (selectedOption !== null) {
+      if (Array.isArray(selectedOption)) {
+        if ([14, 34, 17, 13, 4].includes(field.fieldtypeid)) {
+
+          const ids = selectedOption.map(opt => String(opt.optionid)).join(',');
+          targetField.value = ids;
+          targetField.optiondefault = ids;
+          targetField.optionquantity = '';
+          targetField.valueid =
+            field.fieldtypeid === 13
+              ? selectedOption.map(opt => String(opt.id)).join(',')
+              : field.fieldtypeid === 34
+                ? ids
+                : '';
+        } else {
+          targetField.value = selectedOption.map(opt => opt.optionname).join(', ');
+          targetField.valueid = selectedOption.map(opt => String(opt.fieldoptionlinkid)).join(',');
+          targetField.optionquantity = selectedOption.map(() => '1').join(',');
+        }
+
+        targetField.labelname = selectedOption.map(opt => opt.optionname).join(', ');
+        targetField.optionid = selectedOption.map(opt => String(opt.optionid)).join(',');
+        targetField.optionvalue = selectedOption;
+      }
+
+      else if (selectedOption && selectedOption.optionname) {
+        targetField.labelname = targetField.fieldname ?? '';
+
+        targetField.valueid = selectedOption?.fieldoptionlinkid ? String(selectedOption.fieldoptionlinkid) : '';
+
+        targetField.optionid = String(selectedOption.optionid);
+        if ([17, 13].includes(field.fieldtypeid)) {
+          targetField.value = String(selectedOption.optionid);
+          targetField.valuename = String(selectedOption.optionname);
+        } else {
+          targetField.value = String(selectedOption.optionname);
+        }
+        targetField.optionvalue = [selectedOption];
+        targetField.optionquantity = '1';
+      }
+      else {
+        targetField.value = String(selectedOption) ?? '';
+      }
+    };
+
+    let fractionValue: any;
     const selectedUnitOption = this.unitOption?.find(
       (opt: { optionid: any }) => `${opt.optionid}` === `${this.unittype}`
     );
 
-  const unitName =
-    (this.unitOption && selectedUnitOption?.optionname) || this.unittypename || 'unit';
+    const unitName =
+      (this.unitOption && selectedUnitOption?.optionname) || this.unittypename || 'unit';
 
-  if (this.widthField && [7,8, 11, 31, 34].includes(targetField.fieldtypeid)) {
-    if (this.showFractions) {
-      fractionValue = Number(this.orderForm.get('widthfraction')?.value) || 0;
-      const selectedInchesOption = this.inchfraction_array.find(
-        (opt) => String(opt.decimalvalue) === String(fractionValue)
-      );
+    if (this.widthField && [7, 8, 11, 31, 34].includes(targetField.fieldtypeid)) {
+      if (this.showFractions) {
+        fractionValue = Number(this.orderForm.get('widthfraction')?.value) || 0;
+        const selectedInchesOption = this.inchfraction_array.find(
+          (opt) => String(opt.decimalvalue) === String(fractionValue)
+        );
 
-      if (selectedInchesOption) {
-        this.widthField.widthfraction = `${selectedInchesOption?.id || 0}_${unitName}_${this.inchfractionselected}_${fractionValue}`;
-        this.widthField.widthfractiontext = selectedInchesOption.name;
+        if (selectedInchesOption) {
+          this.widthField.widthfraction = `${selectedInchesOption?.id || 0}_${unitName}_${this.inchfractionselected}_${fractionValue}`;
+          this.widthField.widthfractiontext = selectedInchesOption.name;
+        } else {
+          this.widthField.widthfraction = `0_${unitName}_${this.inchfractionselected}_0`;
+        }
       } else {
         this.widthField.widthfraction = `0_${unitName}_${this.inchfractionselected}_0`;
       }
-    } else {
-      this.widthField.widthfraction = `0_${unitName}_${this.inchfractionselected}_0`;
     }
-  }
 
-  if (this.dropField && [9,10,12, 32, 34].includes(targetField.fieldtypeid)) {
-    if (this.showFractions) {
-      fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
-      const selectedInchesOption = this.inchfraction_array.find(
-        (opt) => String(opt.decimalvalue) === String(fractionValue)
-      );
+    if (this.dropField && [9, 10, 12, 32, 34].includes(targetField.fieldtypeid)) {
+      if (this.showFractions) {
+        fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
+        const selectedInchesOption = this.inchfraction_array.find(
+          (opt) => String(opt.decimalvalue) === String(fractionValue)
+        );
 
-      if (selectedInchesOption) {
-        this.dropField.dropfraction = `${selectedInchesOption?.id || 0}_${unitName}_${this.inchfractionselected}_${fractionValue}`;
-        this.dropField.dropfractiontext = selectedInchesOption.name;
+        if (selectedInchesOption) {
+          this.dropField.dropfraction = `${selectedInchesOption?.id || 0}_${unitName}_${this.inchfractionselected}_${fractionValue}`;
+          this.dropField.dropfractiontext = selectedInchesOption.name;
+        } else {
+          this.dropField.dropfraction = `0_${unitName}_${this.inchfractionselected}_0`;
+        }
       } else {
         this.dropField.dropfraction = `0_${unitName}_${this.inchfractionselected}_0`;
       }
-    } else {
-      this.dropField.dropfraction = `0_${unitName}_${this.inchfractionselected}_0`;
     }
+    this.get_freesample()
   }
-}
 
   /**
    * Called on valueChanges; detects changed field_x controls and triggers handlers.
    */
   onFormChanges(values: any, params: any): void {
-      this.isCalculatingPrice = false;
+    this.isCalculatingPrice = false;
     if (!this.previousFormValue) {
       this.previousFormValue = { ...values };
       return;
@@ -1594,23 +1666,23 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
         const fieldId = parseInt(key.replace('field_', ''), 10);
         const field = this.parameters_data.find(f => f.fieldid === fieldId);
 
-        if (field && [3, 5, 20,21].includes(field.fieldtypeid)) {
+        if (field && [3, 5, 20, 21].includes(field.fieldtypeid)) {
           // Trigger selection change handler
           this.handleOptionSelectionChange(params, field, values[key], false);
         } else if (field && field.fieldtypeid === 34) {
           this.handleUnitTypeChange(values[key], params);
           this.handleRestOptionChange(params, field, values[key]);
-        }else if(field  && [14, 18, 6,29].includes(field.fieldtypeid)){
-           this.handleRestChange(params, field, values[key]);
-        }else if(field  && [ 7,8,11,31].includes(field.fieldtypeid)){
-           this.handleWidthChange(params, field, values[key]);
-        }else if(field  && [9,10,12,32].includes(field.fieldtypeid)){
-           this.handleDropChange(params, field, values[key]);
-        }else if(field) {
-         this.handleRestOptionChange(params, field, values[key]);
+        } else if (field && [14, 18, 6, 29].includes(field.fieldtypeid)) {
+          this.handleRestChange(params, field, values[key]);
+        } else if (field && [7, 8, 11, 31].includes(field.fieldtypeid)) {
+          this.handleWidthChange(params, field, values[key]);
+        } else if (field && [9, 10, 12, 32].includes(field.fieldtypeid)) {
+          this.handleDropChange(params, field, values[key]);
+        } else if (field) {
+          this.handleRestOptionChange(params, field, values[key]);
         }
       }
-    //console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
+      //console.log('parameters_data after form updated:', JSON.parse(JSON.stringify(this.parameters_data)));
     }
     this.previousFormValue = { ...values };
     this.priceUpdate.next();
@@ -1665,20 +1737,20 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
 
     const totalWidth = Number(value) + fractionValue;
     this.width = totalWidth;
-    this.updateFieldValues(field, value,'Totalwidth');
+    this.updateFieldValues(field, value, 'Totalwidth');
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
-    
+
     if (this.showFractions) {
       fractionValue = Number(this.orderForm.get('dropfraction')?.value) || 0;
     }
 
     const totalDrop = Number(value) + fractionValue;
     this.drop = totalDrop;
-    this.updateFieldValues(field, value,'TotalDrop');
+    this.updateFieldValues(field, value, 'TotalDrop');
   }
-  
+
   private handleRestOptionChange(params: any, field: ProductField, value: any): void {
     if (value === null || value === undefined || value === '') {
       return;
@@ -1688,17 +1760,17 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
     if (!options || options.length === 0) return;
 
     const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
-     
+
     if (!selectedOption) return;
 
-    this.updateFieldValues(field, [selectedOption],'handleRestOptionChange');
+    this.updateFieldValues(field, [selectedOption], 'handleRestOptionChange');
   }
   private handleRestChange(params: any, field: ProductField, value: any): void {
-      this.updateFieldValues(field, value,'handleRestChange');
+    this.updateFieldValues(field, value, 'handleRestChange');
   }
   handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
-    this.unittype =  unitValue;
+    this.unittype = unitValue;
     this.showFractions = (unitValue === 4);
     this.updateMinMaxValidators(true);
     this.apiService.getFractionData(params, unitValue).pipe(
@@ -1724,17 +1796,17 @@ private updateFieldValues(field: ProductField,selectedOption: any = [],fundebug:
       this.cd.markForCheck();
     });
   }
-private cleanSubchild(fields: any[]): any[] {
-  return fields
-    .filter(field => !!field.allparentFieldId) // keep only items with allparentFieldId
-    .map(field => ({
-      ...field,
-      subchild: field.subchild && field.subchild.length
-        ? this.cleanSubchild(field.subchild) // recurse deeper
-        : []
-    }));
-}
-onSubmit(): void {
+  private cleanSubchild(fields: any[]): any[] {
+    return fields
+      .filter(field => !!field.allparentFieldId) // keep only items with allparentFieldId
+      .map(field => ({
+        ...field,
+        subchild: field.subchild && field.subchild.length
+          ? this.cleanSubchild(field.subchild) // recurse deeper
+          : []
+      }));
+  }
+  onSubmit(): void {
     if (this.orderForm.invalid) {
       this.markFormGroupTouched(this.orderForm);
       return;
@@ -1760,7 +1832,7 @@ onSubmit(): void {
     const visualizerImage = this.threeService.getCanvasDataURL();
 
     this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site,
-     this.buildProductTitle(this.ecomproductname,this.fabricname,this.colorname),
+      this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname),
       this.pricedata,
       this.vatpercentage,
       this.vatname,
@@ -1777,20 +1849,20 @@ onSubmit(): void {
     ).subscribe({
       next: (response) => {
         if (response.success) {
-           Swal.fire({
-                title: 'Added to Cart!',
-                text: 'Your product has been added successfully.',
-                icon: 'success',
-                showConfirmButton: false,
-                timer: 3000,
-                background: '#fefefe',
-                color: '#333',
-                customClass: {
-                  popup: 'small-toast'
-                }
-              }).then(() => {
-                window.location.href = this.routeParams.site + '/cart';
-              });
+          Swal.fire({
+            title: 'Added to Cart!',
+            text: 'Your product has been added successfully.',
+            icon: 'success',
+            showConfirmButton: false,
+            timer: 3000,
+            background: '#fefefe',
+            color: '#333',
+            customClass: {
+              popup: 'small-toast'
+            }
+          }).then(() => {
+            window.location.href = this.routeParams.site + '/cart';
+          });
 
         } else {
           this.errorMessage = response.message || 'An unknown error occurred while adding to cart.';
@@ -1803,174 +1875,174 @@ onSubmit(): void {
     });
   }
 
-public buildProductTitle(
-  ecomproductname: string,
-  fabricname: string,
-  colorname: string
-): string {
-  let extras = '';
+  public buildProductTitle(
+    ecomproductname: string,
+    fabricname: string,
+    colorname: string
+  ): string {
+    let extras = '';
 
-  if (fabricname && colorname) {
-    extras = `${fabricname} ${colorname}`;
-  } else if (fabricname) {
-    extras = fabricname;
-  } else if (colorname) {
-    extras = colorname;
+    if (fabricname && colorname) {
+      extras = `${fabricname} ${colorname}`;
+    } else if (fabricname) {
+      extras = fabricname;
+    } else if (colorname) {
+      extras = colorname;
+    }
+
+    return extras ? `${ecomproductname} - ${extras}` : ecomproductname;
+  }
+  private getVat(): Observable<any> {
+    return this.apiService.getVat(
+      this.routeParams
+    );
+  }
+  private getPrice(): Observable<any> {
+    return this.getVat().pipe(
+      switchMap(vatResponse => {
+        const vatPercentage = vatResponse?.data ?? '';
+        const selectedTax = vatResponse?.taxlist?.find(
+          (tax: any) => tax.id === vatResponse?.vatselected
+        );
+        this.vatpercentage = vatPercentage;
+        this.vatname = selectedTax ? selectedTax.name : vatResponse?.defaultsalestaxlabel;
+
+        const fetchPrice = (rulesResponse?: any, formulaResponse?: any) => {
+          return this.apiService.getPrice(
+            this.routeParams,
+            this.width,
+            this.drop,
+            this.unittype,
+            this.supplier_id,
+            this.widthField.fieldtypeid,
+            this.dropField.fieldtypeid,
+            this.pricegroup,
+            vatPercentage,
+            this.selected_option_data,
+            this.fabricid,
+            this.colorid,
+            this.netpricecomesfrom,
+            this.costpricecomesfrom,
+            formulaResponse?.productionmaterialcostprice,
+            formulaResponse?.productionmaterialnetprice,
+            formulaResponse?.productionmaterialnetpricewithdiscount,
+            this.fabricFieldType.fieldtypeid
+          );
+        };
+
+        if (this.rulescount > 0) {
+          return this.apiService.calculateRules(
+            this.routeParams,
+            this.width,
+            this.drop,
+            this.unittype,
+            this.supplier_id,
+            this.widthField.fieldtypeid,
+            this.dropField.fieldtypeid,
+            this.pricegroup,
+            vatPercentage,
+            this.selected_option_data,
+            this.fabricid,
+            this.colorid,
+            this.rulesorderitem,
+            0,
+            this.fabricFieldType.fieldtypeid
+          ).pipe(
+            switchMap(rulesResponse => {
+              const rulesresponse = rulesResponse as any;
+
+              if (rulesresponse?.ruleresults?.length) {
+                rulesresponse.ruleresults.forEach((ruleObj: any) => {
+                  const fieldid = +Object.keys(ruleObj)[0];
+                  const ruleArray = ruleObj[fieldid];
+
+                  ruleArray.forEach((rule: any) => {
+                    const { optionid, optionvalue } = rule;
+
+                    const control = this.orderForm.get(`field_${fieldid}`);
+                    const field = this.parameters_data.find(f => f.fieldid === fieldid);
+
+                    if (!control || !field) return;
+
+                    if (optionid && optionvalue && this.option_data[field.fieldid]) {
+                      const numericOptionId = Number(optionid);
+                      const options = this.option_data[field.fieldid] || field.optionsvalue || [];
+                      const selectedOption = options.find(
+                        (opt: any) => Number(opt.optionid) === numericOptionId
+                      );
+
+                      if (selectedOption) {
+                        control.setValue(numericOptionId, { emitEvent: false });
+                        this.updateFieldValues(field, selectedOption, 'rules update select');
+                      }
+                    } else if (optionvalue && optionid !== 0) {
+                      control.setValue(optionid, { emitEvent: false });
+                      this.updateFieldValues(field, optionvalue, 'rules update text');
+                    }
+                    this.updateAccordionData();
+                  });
+                });
+              }
+
+              if (this.formulacount > 0) {
+                return this.apiService.calculateRules(
+                  this.routeParams,
+                  this.width,
+                  this.drop,
+                  this.unittype,
+                  this.supplier_id,
+                  this.widthField.fieldtypeid,
+                  this.dropField.fieldtypeid,
+                  this.pricegroup,
+                  vatPercentage,
+                  this.selected_option_data,
+                  this.fabricid,
+                  this.colorid,
+                  this.rulesorderitem,
+                  1
+                ).pipe(
+                  switchMap(formulaResponse => fetchPrice(rulesResponse, formulaResponse))
+                );
+              }
+
+              return fetchPrice(rulesResponse);
+            })
+          );
+        }
+
+        else if (this.formulacount > 0) {
+          return this.apiService.calculateRules(
+            this.routeParams,
+            this.width,
+            this.drop,
+            this.unittype,
+            this.supplier_id,
+            this.widthField.fieldtypeid,
+            this.dropField.fieldtypeid,
+            this.pricegroup,
+            vatPercentage,
+            this.selected_option_data,
+            this.fabricid,
+            this.colorid,
+            this.rulesorderitem,
+            1
+          ).pipe(
+            switchMap(formulaResponse => fetchPrice(undefined, formulaResponse))
+          );
+        }
+        else {
+          return fetchPrice();
+        }
+      }),
+      catchError(error => {
+        console.error('Error getting VAT or Price', error);
+        return of({ price: 0, vat: '' });
+      })
+    );
   }
 
-  return extras ? `${ecomproductname} - ${extras}` : ecomproductname;
-}
-private getVat(): Observable<any> {
-  return this.apiService.getVat(
-    this.routeParams
-  );
-}
-private getPrice(): Observable<any> {
-  return this.getVat().pipe(
-    switchMap(vatResponse => {
-      const vatPercentage = vatResponse?.data ?? '';
-      const selectedTax = vatResponse?.taxlist?.find(
-        (tax: any) => tax.id === vatResponse?.vatselected
-      );
-      this.vatpercentage = vatPercentage;
-      this.vatname = selectedTax ? selectedTax.name : vatResponse?.defaultsalestaxlabel;
 
-      const fetchPrice = (rulesResponse?: any, formulaResponse?: any) => {
-        return this.apiService.getPrice(
-          this.routeParams,
-          this.width,
-          this.drop,
-          this.unittype,
-          this.supplier_id,
-          this.widthField.fieldtypeid,
-          this.dropField.fieldtypeid,
-          this.pricegroup,
-          vatPercentage,
-          this.selected_option_data,
-          this.fabricid,
-          this.colorid,
-          this.netpricecomesfrom,
-          this.costpricecomesfrom,
-          formulaResponse?.productionmaterialcostprice,
-          formulaResponse?.productionmaterialnetprice,
-          formulaResponse?.productionmaterialnetpricewithdiscount,
-          this.fabricFieldType.fieldtypeid
-        );
-      };
-
-      if (this.rulescount > 0) {
-        return this.apiService.calculateRules(
-          this.routeParams,
-          this.width,
-          this.drop,
-          this.unittype,
-          this.supplier_id,
-          this.widthField.fieldtypeid,
-          this.dropField.fieldtypeid,
-          this.pricegroup,
-          vatPercentage,
-          this.selected_option_data,
-          this.fabricid,
-          this.colorid,
-          this.rulesorderitem,
-          0,
-          this.fabricFieldType.fieldtypeid
-        ).pipe(
-          switchMap(rulesResponse => {
-            const rulesresponse = rulesResponse as any;
-
-            if (rulesresponse?.ruleresults?.length) {
-              rulesresponse.ruleresults.forEach((ruleObj: any) => {
-                const fieldid = +Object.keys(ruleObj)[0];
-                const ruleArray = ruleObj[fieldid];
-
-                ruleArray.forEach((rule: any) => {
-                  const { optionid, optionvalue } = rule;
-
-                  const control = this.orderForm.get(`field_${fieldid}`);
-                  const field = this.parameters_data.find(f => f.fieldid === fieldid);
-
-                  if (!control || !field) return;
-
-                  if (optionid && optionvalue && this.option_data[field.fieldid]) {
-                    const numericOptionId = Number(optionid);
-                    const options = this.option_data[field.fieldid] || field.optionsvalue || [];
-                    const selectedOption = options.find(
-                      (opt: any) => Number(opt.optionid) === numericOptionId
-                    );
-
-                    if (selectedOption) {
-                      control.setValue(numericOptionId, { emitEvent: false });
-                      this.updateFieldValues(field, selectedOption, 'rules update select');
-                    }
-                  } else if (optionvalue && optionid !== 0) {
-                    control.setValue(optionid, { emitEvent: false });
-                    this.updateFieldValues(field, optionvalue, 'rules update text');
-                  }
-                  this.updateAccordionData();
-                });
-              });
-            }
-
-            if (this.formulacount > 0) {
-              return this.apiService.calculateRules(
-                this.routeParams,
-                this.width,
-                this.drop,
-                this.unittype,
-                this.supplier_id,
-                this.widthField.fieldtypeid,
-                this.dropField.fieldtypeid,
-                this.pricegroup,
-                vatPercentage,
-                this.selected_option_data,
-                this.fabricid,
-                this.colorid,
-                this.rulesorderitem,
-                1
-              ).pipe(
-                switchMap(formulaResponse => fetchPrice(rulesResponse, formulaResponse))
-              );
-            }
-
-            return fetchPrice(rulesResponse);
-          })
-        );
-      }
-
-      else if (this.formulacount > 0) {
-        return this.apiService.calculateRules(
-          this.routeParams,
-          this.width,
-          this.drop,
-          this.unittype,
-          this.supplier_id,
-          this.widthField.fieldtypeid,
-          this.dropField.fieldtypeid,
-          this.pricegroup,
-          vatPercentage,
-          this.selected_option_data,
-          this.fabricid,
-          this.colorid,
-          this.rulesorderitem,
-          1
-        ).pipe(
-          switchMap(formulaResponse => fetchPrice(undefined, formulaResponse))
-        );
-      }
-      else {
-        return fetchPrice();
-      }
-    }),
-    catchError(error => {
-      console.error('Error getting VAT or Price', error);
-      return of({ price: 0, vat: '' });
-    })
-  );
-}
-
-
-private markFormGroupTouched(formGroup: FormGroup) {
+  private markFormGroupTouched(formGroup: FormGroup) {
     Object.values(formGroup.controls).forEach(control => {
       control.markAsTouched();
 
@@ -2000,8 +2072,8 @@ private markFormGroupTouched(formGroup: FormGroup) {
       '21': 'materials',
       '25': 'accessories_list',
       '20': 'materials',
-      '4' : 'list',
-      '29' : 'text'
+      '4': 'list',
+      '29': 'text'
     };
 
     return field_types[chosen_field_type_id] || '';
@@ -2043,56 +2115,65 @@ private markFormGroupTouched(formGroup: FormGroup) {
 
           // Special handling for width and drop fields
           if (field.fieldtypeid === 11 || field.fieldtypeid === 7 || field.fieldtypeid === 31) { // width types
-              const fractionControl = this.orderForm.get('widthfraction');
-              if (fractionControl && fractionControl.value) {
-                  const fractionOption = this.inchfraction_array.find(opt => opt.decimalvalue == fractionControl.value);
-                  displayValue = `${value} ${fractionOption ? fractionOption.name : ''}`;
-              } else {
-                  displayValue = value;
-              }
+            const fractionControl = this.orderForm.get('widthfraction');
+            if (fractionControl && fractionControl.value) {
+              const fractionOption = this.inchfraction_array.find(opt => opt.decimalvalue == fractionControl.value);
+              displayValue = `${value} ${fractionOption ? fractionOption.name : ''}`;
+            } else {
+              displayValue = value;
+            }
           } else if (field.fieldtypeid === 12 || field.fieldtypeid === 9 || field.fieldtypeid === 32) { // drop types
-              const fractionControl = this.orderForm.get('dropfraction');
-              if (fractionControl && fractionControl.value) {
-                  const fractionOption = this.inchfraction_array.find(opt => opt.decimalvalue == fractionControl.value);
-                  displayValue = `${value} ${fractionOption ? fractionOption.name : ''}`;
-              } else {
-                  displayValue = value;
-              }
+            const fractionControl = this.orderForm.get('dropfraction');
+            if (fractionControl && fractionControl.value) {
+              const fractionOption = this.inchfraction_array.find(opt => opt.decimalvalue == fractionControl.value);
+              displayValue = `${value} ${fractionOption ? fractionOption.name : ''}`;
+            } else {
+              displayValue = value;
+            }
           } else {
-              const allOptions = this.option_data[field.fieldid] || field.optionsvalue;
+            const allOptions = this.option_data[field.fieldid] || field.optionsvalue;
 
-              if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
-                if (Array.isArray(value)) {
-                  displayValue = value
-                    .map(val => {
-                      const option = allOptions.find(opt => opt.optionid == val);
-                      return option ? option.optionname : val;
-                    })
-                    .join(', ');
-                } else {
-                  const option = allOptions.find(opt => opt.optionid == value);
-              displayValue = option ? option.optionname : value;
-                }
+            if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
+              if (Array.isArray(value)) {
+                displayValue = value
+                  .map(val => {
+                    const option = allOptions.find(opt => opt.optionid == val);
+                    return option ? option.optionname : val;
+                  })
+                  .join(', ');
               } else {
-                displayValue = value;
+                const option = allOptions.find(opt => opt.optionid == value);
+                displayValue = option ? option.optionname : value;
               }
+            } else {
+              displayValue = value;
+            }
           }
 
           if (displayValue && (typeof displayValue !== 'string' || displayValue.trim() !== '')) {
-             this.accordionData.push({ label: field.fieldname, value: displayValue });
+            this.accordionData.push({ label: field.fieldname, value: displayValue });
           }
         }
       }
     });
     this.cd.markForCheck();
   }
-  private orderitemdata(isForRulesCalculation: boolean = false): any[] {
+  private orderitemdata(isForRulesCalculation: boolean = false, freesample: boolean = false): any[] {
     return this.parameters_data.map(t => {
       const isSpecialType = isForRulesCalculation && [34, 17, 13].includes(+t.fieldtypeid);
+      var valueint = isSpecialType ? t.valuename || null : t.value || null;
+      if (freesample) {
+        if ([7, 8, 11, 31, 9, 10, 12, 32].includes(+t.fieldtypeid)) {
+          valueint = "0";
+        } else if (+t.fieldtypeid == 3) {
+          valueint = "";
+        }
+      }
+
       const i = {
         id: +t.fieldid,
         labelname: t.fieldname,
-        value: isSpecialType ? t.valuename || null : t.value || null,
+        value: valueint,
         valueid: t.valueid || null,
         type: t.fieldtypeid,
         optionid: t.optionid || null,
@@ -2122,10 +2203,10 @@ private markFormGroupTouched(formGroup: FormGroup) {
         fieldid: t.fieldid,
         fieldname: t.fieldname
       } as any;;
-    if (isForRulesCalculation) {
-      i.quantity = t.optionquantity || null;
-      i.fractionValue = 0;
-    }
+      if (isForRulesCalculation) {
+        i.quantity = t.optionquantity || null;
+        i.fractionValue = 0;
+      }
       i.subchild = this.cleanSubchild(i.subchild);
       return i;
     });
