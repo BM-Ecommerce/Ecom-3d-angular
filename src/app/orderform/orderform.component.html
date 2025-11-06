@@ -69,7 +69,7 @@
                     [class.selected_frame]="isSelectedFrame(product_img)"
                     (click)="onFrameChange(getFrameImageUrl(product_img))">
                     <img [src]="getFrameImageUrl(product_img)" alt="" width="auto" height="100"
-                      [style.background-image]="'url(' + background_color_image_url + ')'">
+                      [style.max-width.px]="150" [style.background-image]="'url(' + background_color_image_url + ')'">
                   </button>
                 </div>
               </div>
