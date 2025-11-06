@@ -225,6 +225,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   unittypename = "";
   netpricecomesfrom ="";
   is3DOn = false;
+  recipeid: number = 0;
   costpricecomesfrom ="";
   inchfractionselected:Number = 0;
   inchfraction_array: FractionOption[] = [
@@ -526,6 +527,15 @@ private fetchInitialData(params: any): void {
         this.productname = data.label;
         this.productdescription = data.pi_productdescription;
         this.pei_prospec = data.pei_prospec;
+        const category = Number(data.pi_category);
+        if(category == 5){
+          this.fabricFieldType ==21
+        }else if(category == 4){
+          this.fabricFieldType == 20;
+        }else if(category == 3){
+          this.fabricFieldType == 5;
+        }
+        this.recipeid = data.recipeid;
 
         let productBgImages: string[] = [];
         try {
@@ -574,7 +584,7 @@ private fetchInitialData(params: any): void {
 
         this.setupVisualizer(ecomProductName);
       }
-      return this.apiService.getProductParameters(params);
+      return this.apiService.getProductParameters(params,this.recipeid);
     }),
     switchMap((data: any) => {
       if (data && data[0]) {
@@ -591,7 +601,6 @@ private fetchInitialData(params: any): void {
         this.widthField      = this.parameters_data.find(f => [7, 8, 11, 31].includes(f.fieldtypeid));
         this.dropField       = this.parameters_data.find(f => [9, 10, 12, 32].includes(f.fieldtypeid));
         this.unitField       = this.parameters_data.find(f => f.fieldtypeid === 34);
-        this.fabricFieldType = this.parameters_data.find(f => [20, 21, 5].includes(f.fieldtypeid));
 
         return forkJoin({
           optionData: this.loadOptionData(params),
@@ -599,7 +608,8 @@ private fetchInitialData(params: any): void {
             this.routeParams,
             this.routeParams.color_id,
             this.unittype,
-            this.routeParams.pricing_group
+            this.routeParams.pricing_group,
+            this.fabricFieldType
           ),
           recipeList: this.apiService.getRecipeList(params),
           FractionList: this.apiService.getFractionList(params)
@@ -713,7 +723,7 @@ private fetchInitialData(params: any): void {
    * Load top-level option data for fields that require it (3,5,20 etc.)
    */
   private loadOptionData(params: any): Observable<any> {
-    return this.apiService.filterbasedlist(params, '','','',this.pricegroup,this.colorid,this.fabricid,this.unittype).pipe(
+    return this.apiService.filterbasedlist(params, '','','',this.pricegroup,this.colorid,this.fabricid,this.unittype,this.fabricFieldType).pipe(
       takeUntil(this.destroy$),
       switchMap((filterData: any) => {
      
@@ -750,7 +760,8 @@ private fetchInitialData(params: any): void {
                 field.fieldtypeid,
                 matrial,
                 field.fieldid,
-                filter
+                filter,
+                this.recipeid
               ).pipe(
                 map((optionData: any) => ({ fieldId: field.fieldid, optionData })),
                 catchError(err => {
@@ -950,7 +961,7 @@ private fetchInitialData(params: any): void {
                 }
             }
           }
-          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup,this.colorid,this.fabricid,this.unittype)
+          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid),this.pricegroup,this.colorid,this.fabricid,this.unittype,this.fabricFieldType)
           .pipe(takeUntil(this.destroy$))
           .subscribe((filterData: any) => {
               this.supplier_id = filterData[0].data.selectsupplierid;
@@ -1003,7 +1014,7 @@ private fetchInitialData(params: any): void {
     }else{
       var colorid =  "";
     }
-    this.apiService.getminandmax(this.routeParams, colorid, this.unittype, Number(this.pricegroup))
+    this.apiService.getminandmax(this.routeParams, colorid, this.unittype, Number(this.pricegroup),this.fabricFieldType)
       .pipe(takeUntil(this.destroy$))
       .subscribe(minmaxdata => {
              const data = minmaxdata?.data;
@@ -1076,7 +1087,8 @@ private fetchInitialData(params: any): void {
       option.fieldoptionlinkid,
       option.optionid,
       parentField.masterparentfieldid,
-      this.supplier_id
+      this.supplier_id,
+      this.recipeid
     ).pipe(
       takeUntil(this.destroy$),
       switchMap((subFieldResponse: any) => {
@@ -1170,7 +1182,7 @@ private processSubfield(
    * Load options for a subfield using filterbasedlist + getOptionlist
    */
   private loadSubfieldOptions(params: any, subfield: ProductField): Observable<any> {
-    return this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid),this.pricegroup,this.colorid,this.fabricid,this.unittype).pipe(
+    return this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid),this.pricegroup,this.colorid,this.fabricid,this.unittype,this.fabricFieldType).pipe(
       takeUntil(this.destroy$),
       switchMap((filterData: any) => {
         if (!filterData?.[0]?.data?.optionarray) return of(null);
@@ -1195,7 +1207,8 @@ private processSubfield(
             subfield.fieldtypeid,
             matrial,
             subfield.fieldid,
-            filter
+            filter,
+            this.recipeid
           ).pipe(
             takeUntil(this.destroy$),
             map((optionData: any) => {
@@ -1861,7 +1874,7 @@ private getPrice(): Observable<any> {
           formulaResponse?.productionmaterialcostprice,
           formulaResponse?.productionmaterialnetprice,
           formulaResponse?.productionmaterialnetpricewithdiscount,
-          this.fabricFieldType.fieldtypeid
+          this.fabricFieldType
         );
       };
 
@@ -1881,7 +1894,8 @@ private getPrice(): Observable<any> {
           this.colorid,
           this.rulesorderitem,
           0,
-          this.fabricFieldType.fieldtypeid
+          this.fabricFieldType,
+          this.recipeid
         ).pipe(
           switchMap(rulesResponse => {
             const rulesresponse = rulesResponse as any;
@@ -1934,7 +1948,9 @@ private getPrice(): Observable<any> {
                 this.fabricid,
                 this.colorid,
                 this.rulesorderitem,
-                1
+                1,
+                this.fabricFieldType,
+                this.recipeid
               ).pipe(
                 switchMap(formulaResponse => fetchPrice(rulesResponse, formulaResponse))
               );
@@ -1960,7 +1976,9 @@ private getPrice(): Observable<any> {
           this.fabricid,
           this.colorid,
           this.rulesorderitem,
-          1
+          1,
+          this.fabricFieldType,
+          this.recipeid
         ).pipe(
           switchMap(formulaResponse => fetchPrice(undefined, formulaResponse))
         );

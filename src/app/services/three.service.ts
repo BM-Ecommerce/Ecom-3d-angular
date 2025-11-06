@@ -101,8 +101,6 @@ export class ThreeService implements OnDestroy {
     this.resetState();
     const width = container.clientWidth;
     const height = container.clientHeight;
-    console.log(width);
-    console.log(height);
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xffffff);
 
@@ -267,9 +265,6 @@ public initialize2d(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElemen
     antialias: true,
     preserveDrawingBuffer: true 
   });
-  console.log(this.renderer);
-  console.log(width);
-   console.log(height);
   this.renderer.setSize(width, height);
   this.renderer.setPixelRatio(window.devicePixelRatio);
 
