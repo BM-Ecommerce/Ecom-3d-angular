@@ -227,6 +227,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   unittypename = "";
   netpricecomesfrom = "";
   is3DOn = false;
+  recipeid: number = 0;
   costpricecomesfrom = "";
   inchfractionselected: Number = 0;
   freesample: any;
@@ -371,10 +372,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     this.previousFormValue = this.orderForm.value;
   }
 
-
   ngOnInit(): void {
-
-
     const queryParams = this.route.snapshot.queryParams;
     // Check if running on localhost
     const isLocalhost = window.location.hostname === 'localhost';
@@ -433,8 +431,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           }
         });
     }
-
-
 
     // Price updates remain the same
     this.priceUpdate.pipe(
@@ -499,6 +495,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         this.threeService.createObjects(this.mainframe, this.background_color_image_url);
       }
     }
+    setTimeout(() => this.onWindowResize(), 0);
   }
 
   toggle3D() {
@@ -507,6 +504,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.is3DOn && this.background_color_image_url) {
       this.threeService.updateTextures(this.background_color_image_url);
     }
+    setTimeout(() => this.onWindowResize(), 0);
   }
   @HostListener('window:resize')
   onWindowResize(): void {
@@ -537,20 +535,20 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onMouseEnter(): void {
     if (!this.is3DOn) {
+      this.isZooming = true;
       this.threeService.enableZoom(true);
     }
   }
 
   onMouseLeave(): void {
     if (!this.is3DOn) {
+      this.isZooming = false;
       this.threeService.enableZoom(false);
     }
   }
   private fetchInitialData(params: any): void {
     this.isLoading = true;
     this.errorMessage = null;
-
-
 
     this.apiService.getProductData(params).pipe(
       takeUntil(this.destroy$),
@@ -561,13 +559,21 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           this.productname = data.label;
           this.productdescription = data.pi_productdescription;
           this.pei_prospec = data.pei_prospec;
-
+          const category = Number(data.pi_category);
+          if (category == 5) {
+            this.fabricFieldType == 21
+          } else if (category == 4) {
+            this.fabricFieldType == 20;
+          } else if (category == 3) {
+            this.fabricFieldType == 5;
+          }
+          this.recipeid = data.recipeid;
           this.freesameple_status = data?.pei_ecomFreeSample ?? 0;
           this.product_id = params?.product_id ?? this.route.snapshot.params['product_id'],
             this.freesample_price = data?.pei_ecomsampleprice ?? 0;
-
           this.get_freesample();
 
+          this.get_freesample();
           let productBgImages: string[] = [];
           try {
             productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
@@ -591,7 +597,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           const defaultFrameFilename = defaultImageSettings?.backgrounddefault || '';
 
           this.product_img_array = productBgImages.map(imgFilename => {
-
             const isDefault = defaultFrameFilename && imgFilename.includes(defaultFrameFilename);
             const pathParts = imgFilename.split('/');
             const filename = pathParts.pop() || '';
@@ -607,7 +612,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
             return { image_url: imageUrl, is_default: isDefault };
           });
 
-
           if (!this.mainframe && this.product_img_array.length > 0) {
             const firstImage = this.product_img_array[0];
             this.frame_default_url = firstImage.image_url;
@@ -617,10 +621,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
           this.setupVisualizer(ecomProductName);
         }
-        return this.apiService.getProductParameters(params);
-      }),
-      tap(productData => {
-        console.log("productDataproductData", productData);
+        return this.apiService.getProductParameters(params, this.recipeid);
       }),
       switchMap((data: any) => {
         if (data && data[0]) {
@@ -633,15 +634,10 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           this.initializeFormControls();
           this.priceGroupField = this.parameters_data.find(f => f.fieldtypeid === 13);
           this.supplierField = this.parameters_data.find(f => f.fieldtypeid === 17);
-
-
           this.qtyField = this.parameters_data.find(f => f.fieldtypeid === 14);
           this.widthField = this.parameters_data.find(f => [7, 8, 11, 31].includes(f.fieldtypeid));
           this.dropField = this.parameters_data.find(f => [9, 10, 12, 32].includes(f.fieldtypeid));
           this.unitField = this.parameters_data.find(f => f.fieldtypeid === 34);
-          this.fabricFieldType = this.parameters_data.find(f => [20, 21, 5].includes(f.fieldtypeid));
-          // this.freesample.api_url = this.routeParams.site;
-          // this.freesample.catagory_id = this?.routeParams?.category;
           this.get_freesample();
 
           return forkJoin({
@@ -650,7 +646,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
               this.routeParams,
               this.routeParams.color_id,
               this.unittype,
-              this.routeParams.pricing_group
+              this.routeParams.pricing_group,
+              this.fabricFieldType
             ),
             recipeList: this.apiService.getRecipeList(params),
             FractionList: this.apiService.getFractionList(params)
@@ -661,9 +658,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         return of(null);
       }),
       tap((results: any) => {
-
-
-
         if (results) {
           this.parameters_data.forEach(field => {
             const control = this.orderForm.get(`field_${field.fieldid}`);
@@ -767,7 +761,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
    * Load top-level option data for fields that require it (3,5,20 etc.)
    */
   private loadOptionData(params: any): Observable<any> {
-    return this.apiService.filterbasedlist(params, '', '', '', this.pricegroup, this.colorid, this.fabricid, this.unittype).pipe(
+    return this.apiService.filterbasedlist(params, '', '', '', this.pricegroup, this.colorid, this.fabricid, this.unittype, this.fabricFieldType).pipe(
       takeUntil(this.destroy$),
       switchMap((filterData: any) => {
 
@@ -804,7 +798,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
                 field.fieldtypeid,
                 matrial,
                 field.fieldid,
-                filter
+                filter,
+                this.recipeid
               ).pipe(
                 map((optionData: any) => ({ fieldId: field.fieldid, optionData })),
                 catchError(err => {
@@ -825,7 +820,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.supplier_id = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')
                   ? Number(field.optiondefault)
                   : (Array.isArray(field.optionsvalue) && field.optionsvalue.length > 0 ? Number(field.optionsvalue[0].id || field.optionsvalue[0].optionid || 0) : null);
-
                 valueToSet = this.supplier_id ?? '';
               } else {
                 valueToSet = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')
@@ -838,7 +832,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.unittype = valueToSet;
               } else if (field.fieldtypeid === 13) {
                 this.pricegroup = valueToSet;
-
               }
               if (field.fieldtypeid === 17) {
                 this.supplierOption = field.optionsvalue;
@@ -933,7 +926,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
         this.fabricid = 0;
         this.colorid = 0;
-
         this.updateMinMaxValidators(false);
       }
       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
@@ -998,7 +990,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         if ((field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 1)) {
 
           this.pricegroup = selectedOption.pricegroupid;
-
           if (this.priceGroupField) {
             const control = this.orderForm.get(`field_${this.priceGroupField.fieldid}`);
             if (control) {
@@ -1013,12 +1004,10 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
               }
             }
           }
-          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid), this.pricegroup, this.colorid, this.fabricid, this.unittype)
+          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid), this.pricegroup, this.colorid, this.fabricid, this.unittype, this.fabricFieldType)
             .pipe(takeUntil(this.destroy$))
             .subscribe((filterData: any) => {
               this.supplier_id = filterData[0].data.selectsupplierid;
-
-
               if (this.supplierField) {
                 const control = this.orderForm.get(`field_${this.supplierField.fieldid}`);
                 if (control) {
@@ -1056,7 +1045,10 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       });
     }
   }
-
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    img.src = 'assets/no-image.jpg';
+  }
   private updateMinMaxValidators(color: boolean): void {
     this.min_width = null;
     this.max_width = null;
@@ -1067,7 +1059,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     } else {
       var colorid = "";
     }
-    this.apiService.getminandmax(this.routeParams, colorid, this.unittype, Number(this.pricegroup))
+    this.apiService.getminandmax(this.routeParams, colorid, this.unittype, Number(this.pricegroup), this.fabricFieldType)
       .pipe(takeUntil(this.destroy$))
       .subscribe(minmaxdata => {
         const data = minmaxdata?.data;
@@ -1140,7 +1132,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       option.fieldoptionlinkid,
       option.optionid,
       parentField.masterparentfieldid,
-      this.supplier_id
+      this.supplier_id,
+      this.recipeid
     ).pipe(
       takeUntil(this.destroy$),
       switchMap((subFieldResponse: any) => {
@@ -1234,7 +1227,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
    * Load options for a subfield using filterbasedlist + getOptionlist
    */
   private loadSubfieldOptions(params: any, subfield: ProductField): Observable<any> {
-    return this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid), this.pricegroup, this.colorid, this.fabricid, this.unittype).pipe(
+    return this.apiService.filterbasedlist(params, '', String(subfield.fieldtypeid), String(subfield.fieldid), this.pricegroup, this.colorid, this.fabricid, this.unittype, this.fabricFieldType).pipe(
       takeUntil(this.destroy$),
       switchMap((filterData: any) => {
         if (!filterData?.[0]?.data?.optionarray) return of(null);
@@ -1259,7 +1252,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
             subfield.fieldtypeid,
             matrial,
             subfield.fieldid,
-            filter
+            filter,
+            this.recipeid
           ).pipe(
             takeUntil(this.destroy$),
             map((optionData: any) => {
@@ -1926,7 +1920,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
             formulaResponse?.productionmaterialcostprice,
             formulaResponse?.productionmaterialnetprice,
             formulaResponse?.productionmaterialnetpricewithdiscount,
-            this.fabricFieldType.fieldtypeid
+            this.fabricFieldType
           );
         };
 
@@ -1946,7 +1940,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
             this.colorid,
             this.rulesorderitem,
             0,
-            this.fabricFieldType.fieldtypeid
+            this.fabricFieldType,
+            this.recipeid
           ).pipe(
             switchMap(rulesResponse => {
               const rulesresponse = rulesResponse as any;
@@ -1999,7 +1994,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
                   this.fabricid,
                   this.colorid,
                   this.rulesorderitem,
-                  1
+                  1,
+                  this.fabricFieldType,
+                  this.recipeid
                 ).pipe(
                   switchMap(formulaResponse => fetchPrice(rulesResponse, formulaResponse))
                 );
@@ -2025,7 +2022,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
             this.fabricid,
             this.colorid,
             this.rulesorderitem,
-            1
+            1,
+            this.fabricFieldType,
+            this.recipeid
           ).pipe(
             switchMap(formulaResponse => fetchPrice(undefined, formulaResponse))
           );

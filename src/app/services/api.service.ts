@@ -115,19 +115,16 @@ export class ApiService {
     return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
   }
 
-  getProductParameters(params: ApiCommonParams): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, recipeid, ...payload } = params;
-    if (!recipeid) {
+  getProductParameters(params: ApiCommonParams, recipeId: number): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, ...payload } = params;
+    if (!recipeId) {
       return throwError(() => new Error('recipeid is required'));
     }
-    const passData = `products/fields/withdefault/list/${recipeid}/1/0`;
+    const passData = `products/fields/withdefault/list/${recipeId}/1/0`;
     return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
   }
-  getminandmax(params: ApiCommonParams, colorid: string, unittype: number, pricegroup: number): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, recipeid, product_id, category } = params;
-    if (!recipeid) {
-      return throwError(() => new Error('recipeid is required'));
-    }
+  getminandmax(params: ApiCommonParams, colorid: string, unittype: number, pricegroup: number, fabricFieldType: number): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, product_id, category } = params;
     const payload = {
       width: "0",
       drop: "0",
@@ -135,7 +132,7 @@ export class ApiService {
       mode: "both",
       pricegroup: pricegroup,
       colorid: colorid,
-      fieldtypeid: category,
+      fieldtypeid: fabricFieldType,
       fabriciddual: "",
       coloriddual: "",
       pricegroupdual: "",
@@ -153,9 +150,9 @@ export class ApiService {
     const passData = `appSetup/fractionlist/${product_id}/-1/${faction_value}`;
     return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
   }
-  addToCart(formData: any, productId: string, apiUrl: string, cartproductName: string, priceData: any, vatpercentage: number, vatName: string, currenturl: string, productName: string, categoryId: number, visualizerImage?: string, action: string = "add_to_cart"): Observable<ApiResponse> {
+  addToCart(formData: any, productId: string, apiUrl: string, cartproductName: string, priceData: any, vatpercentage: number, vatName: string, currenturl: string, productName: string, categoryId: number, visualizerImage?: string): Observable<ApiResponse> {
     let body = new HttpParams()
-      .set('action', action)
+      .set('action', 'add_to_cart')
       .set('product_id', productId)
       .set('form_data', JSON.stringify(formData))
       .set('cart_product_name', cartproductName)
@@ -168,10 +165,8 @@ export class ApiService {
     if (visualizerImage) {
       body = body.set('visualizer_image', visualizerImage);
     }
-
     const endpoint = '/wp-content/plugins/blindmatrix-v4-hub/api.php';
     const requestUrl = `${apiUrl.replace(/\/+$/, '')}${endpoint}`;
-
 
     return this.http.post<ApiResponse>(requestUrl, body.toString(), {
       headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' })
@@ -194,14 +189,15 @@ export class ApiService {
     colorid: any = "",
     orderitemdata: any = "",
     mode: number = 0,
-    fabricFieldType: number = 0
+    fabricFieldType: number = 0,
+    recipeId: number
   ) {
     const { api_url, api_key, api_name, recipeid, product_id } = params;
 
     const payload = {
       vatpercentage: vatprice,
       blindopeningwidth: [],
-      recipeid: recipeid,
+      recipeid: recipeId,
       productid: product_id,
       orderitemdata: orderitemdata,
       supplierid: supplierid,
@@ -243,11 +239,12 @@ export class ApiService {
     fieldtype: number,
     fabriccolor: number = 0,
     fieldid: number,
-    filter: any
+    filter: any,
+    recipeId: number
   ): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, recipeid, product_id, ...rest } = params;
+    const { api_url, api_key, api_name, product_id, ...rest } = params;
 
-    if (!recipeid) {
+    if (!recipeId) {
       return throwError(() => new Error('recipeid is required'));
     }
 
@@ -259,7 +256,7 @@ export class ApiService {
 
 
 
-    const passData = `products/get/fabric/options/list/${recipeid}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}/?page=1&perpage=150`;
+    const passData = `products/get/fabric/options/list/${recipeId}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}/?page=1&perpage=150`;
 
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
@@ -272,7 +269,8 @@ export class ApiService {
     pricegroup: any = "",
     colorid: any = "",
     fabricid: any = "",
-    unittype: any = ""
+    unittype: any = "",
+    fabricFieldType: number
   ): Observable<ApiResponse> {
     const { api_url, api_key, api_name, product_id, category } = params;
     const payload = {
@@ -283,7 +281,7 @@ export class ApiService {
       drop: null,
       fabricid: fabricid,
       fabriciddual: "",
-      fieldtypeid: category,
+      fieldtypeid: fabricFieldType,
       lineitemselectedvalues: [],
       numFraction: null,
       orderItemId: "",
@@ -318,6 +316,7 @@ export class ApiService {
     selectedvalue: any,
     masterparentfieldid: any,
     supplierid: any,
+    recipeId: number
   ): Observable<ApiResponse> {
     const { api_url, api_key, api_name, recipeid, product_id } = params;
     const payload = {
@@ -331,7 +330,7 @@ export class ApiService {
       }
     };
 
-    const passData = `products/fields/list/0/${recipeid}/${level}/${fieldtype}/${masterparentfieldid}`;
+    const passData = `products/fields/list/0/${recipeId}/${level}/${fieldtype}/${masterparentfieldid}`;
 
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }

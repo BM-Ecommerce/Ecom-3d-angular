@@ -47,29 +47,37 @@
                   <button *ngIf="is3DOn" type="button" mat-icon-button (click)="zoomOut()" aria-label="Zoom out">
                     <mat-icon>zoom_out</mat-icon>
                   </button>
-                  <button type="button" mat-icon-button [class.active3d]="is3DOn" (click)="toggle3D()"
-                    aria-label="Toggle 3D" class="threeD-btn">
-                    <mat-icon>view_in_ar</mat-icon>
+                </div>
+                <div class="visualizer-view-controls">
+                  <mat-button-toggle-group name="viewMode" [value]="is3DOn ? '3d' : '2d'" (change)="toggle3D()"
+                    appearance="standard">
+                    <mat-button-toggle value="2d" aria-label="2D View">
+                      <mat-icon>grid_on</mat-icon>
+                    </mat-button-toggle>
+
+                    <mat-button-toggle value="3d" aria-label="3D View">
+                      <mat-icon>view_in_ar</mat-icon>
+                    </mat-button-toggle>
+                  </mat-button-toggle-group>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!is3DOn" class="slider-container">
+              <div class="blindmatrix-v4-slider">
+                <div *ngFor="let product_img of product_img_array">
+                  <button type="button" class="multiple-frame-list-button"
+                    [class.selected_frame]="isSelectedFrame(product_img)"
+                    (click)="onFrameChange(getFrameImageUrl(product_img))">
+                    <img [src]="getFrameImageUrl(product_img)" alt="" width="auto" height="100"
+                      [style.background-image]="'url(' + background_color_image_url + ')'">
                   </button>
                 </div>
               </div>
-              <div *ngIf="!is3DOn" class="slider-container">
-                <div class="blindmatrix-v4-slider">
-                  <div *ngFor="let product_img of product_img_array">
-                    <button type="button" class="multiple-frame-list-button"
-                      [class.selected_frame]="isSelectedFrame(product_img)"
-                      (click)="onFrameChange(getFrameImageUrl(product_img))">
-                      <img [src]="getFrameImageUrl(product_img)" alt="" width="200" height="100"
-                        [style.background-image]="'url(' + background_color_image_url + ')'">
-                    </button>
-                  </div>
-                </div>
-                <div *ngIf="product_img_array.length > 3" class="prev">
-                  <span class="glyphicon icon-left" aria-hidden="true">&#11164;</span>
-                </div>
-                <div *ngIf="product_img_array.length > 3" class="next">
-                  <span class="glyphicon icon-right" aria-hidden="true">&#11166;</span>
-                </div>
+              <div *ngIf="product_img_array.length > 3" class="prev">
+                <span class="glyphicon icon-left" aria-hidden="true">&#11164;</span>
+              </div>
+              <div *ngIf="product_img_array.length > 3" class="next">
+                <span class="glyphicon icon-right" aria-hidden="true">&#11166;</span>
               </div>
             </div>
           </div>
@@ -165,8 +173,8 @@
                         <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
                           [value]="option.optionid">
                           <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                            <img [src]="apiUrl + '/api/public' + option.optionimage" alt="{{ option.optionname }}"
-                              width="24" height="24"
+                            <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
+                              alt="{{ option.optionname }}" width="24" height="24"
                               style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
                           </ng-container>
                           {{ option.optionname }}
@@ -195,8 +203,8 @@
                         <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
                         <mat-option *ngFor="let option of option_data[field.fieldid]" [value]="option.optionid">
                           <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                            <img [src]="apiUrl + '/api/public' + option.optionimage" alt="{{ option.optionname }}"
-                              width="24" height="24"
+                            <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
+                              alt="{{ option.optionname }}" width="24" height="24"
                               style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
                           </ng-container>
                           {{ option.optionname }}
@@ -380,7 +388,6 @@
                 </div>
               </mat-expansion-panel>
             </mat-accordion>
-
             <app-freesample [freesampledata]="freesample"
               *ngIf="freesample?.status == 1 && freesample?.color_id !=0 "></app-freesample>
             <div class="guides-buttons">
