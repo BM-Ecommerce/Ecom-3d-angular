@@ -238,7 +238,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   get_freesample() {
     this.freesample = {
       "status": this?.freesameple_status,
-      "product_id": this?.product_id,
+      "product_id": this?.routeParams?.cart_productid,
       "type": "free_sample",
       "free_sample_price": this?.freesample_price,
       "form_data": this?.orderitemdata(false, true),
@@ -249,7 +249,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       "api_url": this?.routeParams?.site,
       "current_url": window?.location.href,
       "productname": this?.productname,
-      "catagory_id": this.fabricFieldType,
+      "catagory_id": this?.fabricFieldType,
       "color_id": this.colorid,
       "fabricid": this.fabricid,
       "pei_ecomImage": this.background_color_image_url,

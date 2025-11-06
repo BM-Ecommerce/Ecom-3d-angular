@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { ApiService } from '../services/api.service';
-
+import Swal from 'sweetalert2';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-freesample',
@@ -61,7 +62,23 @@ export class FreesampleComponent implements OnInit, OnChanges {
       action
     ).subscribe({
       next: (data) => {
-        console.log(data, "sucess");
+        if (data.success) {
+                 Swal.fire({
+                   title: 'Added to Cart!',
+                   text: 'Free Sample has been added successfully.',
+                   icon: 'success',
+                   showConfirmButton: false,
+                   timer: 3000,
+                   background: '#fefefe',
+                   color: '#333',
+                   customClass: {
+                     popup: 'small-toast'
+                   }
+                 }).then(() => {
+                   window.location.href = environment.site + '/cart';
+                 });
+       
+               } 
 
       },
       error: (err) => {
