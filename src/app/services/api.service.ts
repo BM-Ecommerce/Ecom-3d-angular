@@ -116,18 +116,15 @@ export class ApiService {
   }
 
   getProductParameters(params: ApiCommonParams,recipeId:number): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, recipeid, ...payload } = params;
-    if (!recipeid) {
+    const { api_url, api_key, api_name, ...payload } = params;
+    if (!recipeId) {
       return throwError(() => new Error('recipeid is required'));
     }
     const passData = `products/fields/withdefault/list/${recipeId}/1/0`;
     return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
   }
   getminandmax(params: ApiCommonParams,colorid:string,unittype:number,pricegroup:number,fabricFieldType:number): Observable<ApiResponse> {
-    const { api_url, api_key, api_name, recipeid,product_id,category } = params;
-    if (!recipeid) {
-      return throwError(() => new Error('recipeid is required'));
-    }
+    const { api_url, api_key, api_name, product_id,category } = params;
     const payload = {
       width: "0",
       drop: "0",
