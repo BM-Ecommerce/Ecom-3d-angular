@@ -1,13 +1,10 @@
 .example-card {
     display: flex;
-    height: 75px;
 }
 
-.example-header-image {
-    background-image: url('https://material.angular.dev/assets/img/examples/shiba1.jpg');
-    max-width: 80px;
+button.mat-focus-indicator.mat-button.mat-stroked-button.mat-button-base.mat-primary {
+    background-color: unset;
 }
-
 .center-card {
     margin: 20px auto;
     /* top/bottom 20px, auto sides */
@@ -32,7 +29,7 @@
 .add-to-cart {
     text-align: center;
     margin: auto !important;
-    width: 50%;
+    width: 70%;
 }
 
 section {
