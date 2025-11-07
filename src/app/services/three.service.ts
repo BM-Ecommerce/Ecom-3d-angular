@@ -630,7 +630,7 @@ export class ThreeService implements OnDestroy {
     }
 
     // Detect transparent region in the image
-    const hole = this.detectTransparentRegion(img, 10);
+    const hole = this.detectTransparentRegion(img, 40);
     if (!hole.found) {
       // nothing transparent -> place background behind entire frame
       // compute frame plane size:
