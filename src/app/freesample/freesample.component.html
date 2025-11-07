@@ -6,7 +6,9 @@
     <div class="add-to-cart">
 
 
-        <button mat-stroked-button mat-button color="primary" (click)="buyFreeSample()">Buy Freesample
+        <button [disabled]="button_disable" [ngClass]="{ 'buttom-inactive-class': button_disable }" mat-stroked-button
+            mat-button color="primary" (click)="buyFreeSample()">Buy
+            Freesample
             <span *ngIf="freesampledata?.free_sample_price > 0">
                 - {{ freesampledata.currencySymbol }} {{ freesampledata.free_sample_price }}
             </span></button>
