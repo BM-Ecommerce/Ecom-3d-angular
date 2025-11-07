@@ -235,6 +235,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   freesameple_status!: number | boolean;
   product_id!: number | string;
   freesample_price!: number | string;
+  siteurl = environment.site;
 
   get_freesample() {
     this.freesample = {
@@ -1043,6 +1044,13 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         this.cd.markForCheck();
       });
     }
+  }
+  buildVisualizerUrl(product: any) {
+    const slug1 = product.productname.toLowerCase().replace(/ /g, '-');
+    const slug2 = (product.fabricname + '-' + product.colorname)
+                    .toLowerCase().replace(/ /g, '-');
+
+    return `${this.siteurl}/visualizer/${this.product_id}/${slug1}/${slug2}/${product.fd_id}/${product.cd_id}/${product.groupid}/${product.supplierid}/${this.routeParams.cart_productid}`;
   }
   onImageError(event: Event) {
     const img = event.target as HTMLImageElement;
