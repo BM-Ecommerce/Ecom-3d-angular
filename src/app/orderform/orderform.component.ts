@@ -2266,11 +2266,8 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
     return '';
   }
   hideFrameImage():boolean{
-<<<<<<< HEAD
     if('single_view' != this.routeParams?.fabric && 2 == this.category){
-=======
-    if('single_view' != this.routeParams?.fabric && 2 == this.routeParams?.category){
->>>>>>> abde4188d924d3363ff9884bda765ecbf87f83be
+
       return true;
     }
     return false;
