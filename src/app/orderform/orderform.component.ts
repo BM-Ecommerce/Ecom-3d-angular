@@ -226,6 +226,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   pei_prospec: string = "";
   isScrolled = false;
   unittypename = "";
+  relatedframeimage:string = ""
   netpricecomesfrom = "";
   is3DOn = false;
   recipeid: number = 0;
@@ -344,6 +345,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   apiUrl = '';
   img_file_path_url = '';
   imgpath = environment.apiUrl+'/api/public/storage/attachments/'+environment.apiName+'/material/colour/';
+  frame_path = environment.apiUrl +'/api/public/storage/';
   parameters_data: ProductField[] = [];
   option_data: Record<number, ProductOption[]> = {};
   selected_option_data: SelectProductOption[] = [];
@@ -574,10 +576,11 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           this.recipeid = data.recipeid;
           this.freesameple_status = data?.pei_ecomFreeSample ?? 0;
           this.product_id = params?.product_id ?? this.route.snapshot.params['product_id'],
-            this.freesample_price = data?.pei_ecomsampleprice ?? 0;
+          this.freesample_price = data?.pei_ecomsampleprice ?? 0;
           this.get_freesample();
-
-          this.get_freesample();
+          this.relatedframeimage =  data?.pi_frameimage ?? "";
+         
+          console.log(this.relatedframeimage);
           let productBgImages: string[] = [];
           try {
             productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
@@ -596,9 +599,32 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
             productDefaultImage = {};
             ecomProductName = "";
           }
+          let frameImages: string[] = [];
+          try {
+            frameImages = JSON.parse(data.pi_frameimage || '[]');
+          } catch (e) {
+            console.error('Error parsing pi_frameimage:', e);
+            frameImages = [];
+          }
 
           const defaultImageSettings = productDefaultImage?.defaultimage || {};
           const defaultFrameFilename = defaultImageSettings?.backgrounddefault || '';
+          const frameDefaultFilename = defaultImageSettings?.framedefault || '';
+          let frameFullUrl = '';
+          frameImages.forEach(imgPath => {
+            const isDefault = frameDefaultFilename && imgPath.includes(frameDefaultFilename);
+
+            const pathParts = imgPath.split('/');
+            const filename = pathParts.pop() || '';
+            const encodedFilename = encodeURIComponent(filename);
+            const encodedImgPath = [...pathParts, encodedFilename].join('/');
+
+            const fullUrl = this.img_file_path_url + encodedImgPath;
+
+            if (isDefault) {
+              this.relatedframeimage = fullUrl;
+            }
+          });
 
           this.product_img_array = productBgImages.map(imgFilename => {
             const isDefault = defaultFrameFilename && imgFilename.includes(defaultFrameFilename);
@@ -612,7 +638,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
               this.frame_default_url = imageUrl;
               this.mainframe = imageUrl;
             }
-
+            console.log(this.relatedframeimage);
             return { image_url: imageUrl, is_default: isDefault };
           });
 
@@ -2289,7 +2315,6 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
         } else {
           this.related_products = [];
         }
-        console.log(this.related_products);
         this.cd.markForCheck();
       });
   }

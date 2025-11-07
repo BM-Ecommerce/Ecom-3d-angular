@@ -413,13 +413,29 @@
       </mat-tab>
     </mat-tab-group>
     <div *ngIf="related_products.length > 0" class="related-products-container">
-     <h2>Related Products</h2>
+      <h2 class="rp-title">Related Products</h2>
       <div class="related-products-grid">
         <div *ngFor="let product of related_products" class="related-product-card">
-         <a [href]="buildVisualizerUrl(product)" target="_blank">
-            <img [src]="imgpath+product.colorimage" alt="{{ product.product_name }}"
-              (error)="onImageError($event)">
-            <p>{{ product.productname }} {{  product.fabricname}} {{  product.colorname}}</p>
+          <a [href]="buildVisualizerUrl(product)" class="rp-link" target="_blank">
+            <div class="rp-image-box">
+             <img
+                [attr.data-img]="imgpath + product.colorimage"
+                [style.background-image]="'url(' + imgpath + product.colorimage + ')'"
+                [src]="relatedframeimage"
+                alt="{{ product.productname }}"
+                (error)="onImageError($event)"
+              />
+            </div>
+            <div class="rp-info">
+              <p class="rp-name">
+                {{ product.productname }}  
+                <span class="rp-fabric">{{ product.fabricname }}</span> 
+                <span class="rp-color">{{ product.colorname }}</span>
+              </p>
+              <p class="rp-price" *ngIf="product.minprice">
+                From: £{{ product.minprice }}
+              </p>
+            </div>
           </a>
         </div>
       </div>

@@ -246,9 +246,8 @@ relatedProducts(
     colorid: colorid,
     productid: product_id,
   };
-  console.log(payload);
     const passData = `fabriclistview/${category_id}/${product_id}/?page=1&perpage=150`;
-console.log(passData);
+
     return this.callApi('POST', passData, payload, false, false, api_url, api_key, api_name);
 }
 
