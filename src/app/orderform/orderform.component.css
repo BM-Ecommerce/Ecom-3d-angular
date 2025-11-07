@@ -838,3 +838,10 @@ mat-button-toggle-group:disabled {
   margin: 0;
   font-size: 14px;
 }
+.hide_section{
+    display: none !important;
+}
+.product-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+}

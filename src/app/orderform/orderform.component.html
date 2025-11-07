@@ -49,7 +49,7 @@
                   </button>
                 </div>
                 <div class="visualizer-view-controls">
-                  <mat-button-toggle-group name="viewMode" [value]="is3DOn ? '3d' : '2d'" (change)="toggle3D()"
+                  <mat-button-toggle-group name="viewMode" *ngIf="show_image_icons"  [value]="is3DOn ? '3d' : '2d'" (change)="toggle3D()"
                     appearance="standard">
                     <mat-button-toggle value="2d" aria-label="2D View">
                       <mat-icon>grid_on</mat-icon>
@@ -67,6 +67,7 @@
                 <div *ngFor="let product_img of product_img_array">
                   <button type="button" class="multiple-frame-list-button"
                     [class.selected_frame]="isSelectedFrame(product_img)"
+                          [class.hide_section]="hideFrameImage()"
                     (click)="onFrameChange(getFrameImageUrl(product_img))">
                     <img [src]="getFrameImageUrl(product_img)" alt="" width="auto" height="100"
                       [style.max-width.px]="150" [style.background-image]="'url(' + background_color_image_url + ')'">
@@ -104,7 +105,7 @@
               <div *ngIf="field.showfieldecomonjob == 1">
 
                 <!-- Unit Type -->
-                <div *ngSwitchCase="'unit_type'">
+    <div *ngSwitchCase="'unit_type'" [class]="getClassNameAccessories(field)">
                   <div class="parameter-wrapper inline-toggle radio">
                     <span class="mat-label" id="example-toggle-group-label">
                       {{ field.fieldname }}
@@ -129,7 +130,7 @@
                 </div>
 
                 <!-- Text -->
-                <div *ngSwitchCase="'text'">
+    <div *ngSwitchCase="'text'" [class]="getClassNameAccessories(field)">
                   <div class="parameter-wrapper">
                     <mat-form-field>
                       <mat-label>
@@ -154,8 +155,8 @@
                 </div>
 
                 <!-- List -->
-                <div *ngSwitchCase="'list'">
-                  <div class="parameter-wrapper">
+    <div *ngSwitchCase="'list'" [class]="getClassNameAccessories(field)">
+      <div class="parameter-wrapper" [class]="getClassNameAccessories(field,true)">
                     <mat-form-field>
                       <mat-label>
                         {{ field.fieldname }}
@@ -185,7 +186,7 @@
                 </div>
 
                 <!-- Materials -->
-                <div *ngSwitchCase="'materials'">
+    <div *ngSwitchCase="'materials'" [class]="getClassNameAccessories(field)">
                   <div class="parameter-wrapper">
                     <mat-form-field>
                       <mat-label>
@@ -215,7 +216,7 @@
                 </div>
 
                 <!-- Number -->
-                <div *ngSwitchCase="'number'">
+    <div *ngSwitchCase="'number'" [class]="getClassNameAccessories(field)">
                   <div class="parameter-wrapper">
                     <mat-form-field>
                       <mat-label>
@@ -254,7 +255,7 @@
                 </div>
 
                 <!-- Width with Fraction -->
-                <div *ngSwitchCase="'width_with_fraction'">
+    <div *ngSwitchCase="'width_with_fraction'" [class]="getClassNameAccessories(field)">
                   <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
                     <mat-form-field class="fraction-field">
                       <mat-label>
@@ -289,7 +290,7 @@
                 </div>
 
                 <!-- Drop with Fraction -->
-                <div *ngSwitchCase="'drop_with_fraction'">
+    <div *ngSwitchCase="'drop_with_fraction'" [class]="getClassNameAccessories(field)">
                   <div class="parameter-wrapper fraction-wrapper" [ngClass]="{'fraction-visible': showFractions}">
                     <mat-form-field class="fraction-field">
                       <mat-label>

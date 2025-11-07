@@ -229,6 +229,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   netpricecomesfrom = "";
   is3DOn = false;
   recipeid: number = 0;
+  category: number = 0;
   costpricecomesfrom = "";
   inchfractionselected: Number = 0;
   freesample: any;
@@ -350,6 +351,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   routeParams: any;
   unittype: number = 1;
   pricegroup: string = "";
+  show_image_icons = false;
+  chosenAccessoriesFieldId:number = 0;
+  chosenAccessoriesOptionId:string = "";
   public grossPrice: string | null = null;
   public isCalculatingPrice = true;
   grossPricenum: number = 0;
@@ -559,12 +563,12 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           this.productname = data.label;
           this.productdescription = data.pi_productdescription;
           this.pei_prospec = data.pei_prospec;
-          const category = Number(data.pi_category);
-          if (category == 5) {
+          this.category = Number(data.pi_category);
+          if (this.category == 5) {
             this.fabricFieldType = 21
-          } else if (category == 4) {
+          } else if (this.category == 4) {
             this.fabricFieldType = 20;
-          } else if (category == 3) {
+          } else if (this.category == 3) {
             this.fabricFieldType = 5;
           }
           this.recipeid = data.recipeid;
@@ -629,6 +633,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           this.parameters_data = response.data || [];
           this.apiUrl = params.api_url;
           this.routeParams = params;
+        this.chosenAccessoriesFieldId = this.routeParams.fabric_id;
+        this.chosenAccessoriesOptionId = this.routeParams.pricing_group;
           this.netpricecomesfrom = response.netpricecomesfrom;
           this.costpricecomesfrom = response.costpricecomesfrom;
           this.initializeFormControls();
@@ -639,7 +645,10 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           this.dropField = this.parameters_data.find(f => [9, 10, 12, 32].includes(f.fieldtypeid));
           this.unitField = this.parameters_data.find(f => f.fieldtypeid === 34);
           this.get_freesample();
-
+		  this.show_image_icons = true;
+          if(2 == this.category){
+                this.show_image_icons = false;
+          }
           return forkJoin({
             optionData: this.loadOptionData(params),
             minMaxData: this.apiService.getminandmax(
@@ -875,7 +884,10 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
           if (control) {
             let valueToSet: any;
-
+            // Set option default in Accessories type on page load.
+            if('single_view' != this.routeParams?.fabric && 2 == this.category && this.chosenAccessoriesFieldId == field.fieldid){
+                field.optiondefault = this.chosenAccessoriesOptionId;
+            }
             if (field.fieldtypeid === 3 && field.selection == 1) {
               valueToSet = field.optiondefault
                 ? field.optiondefault.toString().split(',').filter((val: string) => val !== '').map(Number)
@@ -954,7 +966,21 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         toArray(),
         takeUntil(this.destroy$)
       ).subscribe(() => {
-
+        // Accessories Type.
+        if('single_view' != this.routeParams?.fabric && 2 == this.category){
+            const selected_accessories_data = this.option_data[this.chosenAccessoriesFieldId];
+            if(selected_accessories_data.length > 0){
+                var chosen_accessories_list:any = [];
+                if(selected_accessories_data){
+                  chosen_accessories_list = selected_accessories_data.filter(opt => opt.optionid == this.chosenAccessoriesOptionId);
+                }
+                if(chosen_accessories_list[0].optionimage){
+                  this.threeService.updateTextures2d(this.apiUrl + '/api/public' + chosen_accessories_list[0].optionimage, ""); 
+                }else{
+                  this.threeService.updateTextures2d("assets/no-image.jpg", "");
+                }
+          }
+      }
         this.updateFieldValues(field, selectedOptions, 'Array.isArrayOptions');
         this.cd.markForCheck();
       });
@@ -983,6 +1009,21 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       if (canUpdate && (field.fieldtypeid === 3 && field.fieldname == "Frame Colour") && selectedOption.optionimage) {
 
         this.threeService.updateFrame(this.apiUrl + '/api/public' + selectedOption.optionimage);
+      }
+      // Accessories Type.
+     if('single_view' != this.routeParams?.fabric && 2 == this.category){
+            const selected_accessories_data = this.option_data[this.chosenAccessoriesFieldId];
+            if(selected_accessories_data.length > 0){
+                var chosen_accessories_list:any = [];
+                if(selected_accessories_data){
+                  chosen_accessories_list = selected_accessories_data.filter(opt => opt.optionid == this.chosenAccessoriesOptionId);
+                }
+                if(chosen_accessories_list[0].optionimage){
+                  this.threeService.updateTextures2d(this.apiUrl + '/api/public' + chosen_accessories_list[0].optionimage, ""); 
+                }else{
+                  this.threeService.updateTextures2d("assets/no-image.jpg", "");
+                }
+          }
       }
       this.processSelectedOption(params, field, selectedOption).pipe(
         takeUntil(this.destroy$)
@@ -1837,7 +1878,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       this.vatname,
       window.location.href,
       this.productname,
-      this.routeParams.category,
+      this.fabricFieldType,
       visualizerImage,
     ).pipe(
       takeUntil(this.destroy$),
@@ -1913,8 +1954,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
             this.drop,
             this.unittype,
             this.supplier_id,
-            this.widthField.fieldtypeid,
-            this.dropField.fieldtypeid,
+            this.widthField?.fieldtypeid ?? "",
+            this.dropField?.fieldtypeid ?? "",
             this.pricegroup,
             vatPercentage,
             this.selected_option_data,
@@ -1936,8 +1977,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
             this.drop,
             this.unittype,
             this.supplier_id,
-            this.widthField.fieldtypeid,
-            this.dropField.fieldtypeid,
+            this.widthField?.fieldtypeid ?? "",
+            this.dropField?.fieldtypeid ?? "",
             this.pricegroup,
             vatPercentage,
             this.selected_option_data,
@@ -1991,8 +2032,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
                   this.drop,
                   this.unittype,
                   this.supplier_id,
-                  this.widthField.fieldtypeid,
-                  this.dropField.fieldtypeid,
+                  this.widthField?.fieldtypeid ?? "",
+                  this.dropField?.fieldtypeid ?? "",
                   this.pricegroup,
                   vatPercentage,
                   this.selected_option_data,
@@ -2019,8 +2060,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
             this.drop,
             this.unittype,
             this.supplier_id,
-            this.widthField.fieldtypeid,
-            this.dropField.fieldtypeid,
+            this.widthField?.fieldtypeid ?? "",
+            this.dropField?.fieldtypeid ?? "",
             this.pricegroup,
             vatPercentage,
             this.selected_option_data,
@@ -2214,6 +2255,21 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       i.subchild = this.cleanSubchild(i.subchild);
       return i;
     });
+  }	 
+getClassNameAccessories(field: any,list_field:boolean = false): string {
+    if('single_view' != this.routeParams?.fabric && list_field && 2 == this.category && field.fieldid == this.chosenAccessoriesFieldId){
+       return 'hide_section';
+    } 
+    if('single_view' != this.routeParams?.fabric && 2 == this.category && field.masterparentfieldid != this.chosenAccessoriesFieldId){
+      return 'hide_section';
+    }
+    return '';
+  }
+  hideFrameImage():boolean{
+    if('single_view' != this.routeParams?.fabric && 2 == this.category){
+      return true;
+    }
+    return false;
   }
   private getRelatedProducts(): void {
 
