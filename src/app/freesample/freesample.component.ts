@@ -18,6 +18,7 @@ export class FreesampleComponent implements OnInit, OnChanges {
   @Input() freesampledata: any;
 
   freeSampleOrderData: any = [];
+  button_disable: boolean = false;
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -28,10 +29,13 @@ export class FreesampleComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    // console.log(changes);
     this.cdr.detectChanges();
   }
 
   buyFreeSample() {
+    this.button_disable = true;
+
     let form_data = this.freesampledata.form_data;
     let productId = this.freesampledata.product_id;
     let api_url = this.freesampledata.api_url;
@@ -63,22 +67,22 @@ export class FreesampleComponent implements OnInit, OnChanges {
     ).subscribe({
       next: (data) => {
         if (data.success) {
-                 Swal.fire({
-                   title: 'Added to Cart!',
-                   text: 'Free Sample has been added successfully.',
-                   icon: 'success',
-                   showConfirmButton: false,
-                   timer: 3000,
-                   background: '#fefefe',
-                   color: '#333',
-                   customClass: {
-                     popup: 'small-toast'
-                   }
-                 }).then(() => {
-                   window.location.href = environment.site + '/cart';
-                 });
-       
-               } 
+          Swal.fire({
+            title: 'Added to Cart!',
+            text: 'Free Sample has been added successfully.',
+            icon: 'success',
+            showConfirmButton: false,
+            timer: 3000,
+            background: '#fefefe',
+            color: '#333',
+            customClass: {
+              popup: 'small-toast'
+            }
+          }).then(() => {
+            this.button_disable = false;
+            this.cdr.detectChanges();
+          });
+        }
 
       },
       error: (err) => {

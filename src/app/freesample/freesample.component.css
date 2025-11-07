@@ -5,6 +5,7 @@
 button.mat-focus-indicator.mat-button.mat-stroked-button.mat-button-base.mat-primary {
     background-color: unset;
 }
+
 .center-card {
     margin: 20px auto;
     /* top/bottom 20px, auto sides */
@@ -55,4 +56,9 @@ section {
     display: flex;
     justify-content: space-between;
     flex-wrap: wrap;
+}
+
+.buttom-inactive-class {
+    color: #a6a6a6;
+    background-color: #e0e0e0;
 }
