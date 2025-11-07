@@ -806,7 +806,35 @@ mat-button-toggle-group:disabled {
     top: 0;
     right: 10px;
     transform: translateY(-50%);
-    display: flex
-;
+    display: flex;
     flex-direction: column;
+}
+.related-products-container {
+  margin-top: 20px;
+  padding: 20px;
+  border-top: 1px solid #eee;
+}
+
+.related-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px;
+}
+
+.related-product-card {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  text-align: center;
+}
+
+.related-product-card img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+.related-product-card p {
+  margin: 0;
+  font-size: 14px;
 }

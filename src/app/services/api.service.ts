@@ -64,7 +64,7 @@ export class ApiService {
     } else {
       url = this.constructUrl(`${api_url}/api/public/api`, passData);
     }
-
+    
     const headers = this.getHeaders(api_name, api_key);
 
     switch (method.toUpperCase()) {
@@ -229,6 +229,28 @@ export class ApiService {
     const passData = `orderitems/calculate/rules`;
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
+
+relatedProducts(
+  params: ApiCommonParams,
+  category_id: number,
+  related_fabric: number = 0,
+  colorid: number = 0
+): Observable<ApiResponse> {
+
+ const { api_url, api_key, api_name, product_id, ...rest } = params;
+
+  let fabric_id = related_fabric || colorid;
+
+  const payload = {
+    related_fabric: fabric_id,
+    colorid: colorid,
+    productid: product_id,
+  };
+  console.log(payload);
+    const passData = `fabriclistview/${category_id}/${product_id}/?page=1&perpage=150`;
+console.log(passData);
+    return this.callApi('POST', passData, payload, false, false, api_url, api_key, api_name);
+}
 
   getOptionlist(
     params: ApiCommonParams,
@@ -406,4 +428,5 @@ export class ApiService {
     const passData = `orderitems/calculate/option/price`;
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
+  
 }

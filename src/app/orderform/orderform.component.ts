@@ -205,6 +205,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   private unitField?: ProductField;
   // Form / UI state
   public productTitle: string = '';
+  public related_products: any[] = [];
   isLoading = false;
   isSubmitting = false;
   errorMessage: string | null = null;
@@ -340,7 +341,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   previousFormValue: any;
   apiUrl = '';
   img_file_path_url = '';
-  // Data arrays
+  imgpath = environment.apiUrl+'/api/public/storage/attachments/'+environment.apiName+'/material/colour/';
   parameters_data: ProductField[] = [];
   option_data: Record<number, ProductOption[]> = {};
   selected_option_data: SelectProductOption[] = [];
@@ -430,7 +431,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           }
         });
     }
-
     // Price updates remain the same
     this.priceUpdate.pipe(
       debounceTime(500),
@@ -1039,7 +1039,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
         this.freesample = { ...this.freesample, fabricid: this.fabricid, color_id: this.colorid };
-
+        this.getRelatedProducts();
         this.cd.markForCheck();
       });
     }
@@ -2206,5 +2206,26 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       i.subchild = this.cleanSubchild(i.subchild);
       return i;
     });
+  }
+  private getRelatedProducts(): void {
+
+    let relatedFabricId = this.fabricid;
+    let colorId = 0;
+
+    if (this.fabricFieldType === 5 || this.fabricFieldType === 20) {
+      colorId = this.colorid;
+    }
+
+    this.apiService.relatedProducts(this.routeParams, this.fabricFieldType , relatedFabricId, colorId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((response: any) => {
+        if (response && response.result) {
+          this.related_products = response.result;
+        } else {
+          this.related_products = [];
+        }
+        console.log(this.related_products);
+        this.cd.markForCheck();
+      });
   }
 }
