@@ -970,6 +970,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         this.colorid = 0;
         this.updateMinMaxValidators(false);
       }
+      if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
+        this.getRelatedProducts();
+      }
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       this.get_freesample();
@@ -1107,7 +1110,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
         this.freesample = { ...this.freesample, fabricid: this.fabricid, color_id: this.colorid };
-        this.getRelatedProducts();
+        if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
+           this.getRelatedProducts();
+        }
         this.cd.markForCheck();
       });
     }
