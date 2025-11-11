@@ -26,8 +26,10 @@ export class ThreeService implements OnDestroy {
     this.canvasEl?.classList.remove('grabbing');
     this.canvasEl?.classList.add('grab');
   };
+
   private textureLoader = new THREE.TextureLoader();
   private gltfLoader = new GLTFLoader();
+
   private cube2Mesh!: THREE.Mesh;
   private frameMesh!: THREE.Mesh;
   private cube4Mesh!: THREE.Mesh;
@@ -38,6 +40,14 @@ export class ThreeService implements OnDestroy {
   private cubeMesh!: THREE.Mesh;
   private initialCameraPosition!: THREE.Vector3;
   private initialControlsTarget!: THREE.Vector3;
+
+  // Animation-related
+  private mixer?: THREE.AnimationMixer;                    
+  private clock = new THREE.Clock();                       
+  private rollerAction?: THREE.AnimationAction | null = null;
+  private actions?: { [key: string]: THREE.AnimationAction };
+  private isRollerOpen: boolean = false;
+
 
   // New properties for 2D zoom
   private zoomCamera!: THREE.OrthographicCamera;
@@ -60,15 +70,19 @@ export class ThreeService implements OnDestroy {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = undefined;
     }
+
     if (this.renderer) {
-      this.renderer.dispose();
+      try { this.renderer.dispose(); } catch { /* ignore */ }
     }
+
     if (this.textureMaterial) {
-      this.textureMaterial.dispose();
+      try { this.textureMaterial.dispose(); } catch { /* ignore */ }
     }
+
     if (this.controls) {
-      this.controls.dispose();
+      try { this.controls.dispose(); } catch { /* ignore */ }
     }
+
     if (this.canvasEl) {
       this.canvasEl.removeEventListener('mousedown', this.onCanvasMouseDown);
       this.canvasEl.removeEventListener('mouseup', this.onCanvasMouseUp);
@@ -76,6 +90,15 @@ export class ThreeService implements OnDestroy {
       this.canvasEl.classList.remove('grab', 'grabbing');
       this.canvasEl = null;
     }
+
+    if (this.mixer) {
+      // stop any actions and release mixer
+      try {
+        this.mixer.stopAllAction();
+      } catch { /* ignore */ }
+      this.mixer = undefined;
+    }
+
     this.scene = new THREE.Scene();
     this.camera = null!;
     this.camera2d = null!;
@@ -94,6 +117,8 @@ export class ThreeService implements OnDestroy {
     this.mouseX = 0;
     this.mouseY = 0;
     this.isZooming = false;
+    this.rollerAction = null;
+    this.clock = new THREE.Clock();
   }
 
   public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
@@ -124,7 +149,7 @@ export class ThreeService implements OnDestroy {
     this.renderer.setSize(width, height, false);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1;
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.outputColorSpace = (THREE as any).SRGBColorSpace ?? THREE.SRGBColorSpace;
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
@@ -133,7 +158,6 @@ export class ThreeService implements OnDestroy {
     this.initialControlsTarget = this.controls.target.clone();
 
     this.controls.addEventListener('start', this.onCanvasMouseDown);
-
     this.controls.addEventListener('end', this.onCanvasMouseUp);
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -164,68 +188,131 @@ export class ThreeService implements OnDestroy {
     }
   }
 
+
   public loadGltfModel(gltfUrl: string, type: string): void {
     this.gltfLoader.load(
       gltfUrl,
       (gltf) => {
-        this.scene.add(gltf.scene);
+  this.scene.add(gltf.scene);
 
-        gltf.scene.traverse((child) => {
-          if (type == 'rollerblinds') {
-            const mesh = child as THREE.Mesh;
-            if (mesh.name.startsWith("Cylinder") || mesh.name.startsWith("Cube")) {
-              this.cube5Meshes.push(mesh);
-            }
-          } else if (type == 'venetian') {
-            if ((child as THREE.Mesh).isMesh) {
-              const mesh = child as THREE.Mesh;
-              if (mesh.name.startsWith("Cylinder") || mesh.name.startsWith("Cube")) {
-                mesh.material = new THREE.MeshStandardMaterial({
-                  color: 0xffffff,
-                });
-                (mesh.material as THREE.Material).needsUpdate = true;
-              } else if (mesh.name.startsWith("Boolean")) {
-                this.cube5Meshes.push(mesh);
-              }
-            }
-          } else {
-            if ((child as THREE.Mesh).isMesh) {
-              const parent = child.parent;
-              const grandParent = parent?.parent;
-              if (parent && grandParent && grandParent.name === "Cube_5") {
-                const index = parent.children.indexOf(child);
+  if (gltf.animations && gltf.animations.length > 0) {
+    this.mixer = new THREE.AnimationMixer(gltf.scene);
+    console.log(gltf.animations.length);
+    if (gltf.animations.length === 2) {
+      const clip = gltf.animations[0];
+      this.rollerAction = this.mixer.clipAction(clip);
+      this.rollerAction.clampWhenFinished = true;
+      this.rollerAction.loop = THREE.LoopOnce;
+      this.actions = undefined; 
+    } else {
+      this.actions = {};
+      this.rollerAction = undefined;
+      
+      gltf.animations.forEach((clip) => {
+        const action = this.mixer!.clipAction(clip);
+        action.loop = THREE.LoopOnce;
+        action.clampWhenFinished = true;
+        this.actions![clip.name] = action;
+      });
+    }
+  } else {
+    this.mixer = undefined;
+    this.rollerAction = null;
+    console.warn('ThreeService: no animations found in GLTF.');
+  }
 
-                if (index === 1) {
-                  this.cube5Meshes.push(child as THREE.Mesh);
-                } else {
-                  if ((child as THREE.Mesh).isMesh) {
-                    (child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
-                      color: 0x000000,
-                    });
-                    ((child as THREE.Mesh).material as THREE.Material).needsUpdate = true;
-                  }
-                }
-              }
-            }
-            if ((child as THREE.Mesh).isMesh && child.name === 'Cube_4') {
-              this.cube4Mesh = child as THREE.Mesh;
-            } else if ((child as THREE.Mesh).isMesh && child.name === 'Cube_3') {
-              this.cube3Mesh = child as THREE.Mesh;
-            } else if ((child as THREE.Mesh).isMesh && child.name === 'Cube_2') {
-              this.cube2Mesh = child as THREE.Mesh;
-            } else if ((child as THREE.Mesh).isMesh && child.name === 'Cube') {
-              this.cubeMesh = child as THREE.Mesh;
-            }
-          }
-        });
+  gltf.scene.traverse((child) => {
+    if ((child as any).isMesh) {
+      const mesh = child as THREE.Mesh;
 
-        if (this.textureMaterial && this.cube5Meshes.length > 0) {
-          this.cube5Meshes.forEach((mesh) => {
-            mesh.material = this.textureMaterial!;
-            (mesh.material as THREE.Material).needsUpdate = true;
-          });
+      if (type === 'rollerblinds') {
+        console.log(mesh);
+        if (mesh.name.startsWith('Cylinder') || mesh.name.startsWith('Cube')) {
+          this.cube5Meshes.push(mesh);
         }
-      },
+      } else if (type === 'venetian') {
+        if (mesh.name.startsWith('Cylinder') || mesh.name.startsWith('Cube')) {
+          mesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+          (mesh.material as THREE.Material).needsUpdate = true;
+        } else if (mesh.name.startsWith('Boolean')) {
+          this.cube5Meshes.push(mesh);
+        }
+      } else {
+        const parent = mesh.parent;
+        const grandParent = parent?.parent;
+        if (parent && grandParent && grandParent.name === 'Cube_5') {
+          const index = parent.children.indexOf(child);
+          if (index === 1) {
+            this.cube5Meshes.push(mesh);
+          } else {
+            mesh.material = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            (mesh.material as THREE.Material).needsUpdate = true;
+          }
+        }
+
+        if (mesh.name === 'Cube_4') {
+          this.cube4Mesh = mesh;
+        } else if (mesh.name === 'Cube_3') {
+          this.cube3Mesh = mesh;
+        } else if (mesh.name === 'Cube_2') {
+          this.cube2Mesh = mesh;
+        } else if (mesh.name === 'Cube') {
+          this.cubeMesh = mesh;
+        }
+      }
+    }
+  });
+
+  if (this.textureMaterial && this.cube5Meshes.length > 0) {
+    this.cube5Meshes.forEach((mesh) => {
+      mesh.material = this.textureMaterial!;
+      (mesh.material as THREE.Material).needsUpdate = true;
+    });
+  }
+
+    try {
+      const bbox = new THREE.Box3().setFromObject(gltf.scene);
+      const size = bbox.getSize(new THREE.Vector3());
+      const center = bbox.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const safeMax = maxDim > 0 ? maxDim : 1;
+      gltf.scene.position.x += -center.x;
+      gltf.scene.position.y += -center.y;
+      gltf.scene.position.z += -center.z;
+
+      if (this.camera && this.camera.isPerspectiveCamera) {
+        const fov = this.camera.fov * (Math.PI / 180);
+        const aspect = this.camera.aspect;
+        const distance = safeMax / (2 * Math.tan(fov / 2));
+        const framingMultiplier = 1.15; 
+        this.camera.position.set(0, 0, distance * framingMultiplier);
+        this.camera.near = Math.max(0.01, safeMax / 1000);
+        this.camera.far = Math.max(1000, safeMax * 100);
+        this.camera.updateProjectionMatrix();
+
+        if (this.controls) {
+          this.controls.target.set(0, 0, 0);
+          this.controls.update();
+          const fitDist = distance * framingMultiplier;
+          this.controls.minDistance = Math.max(0.1, fitDist * 0.5);
+          this.controls.maxDistance = Math.max(10, fitDist * 5);
+        }
+
+        this.initialCameraPosition = this.camera.position.clone();
+        this.initialControlsTarget = this.controls ? this.controls.target.clone() : new THREE.Vector3(0,0,0);
+      }
+    } catch (err) {
+      console.warn('Auto-framing failed: ', err);
+    }
+
+    this.setRollerState(true);
+    if (this.textureMaterial && this.cube5Meshes.length > 0) {
+      this.cube5Meshes.forEach((mesh) => {
+        mesh.material = this.textureMaterial!;
+        (mesh.material as THREE.Material).needsUpdate = true;
+      });
+    }
+    },
       undefined,
       (error) => {
         console.error(error);
@@ -233,12 +320,88 @@ export class ThreeService implements OnDestroy {
     );
   }
 
+ public openRoller(): void {
+  if (!this.mixer || this.isRollerOpen) return; // Prevent opening if already open
+
+  if (this.rollerAction) {
+    // Single animation approach
+    const action = this.rollerAction;
+    action.stop();
+    action.enabled = true;
+    action.timeScale = 1;
+    action.reset();
+    action.play();
+    this.isRollerOpen = true;
+    this.updateButtonStates();
+  } else if (this.actions && Object.keys(this.actions).length > 0) {
+    // Multiple animations approach
+    Object.values(this.actions).forEach((action) => {
+      action.stop();
+      action.enabled = true;
+      action.timeScale = 1;
+      action.reset();
+      action.play();
+    });
+    this.isRollerOpen = true;
+    this.updateButtonStates();
+  }
+}
+
+
+
+  public closeRoller(): void {
+  if (!this.mixer || !this.isRollerOpen) return; // Prevent closing if already closed
+
+  if (this.rollerAction) {
+    const action = this.rollerAction;
+    const clip = action.getClip();
+    const duration = clip.duration ?? 0;
+
+    action.stop();
+    action.enabled = true;
+    action.time = duration;
+    this.mixer.update(0);
+    action.timeScale = -1;
+    action.play();
+    this.isRollerOpen = false;
+    this.updateButtonStates();
+  } else if (this.actions && Object.keys(this.actions).length > 0) {
+    Object.values(this.actions).forEach((action) => {
+      const clip = action.getClip();
+      const duration = clip.duration ?? 0;
+
+      action.stop();
+      action.enabled = true;
+      action.time = duration;
+      this.mixer?.update(0);
+      action.timeScale = -1;
+      action.play();
+    });
+    this.isRollerOpen = false;
+    this.updateButtonStates();
+  }
+}
   public getCanvasDataURL(): string | undefined {
     if (!this.renderer) {
       return undefined;
     }
     this.render();
     return this.renderer.domElement.toDataURL('image/png');
+  }
+  private updateButtonStates(): void {
+    // If you have direct references to buttons
+    // if (this.openButton && this.closeButton) {
+    //   this.openButton.disabled = this.isRollerOpen;
+    //   this.closeButton.disabled = !this.isRollerOpen;
+    // }
+    
+    // Or if you're using template references, emit events or use a service
+    console.log(`Roller is now ${this.isRollerOpen ? 'OPEN' : 'CLOSED'}`);
+  }
+
+  public setRollerState(isOpen: boolean): void {
+    this.isRollerOpen = isOpen;
+    this.updateButtonStates();
   }
 
   public initialize2d(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
@@ -513,6 +676,13 @@ export class ThreeService implements OnDestroy {
       if (this.controls) {
         this.controls.update();
       }
+
+      // update mixer with clock delta
+      if (this.mixer) {
+        const delta = this.clock.getDelta();
+        this.mixer.update(delta);
+      }
+
       this.render();
       this.animationFrameId = requestAnimationFrame(loop);
     };

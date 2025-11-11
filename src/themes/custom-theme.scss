@@ -1,21 +1,20 @@
 @use '@angular/material' as mat;
 
-// Define your custom colors
-$custom-primary: mat.define-palette(mat.$indigo-palette, 500, 300, 700);
-$custom-accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
 
-// Override the color tones with your color
+$brand-primary: #3f90a8; 
+
+
 $custom-primary: mat.define-palette((
-  50: #e0f7ff,
-  100: #b3ecff,
-  200: #80e0ff,
-  300: #4dd3ff,
-  400: #26caff,
-  500: #00c2ff, 
-  600: #00b8ff,
-  700: #00acff,
-  800: #009fff,
-  900: #0085ff,
+  50:  lighten($brand-primary, 45%),
+  100: lighten($brand-primary, 35%),
+  200: lighten($brand-primary, 25%),
+  300: lighten($brand-primary, 15%),
+  400: lighten($brand-primary, 8%),
+  500: $brand-primary,          
+  600: darken($brand-primary, 5%),
+  700: darken($brand-primary, 10%),
+  800: darken($brand-primary, 15%),
+  900: darken($brand-primary, 20%),
   contrast: (
     500: #ffffff,
     700: #ffffff,
@@ -23,7 +22,9 @@ $custom-primary: mat.define-palette((
   )
 ));
 
-// Define the theme using your palettes
+$custom-accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
+
+
 $custom-theme: mat.define-light-theme((
   color: (
     primary: $custom-primary,
@@ -31,5 +32,8 @@ $custom-theme: mat.define-light-theme((
   )
 ));
 
-// Include all component themes
 @include mat.all-component-themes($custom-theme);
+
+:root {
+  --primary-color: #{$brand-primary}; 
+}

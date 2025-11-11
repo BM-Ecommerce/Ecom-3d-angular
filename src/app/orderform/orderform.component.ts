@@ -21,6 +21,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { HtmlTooltipDirective } from '../html-tooltip.directive';
 import { FreesampleComponent } from "../freesample/freesample.component";
+import { CarouselModule } from 'ngx-owl-carousel-o';
+import { RelatedproductComponent } from '../relatedproduct/relatedproduct.component';
+
+
 
 
 
@@ -183,7 +187,9 @@ interface FractionOption {
     MatIconModule,
     MatTooltipModule,
     HtmlTooltipDirective,
-    FreesampleComponent
+    FreesampleComponent,
+    CarouselModule,
+    RelatedproductComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -234,6 +240,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   costpricecomesfrom = "";
   inchfractionselected: Number = 0;
   freesample: any;
+  relatedproducts: any;
   freesameple_status!: number | boolean;
   product_id!: number | string;
   freesample_price!: number | string;
@@ -260,8 +267,18 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       "currencySymbol": this.currencySymbol
     }
   }
-
-
+  get_relatedproduct_data() {
+    this.relatedproducts = {
+      fabricid: this.fabricid,            
+      colorid: this.colorid || 0,         
+      routeParams: this.routeParams,      
+      fabricFieldType: this.fabricFieldType,  
+      siteurl: this.siteurl,
+      relatedframeimage:this.relatedframeimage,
+      currencySymbol:this.currencySymbol,         
+      product_id: this.product_id         
+    };
+  }
   inchfraction_array: FractionOption[] = [
     {
       "name": "1/32",
@@ -361,6 +378,32 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   grossPricenum: number = 0;
   private priceUpdate = new Subject<void>();
   private rulesorderitem: any[] = [];
+  customOptions: any = {
+    loop: true,
+    mouseDrag: true,
+    touchDrag: true,
+    pullDrag: true,
+    margin: 20,
+    dots: false, 
+    navSpeed: 700,
+    navText: ['<', '>'],
+    responsive: {
+      0: {
+        items: 4
+      },
+      400: {
+        items: 4
+      },
+      740: {
+        items: 4
+      },
+      940: {
+        items: 4
+      }
+    },
+    nav: true
+  };
+
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
@@ -485,12 +528,12 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
 
       if (productname.toLowerCase().includes('roller blinds')) {
-        this.threeService.loadGltfModel('assets/rollerblinds.gltf', 'rollerblinds');
+        this.threeService.loadGltfModel('assets/rollerblinds.glb', 'rollerblinds');
       } else if (
         productname.toLowerCase().includes('venetian') ||
         productname.toLowerCase().includes('fauxwood')
       ) {
-        this.threeService.loadGltfModel('assets/venetianblinds.gltf', 'venetian');
+        this.threeService.loadGltfModel('assets/venetian6.glb', 'venetian');
       } else {
         this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'rollerdoor');
       }
@@ -503,7 +546,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     setTimeout(() => this.onWindowResize(), 0);
   }
-
   toggle3D() {
     this.is3DOn = !this.is3DOn;
     this.setupVisualizer(this.productname);
@@ -523,7 +565,13 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       this.threeService.zoomIn();
     }
   }
+  openRoller() {
+    this.threeService.openRoller();
+  }
 
+  closeRoller() {
+    this.threeService.closeRoller();
+  }
   zoomOut(): void {
     if (this.is3DOn) {
       this.threeService.zoomOut();
@@ -971,7 +1019,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         this.updateMinMaxValidators(false);
       }
       if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
-        this.getRelatedProducts();
+        this.get_relatedproduct_data();
       }
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
@@ -1111,7 +1159,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
         this.freesample = { ...this.freesample, fabricid: this.fabricid, color_id: this.colorid };
         if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
-           this.getRelatedProducts();
+           this.get_relatedproduct_data();
         }
         this.cd.markForCheck();
       });
@@ -1854,6 +1902,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         return of(null);
       })
     ).subscribe((FractionData: any) => {
+      console.log(FractionData);
       this.inchfractionselected = FractionData?.result?.inchfractionselected || 0;
       if (FractionData?.result?.inchfraction) {
         this.inchfraction_array = FractionData.result.inchfraction.map((item: any) => ({
@@ -1863,6 +1912,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           frac_decimalvalue: item.decimalvalue
         }));
       } else {
+        this.showFractions = false;
         this.inchfraction_array = [];
       }
       this.updateAccordionData();
@@ -2303,24 +2353,5 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
     }
     return false;
   }
-  private getRelatedProducts(): void {
-
-    let relatedFabricId = this.fabricid;
-    let colorId = 0;
-
-    if (this.fabricFieldType === 5 || this.fabricFieldType === 20) {
-      colorId = this.colorid;
-    }
-
-    this.apiService.relatedProducts(this.routeParams, this.fabricFieldType , relatedFabricId, colorId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((response: any) => {
-        if (response && response.result) {
-          this.related_products = response.result;
-        } else {
-          this.related_products = [];
-        }
-        this.cd.markForCheck();
-      });
-  }
+ 
 }
