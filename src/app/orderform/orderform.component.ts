@@ -533,7 +533,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         productname.toLowerCase().includes('venetian') ||
         productname.toLowerCase().includes('fauxwood')
       ) {
-        this.threeService.loadGltfModel('assets/venetian6.glb', 'venetian');
+        this.threeService.loadGltfModel('assets/venetianblinds.glb', 'venetian');
       } else {
         this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'rollerdoor');
       }
