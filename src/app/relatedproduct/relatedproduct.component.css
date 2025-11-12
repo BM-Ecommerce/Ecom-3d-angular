@@ -76,6 +76,9 @@ mat-button-toggle.mat-button-toggle-checked {
   height: 100%;
   background-size: cover;
   background-position: center;
+  background-size: 56%;
+  background-position: 64% 32%;
+  background-repeat: no-repeat;
 }
 
 .rp-info {

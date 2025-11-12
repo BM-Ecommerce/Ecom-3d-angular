@@ -531,6 +531,8 @@ hasDescriptionContent = false;
         this.threeService.loadGltfModel('assets/venetianblinds.glb', 'venetian');
       } else if(productname.toLowerCase().includes('vertical')) {
           this.threeService.loadGltfModel('assets/verticalblinds.glb', 'venetian');
+      } else if(productname.toLowerCase().includes('wood')) {
+          this.threeService.loadGltfModel('assets/woodenblinds.glb', 'venetian');
       }else {
         this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'rollerdoor');
       }

@@ -667,11 +667,11 @@ export class ThreeService implements OnDestroy {
             } else {
               mesh.material.dispose();
             }
-          mesh.material = newMaterial.clone(); // clone ensures independent updates
+          mesh.material = newMaterial.clone(); 
           (mesh.material as THREE.Material).needsUpdate = true;
         });
 
-        this.textureMaterial = newMaterial; // store for reuse
+        this.textureMaterial = newMaterial; 
         this.render();
       } else {
         console.warn('No target meshes found for texture application.');
