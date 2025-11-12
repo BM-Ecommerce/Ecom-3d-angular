@@ -4,7 +4,7 @@ html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
 .mat-input-element {
-    caret-color: #00c2ff !important;
+    caret-color: var(--primary-color) !important;
 }
 
 .mat-form-field-required-marker {
@@ -14,10 +14,6 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
     color: blue!important;
     text-decoration: none;
 }
-<<<<<<< HEAD
-
-=======
 .owl-item:first-child .frame-card{
     margin-left:15px;
 }
->>>>>>> origin/main

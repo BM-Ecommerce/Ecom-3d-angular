@@ -2967,7 +2967,7 @@ table.variations tbody.is-active td.config-heading-td:before {
 }
 
 .shutters-configurator .toggle_slats mat-button-toggle.mat-button-toggle-checked {
-  background-color: #00c2ff !important; /* Material blue */
+  background-color: var(--primary-color) !important; /* Material blue */
   color: #fff !important;
 }
 
