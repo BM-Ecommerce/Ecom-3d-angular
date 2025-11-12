@@ -559,7 +559,7 @@ mat-button-toggle.mat-button-toggle-checked {
     color: rgb(129 130 130);
    font-size: 14px;
 }
-.frame-card {
+.frame-card  img{
   padding: 6px;
   border-radius: 10px;
   cursor: pointer;
@@ -567,12 +567,21 @@ mat-button-toggle.mat-button-toggle-checked {
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.frame-card:hover {
+.frame-card:hover img{
   transform: scale(1.05);
   box-shadow: var(--box-shadow);
 }
+.frame-card img {
+  display: block;
+  height: 100px;
+  width: auto;
+  max-width: 150px;
+  border-radius: 10px;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
 
-.frame-card.selected {
+.frame-card.selected img{
   box-shadow: var(--box-shadow);
   border: 1px solid var(--primary-color);
   transform: scale(1.1);

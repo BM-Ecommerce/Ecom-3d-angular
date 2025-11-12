@@ -404,15 +404,17 @@
         </div>
       </div>
     </div>
-    <mat-tab-group dynamicHeight>
-      <mat-tab label="Product Specification">
-        <div class="tabsproduct" [innerHTML]="pei_prospec"></div>
-      </mat-tab>
+  <mat-tab-group dynamicHeight>
 
-      <mat-tab label="Details">
-        <div class="tabsproduct" [innerHTML]="productdescription"></div>
-      </mat-tab>
-    </mat-tab-group>
+    <mat-tab *ngIf="hasProspecContent" label="Product Specification">
+      <div class="tabsproduct" [innerHTML]="pei_prospec"></div>
+    </mat-tab>
+
+    <mat-tab *ngIf="hasDescriptionContent" label="Details">
+      <div class="tabsproduct" [innerHTML]="productdescription"></div>
+    </mat-tab>
+
+  </mat-tab-group>
    <app-relatedproduct
   [relatedproducts]="relatedproducts"
 ></app-relatedproduct>

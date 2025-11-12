@@ -232,6 +232,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   pei_prospec: string = "";
   isScrolled = false;
   unittypename = "";
+  hasProspecContent = false;
+  hasDescriptionContent = false;
   relatedframeimage:string = ""
   netpricecomesfrom = "";
   is3DOn = false;
@@ -379,28 +381,15 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   private priceUpdate = new Subject<void>();
   private rulesorderitem: any[] = [];
   customOptions: any = {
-    loop: true,
+    loop: false,
     mouseDrag: true,
+    autoWidth: true,
     touchDrag: true,
     pullDrag: true,
     margin: 20,
     dots: false, 
     navSpeed: 700,
     navText: ['<', '>'],
-    responsive: {
-      0: {
-        items: 4
-      },
-      400: {
-        items: 4
-      },
-      740: {
-        items: 4
-      },
-      940: {
-        items: 4
-      }
-    },
     nav: true
   };
 
@@ -621,6 +610,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           this.productname = data.label;
           this.productdescription = data.pi_productdescription;
           this.pei_prospec = data.pei_prospec;
+          this.hasProspecContent = this.hasContent(this.pei_prospec);
+          this.hasDescriptionContent = this.hasContent(this.productdescription);
           this.category = Number(data.pi_category);
           if (this.category == 5) {
             this.fabricFieldType = 21
