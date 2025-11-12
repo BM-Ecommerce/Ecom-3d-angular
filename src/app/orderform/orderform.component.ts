@@ -520,7 +520,13 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     // We also need to ensure the animation loop in three.service is started.
     // A better place for this might be after the first textures are loaded.
   }
-
+  
+  onAnimate() {
+    this.threeService.toggleAnimate();
+  }
+  get isAnimateOpen(): boolean {
+    return this.threeService.isAnimateOpen;
+  }
   private setupVisualizer(productname: string): void {
     if (!this.canvasRef || !this.containerRef) return;
 
@@ -534,7 +540,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         productname.toLowerCase().includes('fauxwood')
       ) {
         this.threeService.loadGltfModel('assets/venetianblinds.glb', 'venetian');
-      } else {
+      } else if(productname.toLowerCase().includes('vertical')) {
+          this.threeService.loadGltfModel('assets/verticalblinds.glb', 'venetian');
+      }else {
         this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'rollerdoor');
       }
 
@@ -565,12 +573,12 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       this.threeService.zoomIn();
     }
   }
-  openRoller() {
-    this.threeService.openRoller();
+  openAnimate() {
+    this.threeService.openAnimate();
   }
 
-  closeRoller() {
-    this.threeService.closeRoller();
+  closeAnimate() {
+    this.threeService.closeAnimate();
   }
   zoomOut(): void {
     if (this.is3DOn) {

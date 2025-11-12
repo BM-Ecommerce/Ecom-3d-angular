@@ -46,7 +46,7 @@ export class ThreeService implements OnDestroy {
   private clock = new THREE.Clock();                       
   private rollerAction?: THREE.AnimationAction | null = null;
   private actions?: { [key: string]: THREE.AnimationAction };
-  private isRollerOpen: boolean = false;
+  public isAnimateOpen: boolean = false;
 
 
   // New properties for 2D zoom
@@ -126,7 +126,7 @@ export class ThreeService implements OnDestroy {
     const width = container.clientWidth;
     const height = container.clientHeight;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xffffff);
+    this.scene.background = new THREE.Color(0xeeeeee);
 
     this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     this.camera.position.z = 5;
@@ -159,14 +159,12 @@ export class ThreeService implements OnDestroy {
 
     this.controls.addEventListener('start', this.onCanvasMouseDown);
     this.controls.addEventListener('end', this.onCanvasMouseUp);
-
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(1, 1, 1).normalize();
     this.scene.add(directionalLight);
-
     this.animate();
   }
 
@@ -284,7 +282,7 @@ export class ThreeService implements OnDestroy {
         const fov = this.camera.fov * (Math.PI / 180);
         const aspect = this.camera.aspect;
         const distance = safeMax / (2 * Math.tan(fov / 2));
-        const framingMultiplier = 1.15; 
+        const framingMultiplier = 1.45; 
         this.camera.position.set(0, 0, distance * framingMultiplier);
         this.camera.near = Math.max(0.01, safeMax / 1000);
         this.camera.far = Math.max(1000, safeMax * 100);
@@ -320,8 +318,8 @@ export class ThreeService implements OnDestroy {
     );
   }
 
- public openRoller(): void {
-  if (!this.mixer || this.isRollerOpen) return; // Prevent opening if already open
+ public openAnimate(): void {
+  if (!this.mixer || this.isAnimateOpen) return;
 
   if (this.rollerAction) {
     // Single animation approach
@@ -331,7 +329,7 @@ export class ThreeService implements OnDestroy {
     action.timeScale = 1;
     action.reset();
     action.play();
-    this.isRollerOpen = true;
+    this.isAnimateOpen = true;
     this.updateButtonStates();
   } else if (this.actions && Object.keys(this.actions).length > 0) {
     // Multiple animations approach
@@ -342,15 +340,15 @@ export class ThreeService implements OnDestroy {
       action.reset();
       action.play();
     });
-    this.isRollerOpen = true;
+    this.isAnimateOpen = true;
     this.updateButtonStates();
   }
 }
 
 
 
-  public closeRoller(): void {
-  if (!this.mixer || !this.isRollerOpen) return; // Prevent closing if already closed
+  public closeAnimate(): void {
+  if (!this.mixer || !this.isAnimateOpen) return; // Prevent closing if already closed
 
   if (this.rollerAction) {
     const action = this.rollerAction;
@@ -363,7 +361,7 @@ export class ThreeService implements OnDestroy {
     this.mixer.update(0);
     action.timeScale = -1;
     action.play();
-    this.isRollerOpen = false;
+    this.isAnimateOpen = false;
     this.updateButtonStates();
   } else if (this.actions && Object.keys(this.actions).length > 0) {
     Object.values(this.actions).forEach((action) => {
@@ -377,10 +375,19 @@ export class ThreeService implements OnDestroy {
       action.timeScale = -1;
       action.play();
     });
-    this.isRollerOpen = false;
+    this.isAnimateOpen = false;
     this.updateButtonStates();
   }
 }
+  public toggleAnimate(): void {
+    if (!this.mixer) return;
+
+    if (this.isAnimateOpen) {
+      this.closeAnimate();
+    } else {
+      this.openAnimate();
+    }
+  }
   public getCanvasDataURL(): string | undefined {
     if (!this.renderer) {
       return undefined;
@@ -391,16 +398,16 @@ export class ThreeService implements OnDestroy {
   private updateButtonStates(): void {
     // If you have direct references to buttons
     // if (this.openButton && this.closeButton) {
-    //   this.openButton.disabled = this.isRollerOpen;
-    //   this.closeButton.disabled = !this.isRollerOpen;
+    //   this.openButton.disabled = this.isAnimateOpen;
+    //   this.closeButton.disabled = !this.isAnimateOpen;
     // }
     
     // Or if you're using template references, emit events or use a service
-    console.log(`Roller is now ${this.isRollerOpen ? 'OPEN' : 'CLOSED'}`);
+    console.log(`Roller is now ${this.isAnimateOpen ? 'OPEN' : 'CLOSED'}`);
   }
 
   public setRollerState(isOpen: boolean): void {
-    this.isRollerOpen = isOpen;
+    this.isAnimateOpen = isOpen;
     this.updateButtonStates();
   }
 

@@ -50,7 +50,7 @@ export class RelatedproductComponent implements OnInit, OnChanges {
       740: { items: 3 },
       940: { items: 5 }
     },
-    nav: true
+    nav: false
   };
 
   constructor(

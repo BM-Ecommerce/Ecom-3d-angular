@@ -42,39 +42,44 @@
                   <button *ngIf="is3DOn" type="button" mat-icon-button (click)="zoomOut()" aria-label="Zoom out">
                     <mat-icon>zoom_out</mat-icon>
                   </button>
-                  <button *ngIf="is3DOn" type="button" mat-icon-button (click)="openRoller()" aria-label="Open Roller">
-                    <mat-icon>arrow_upward</mat-icon>
-                  </button>
-
-                  <button *ngIf="is3DOn" type="button" mat-icon-button (click)="closeRoller()" aria-label="Close Roller">
-                    <mat-icon>arrow_downward</mat-icon>
-                  </button>
+                  <button *ngIf="is3DOn"
+                                  type="button"
+                                  mat-icon-button
+                                  (click)="onAnimate()"
+                                  aria-label="Toggle Roller">
+                            <mat-icon>
+                               {{ isAnimateOpen ? 'door_sliding' : 'door_front' }}
+                            </mat-icon>
+                          </button>
                 </div>
                 <div class="visualizer-view-controls">
                   <mat-button-toggle-group name="viewMode" *ngIf="show_image_icons"  [value]="is3DOn ? '3d' : '2d'" (change)="toggle3D()"
                     appearance="standard">
                     <mat-button-toggle value="2d" aria-label="2D View">
-                      <mat-icon>grid_on</mat-icon>
+                     2D
                     </mat-button-toggle>
-
                     <mat-button-toggle value="3d" aria-label="3D View">
-                      <mat-icon>view_in_ar</mat-icon>
+                     3D
                     </mat-button-toggle>
                   </mat-button-toggle-group>
                 </div>
               </div>
             </div>
-            <div *ngIf="!is3DOn" class="slider-container">
-               <owl-carousel-o [options]="customOptions">
+          <div *ngIf="!is3DOn" class="slider-container">
+              <owl-carousel-o [options]="customOptions">
                 <ng-template carouselSlide *ngFor="let product_img of product_img_array">
-                  <button type="button" class="multiple-frame-list-button"
-                    [class.selected_frame]="isSelectedFrame(product_img)"
-                          [class.hide_section]="hideFrameImage()"
+                  <div 
+                    class="frame-card" 
+                    [class.selected]="isSelectedFrame(product_img)" 
+                    [class.hide_section]="hideFrameImage()"
                     (click)="onFrameChange(getFrameImageUrl(product_img))">
-                    <img [src]="getFrameImageUrl(product_img)" alt="" width="auto" height="100"
+                    <img 
+                      [src]="getFrameImageUrl(product_img)" 
+                      alt="" 
+                      height="100" 
                       [style.max-width.px]="150">
-                  </button>
-                  </ng-template>
+                  </div>
+                </ng-template>
               </owl-carousel-o>
             </div>
           </div>
