@@ -1,13 +1,10 @@
-					   <form [formGroup]="orderForm" (ngSubmit)="onSubmit()"
-  class="tooltip-container blindmatrix-v4-parameters-form cart angularbody">
+<form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="tooltip-container blindmatrix-v4-parameters-form cart angularbody">
   <div class="blinds container">
-    <!-- Loading indicator -->
     <div *ngIf="isLoading" class="loading-overlay">
       <div class="loading-spinner"></div>
       <p>Loading product data...</p>
     </div>
 
-    <!-- Error message -->
     <div *ngIf="errorMessage" class="alert alert-danger">
       {{ errorMessage }}
     </div>
@@ -47,39 +44,55 @@
                   <button *ngIf="is3DOn" type="button" mat-icon-button (click)="zoomOut()" aria-label="Zoom out">
                     <mat-icon>zoom_out</mat-icon>
                   </button>
+                  <button *ngIf="is3DOn"
+                                  type="button"
+                                  mat-icon-button
+                                  (click)="onAnimate()"
+                                  aria-label="Toggle Roller">
+                            <mat-icon>
+                               {{ isAnimateOpen ? 'door_sliding' : 'door_front' }}
+                            </mat-icon>
+                          </button>
+                          <button *ngIf="is3DOn"
+                                type="button"
+                                mat-icon-button
+                                (click)="onToggleLoopAnimate()"
+                                aria-label="Toggle Loop Animation">
+                          <mat-icon color="primary">
+                            {{ isLooping ? 'loop' : 'autorenew' }}
+                          </mat-icon>
+                        </button>
                 </div>
+                
                 <div class="visualizer-view-controls">
                   <mat-button-toggle-group name="viewMode" *ngIf="show_image_icons"  [value]="is3DOn ? '3d' : '2d'" (change)="toggle3D()"
                     appearance="standard">
                     <mat-button-toggle value="2d" aria-label="2D View">
-                      <mat-icon>grid_on</mat-icon>
+                     2D
                     </mat-button-toggle>
-
                     <mat-button-toggle value="3d" aria-label="3D View">
-                      <mat-icon>view_in_ar</mat-icon>
+                     3D
                     </mat-button-toggle>
                   </mat-button-toggle-group>
                 </div>
               </div>
             </div>
-            <div *ngIf="!is3DOn" class="slider-container">
-              <div class="blindmatrix-v4-slider">
-                <div *ngFor="let product_img of product_img_array">
-                  <button type="button" class="multiple-frame-list-button"
-                    [class.selected_frame]="isSelectedFrame(product_img)"
-                          [class.hide_section]="hideFrameImage()"
+          <div *ngIf="!is3DOn" class="slider-container">
+              <owl-carousel-o [options]="customOptions">
+                <ng-template carouselSlide *ngFor="let product_img of product_img_array">
+                  <div 
+                    class="frame-card" 
+                    [class.selected]="isSelectedFrame(product_img)" 
+                    [class.hide_section]="hideFrameImage()"
                     (click)="onFrameChange(getFrameImageUrl(product_img))">
-                    <img [src]="getFrameImageUrl(product_img)" alt="" width="auto" height="100"
-                      [style.max-width.px]="150" [style.background-image]="'url(' + background_color_image_url + ')'">
-                  </button>
-                </div>
-              </div>
-              <div *ngIf="product_img_array.length > 3" class="prev">
-                <span class="glyphicon icon-left" aria-hidden="true">&#11164;</span>
-              </div>
-              <div *ngIf="product_img_array.length > 3" class="next">
-                <span class="glyphicon icon-right" aria-hidden="true">&#11166;</span>
-              </div>
+                    <img 
+                      [src]="getFrameImageUrl(product_img)" 
+                      alt="" 
+                      height="100" 
+                      [style.max-width.px]="150">
+                  </div>
+                </ng-template>
+              </owl-carousel-o>
             </div>
           </div>
         </div>
@@ -403,42 +416,19 @@
         </div>
       </div>
     </div>
-    <mat-tab-group dynamicHeight>
-      <mat-tab label="Product Specification">
-        <div class="tabsproduct" [innerHTML]="pei_prospec"></div>
-      </mat-tab>
+  <mat-tab-group dynamicHeight>
 
-      <mat-tab label="Details">
-        <div class="tabsproduct" [innerHTML]="productdescription"></div>
-      </mat-tab>
-    </mat-tab-group>
-    <div *ngIf="related_products.length > 0" class="related-products-container">
-      <h2 class="rp-title">Related Products</h2>
-      <div class="related-products-grid">
-        <div *ngFor="let product of related_products" class="related-product-card">
-          <a [href]="buildVisualizerUrl(product)" class="rp-link" target="_blank">
-            <div class="rp-image-box">
-             <img
-                [attr.data-img]="imgpath + product.colorimage"
-                [style.background-image]="'url(' + imgpath + product.colorimage + ')'"
-                [src]="relatedframeimage"
-                alt="{{ product.productname }}"
-                (error)="onImageError($event)"
-              />
-            </div>
-            <div class="rp-info">
-              <p class="rp-name">
-                {{ product.productname }}  
-                <span class="rp-fabric">{{ product.fabricname }}</span> 
-                <span class="rp-color">{{ product.colorname }}</span>
-              </p>
-              <p class="rp-price" *ngIf="product.minprice">
-                From: £{{ product.minprice }}
-              </p>
-            </div>
-          </a>
-        </div>
-      </div>
-    </div>
+    <mat-tab *ngIf="hasProspecContent" label="Product Specification">
+      <div class="tabsproduct" [innerHTML]="pei_prospec"></div>
+    </mat-tab>
+
+    <mat-tab *ngIf="hasDescriptionContent" label="Details">
+      <div class="tabsproduct" [innerHTML]="productdescription"></div>
+    </mat-tab>
+
+  </mat-tab-group>
+   <app-relatedproduct
+  [relatedproducts]="relatedproducts"
+></app-relatedproduct>
   </div>
 </form>

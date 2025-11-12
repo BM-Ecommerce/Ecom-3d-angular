@@ -1,6 +1,5 @@
 :host {
-  --primary-color: #00c2ff;
-  --primary-hover: #00a8e0;
+  --primary-color-rgb: 0, 194, 255;
   --secondary-color: #6c757d;
   --secondary-hover: #5a6268;
   --light-gray: #f8f9fa;
@@ -152,7 +151,9 @@ textarea {
 .next {
     right: 0;
 }
-
+.mat-primary{
+    color:var(--primary-color);
+}
 .product-wrapper {
     flex: 1 1 45%;
     min-width: 300px;
@@ -558,7 +559,33 @@ mat-button-toggle.mat-button-toggle-checked {
     color: rgb(129 130 130);
    font-size: 14px;
 }
+.frame-card  img{
+  padding: 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin: 10px 0;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
 
+.frame-card:hover img{
+  transform: scale(1.05);
+  box-shadow: var(--box-shadow);
+}
+.frame-card img {
+  display: block;
+  height: 100px;
+  width: auto;
+  max-width: 150px;
+  border-radius: 10px;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+
+.frame-card.selected img{
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--primary-color);
+  transform: scale(1.1);
+}
 .parameter-wrapper mat-button-toggle {
   padding: 0 12px !important;     
 }
@@ -724,12 +751,14 @@ button.mat-raised-button:hover {
 }
 
 ::ng-deep .mat-tab-label-active {
-  color: #00c2ff !important; /* Active tab text color */
+  color: var(--primary-color) !important; /* Active tab text color */
   font-weight: 500;
 }
-
+.tabsproduct {
+    color: #333;
+}
 ::ng-deep .mat-ink-bar {
-  background-color: #00c2ff !important; /* The underline color */
+  background-color: var(--primary-color) !important; /* The underline color */
 }
 .guides-card {
   text-align: center;
@@ -775,7 +804,7 @@ mat-button-toggle-group:disabled {
   transition: color 0.2s, transform 0.2s;
 }
 .info-icon:hover {
-  color: #00c2ff;
+  color: var(--primary-color);
   transform: scale(1.1);
 }
 
@@ -803,18 +832,16 @@ mat-button-toggle-group:disabled {
 }
 .visualizer-view-controls {
     position: absolute;
-    top: 0;
+    top: 10px;
     right: 10px;
-    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
 }
-.related-products-container {
-  margin-top: 20px;
-  padding: 20px;
-  border-top: 1px solid #eee;
+.hide_section {
+  display: none !important;
 }
 
+<<<<<<< HEAD
 .related-products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -922,4 +949,8 @@ mat-button-toggle-group:disabled {
   margin-top: 6px;
   font-size: 12px;
   color: #666;
+=======
+.multiple-frame-list-button {
+    cursor: pointer;
+>>>>>>> origin/main
 }

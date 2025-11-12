@@ -22,7 +22,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { HtmlTooltipDirective } from '../html-tooltip.directive';
 import { FreesampleComponent } from "../freesample/freesample.component";
 import { ConfiguratorComponent } from "../configurator/configurator.component";
-
+import { CarouselModule } from 'ngx-owl-carousel-o';
+import { RelatedproductComponent } from '../relatedproduct/relatedproduct.component';
 
 // Interfaces (kept as you had them)
 // Interfaces
@@ -184,7 +185,9 @@ interface FractionOption {
     MatTooltipModule,
     HtmlTooltipDirective,
     FreesampleComponent,
-    ConfiguratorComponent
+    ConfiguratorComponent,
+    CarouselModule,
+    RelatedproductComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -194,7 +197,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('zoomLens', { static: false }) private zoomLensRef!: ElementRef<HTMLElement>;
   @ViewChild('stickyEl', { static: false }) stickyEl!: ElementRef<HTMLElement>;
 
-
+  public isLooping: boolean = false;
   isZooming = false;
   mainframe!: string;
   background_color_image_url!: string;
@@ -228,6 +231,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   pei_prospec: string = "";
   isScrolled = false;
   unittypename = "";
+  hasProspecContent = false;
+hasDescriptionContent = false;
   relatedframeimage:string = ""
   netpricecomesfrom = "";
   is3DOn = false;
@@ -236,6 +241,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   costpricecomesfrom = "";
   inchfractionselected: Number = 0;
   freesample: any;
+  relatedproducts: any;
   freesameple_status!: number | boolean;
   product_id!: number | string;
   freesample_price!: number | string;
@@ -270,8 +276,18 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       "currencySymbol": this.currencySymbol
     }
   }
-
-
+  get_relatedproduct_data() {
+    this.relatedproducts = {
+      fabricid: this.fabricid,            
+      colorid: this.colorid || 0,         
+      routeParams: this.routeParams,      
+      fabricFieldType: this.fabricFieldType,  
+      siteurl: this.siteurl,
+      relatedframeimage:this.relatedframeimage,
+      currencySymbol:this.currencySymbol,         
+      product_id: this.product_id         
+    };
+  }
   inchfraction_array: FractionOption[] = [
     {
       "name": "1/32",
@@ -371,6 +387,19 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   grossPricenum: number = 0;
   private priceUpdate = new Subject<void>();
   private rulesorderitem: any[] = [];
+  customOptions: any = {
+    loop: false,
+    mouseDrag: true,
+    autoWidth: true,
+    touchDrag: true,
+    pullDrag: true,
+    margin: 20,
+    dots: false, 
+    navSpeed: 700,
+    navText: ['<', '>'],
+    nav: true
+  };
+
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
@@ -487,7 +516,30 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     // We also need to ensure the animation loop in three.service is started.
     // A better place for this might be after the first textures are loaded.
   }
+  
+  onAnimate() {
+    this.threeService.toggleAnimate();
+  }
+  get isAnimateOpen(): boolean {
+    return this.threeService.isAnimateOpen;
+  }
+  onStopAnimate(): void {
+    this.threeService.stopAll();
+  }
+  onLoopAnimate(): void {
+   this.threeService.loopAnimate();
+  }
+  
+public onToggleLoopAnimate(): void {
 
+  if (this.isLooping) {
+    this.threeService.stopAll();
+    this.isLooping = false;
+  } else {
+    this.threeService.loopAnimate();
+    this.isLooping = true;
+  }
+}
   private setupVisualizer(productname: string): void {
     if (!this.canvasRef || !this.containerRef) return;
 
@@ -495,13 +547,17 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
 
       if (productname.toLowerCase().includes('roller blinds')) {
-        this.threeService.loadGltfModel('assets/rollerblinds.gltf', 'rollerblinds');
+        this.threeService.loadGltfModel('assets/rollerblinds.glb', 'rollerblinds');
       } else if (
         productname.toLowerCase().includes('venetian') ||
         productname.toLowerCase().includes('fauxwood')
       ) {
-        this.threeService.loadGltfModel('assets/venetianblinds.gltf', 'venetian');
-      } else {
+        this.threeService.loadGltfModel('assets/venetianblinds.glb', 'venetian');
+      } else if(productname.toLowerCase().includes('vertical')) {
+          this.threeService.loadGltfModel('assets/verticalblinds.glb', 'venetian');
+      } else if(productname.toLowerCase().includes('wood')) {
+          this.threeService.loadGltfModel('assets/woodenblinds.glb', 'venetian');
+      }else {
         this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'rollerdoor');
       }
 
@@ -513,7 +569,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     setTimeout(() => this.onWindowResize(), 0);
   }
-
   toggle3D() {
     this.is3DOn = !this.is3DOn;
     this.setupVisualizer(this.productname);
@@ -533,7 +588,13 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       this.threeService.zoomIn();
     }
   }
+  openAnimate() {
+    this.threeService.openAnimate();
+  }
 
+  closeAnimate() {
+    this.threeService.closeAnimate();
+  }
   zoomOut(): void {
     if (this.is3DOn) {
       this.threeService.zoomOut();
@@ -576,6 +637,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           this.productname = data.label;
           this.productdescription = data.pi_productdescription;
           this.pei_prospec = data.pei_prospec;
+          this.hasProspecContent = this.hasContent(this.pei_prospec);
+          this.hasDescriptionContent = this.hasContent(this.productdescription);
           this.category = Number(data.pi_category);
           if (this.category == 5) {
             this.fabricFieldType = 21
@@ -591,7 +654,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           this.get_freesample();
           this.relatedframeimage =  data?.pi_frameimage ?? "";
          
-          console.log(this.relatedframeimage);
           let productBgImages: string[] = [];
           try {
             productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
@@ -649,7 +711,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
               this.frame_default_url = imageUrl;
               this.mainframe = imageUrl;
             }
-            console.log(this.relatedframeimage);
             return { image_url: imageUrl, is_default: isDefault };
           });
 
@@ -982,7 +1043,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         this.updateMinMaxValidators(false);
       }
       if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
-        this.getRelatedProducts();
+        this.get_relatedproduct_data();
       }
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
@@ -1126,7 +1187,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
         this.freesample = { ...this.freesample, fabricid: this.fabricid, color_id: this.colorid };
         if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
-           this.getRelatedProducts();
+           this.get_relatedproduct_data();
         }
         if(this.category == 5){
            this.setShutterObject(field,selectedOption);
@@ -1881,6 +1942,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           frac_decimalvalue: item.decimalvalue
         }));
       } else {
+        this.showFractions = false;
         this.inchfraction_array = [];
       }
       this.updateAccordionData();
@@ -2321,6 +2383,7 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
     }
     return false;
   }
+
   private getRelatedProducts(): void {
 
     let relatedFabricId = this.fabricid;
