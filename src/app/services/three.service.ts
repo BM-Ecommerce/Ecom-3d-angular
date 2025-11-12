@@ -318,75 +318,93 @@ export class ThreeService implements OnDestroy {
     );
   }
 
-  public openAnimate(): void {
+ public openAnimate(loopCount: number = 1): void {
     if (!this.mixer || this.isAnimateOpen) return;
 
-    if (this.rollerAction) {
-      // Single animation approach
-      const action = this.rollerAction;
+    const playAction = (action: THREE.AnimationAction) => {
       action.stop();
       action.enabled = true;
       action.timeScale = 1;
       action.reset();
+      action.setLoop(loopCount > 1 ? THREE.LoopRepeat : THREE.LoopOnce, loopCount - 1);
+      action.clampWhenFinished = true;
       action.play();
-      this.isAnimateOpen = true;
-      this.updateButtonStates();
-    } else if (this.actions && Object.keys(this.actions).length > 0) {
-      // Multiple animations approach
-      Object.values(this.actions).forEach((action) => {
-        action.stop();
-        action.enabled = true;
-        action.timeScale = 1;
-        action.reset();
-        action.play();
-      });
-      this.isAnimateOpen = true;
-      this.updateButtonStates();
-    }
-  }
-
-
-
-  public closeAnimate(): void {
-    if (!this.mixer || !this.isAnimateOpen) return; // Prevent closing if already closed
+    };
 
     if (this.rollerAction) {
-      const action = this.rollerAction;
+      playAction(this.rollerAction);
+    } else if (this.actions && Object.keys(this.actions).length > 0) {
+      Object.values(this.actions).forEach(playAction);
+    }
+
+    this.isAnimateOpen = true;
+    this.updateButtonStates();
+  }
+
+  public closeAnimate(): void {
+    if (!this.mixer || !this.isAnimateOpen) return;
+
+    const reverseAction = (action: THREE.AnimationAction) => {
       const clip = action.getClip();
       const duration = clip.duration ?? 0;
 
       action.stop();
       action.enabled = true;
       action.time = duration;
-      this.mixer.update(0);
+      this.mixer?.update(0);
       action.timeScale = -1;
+      action.setLoop(THREE.LoopOnce, 0);
+      action.clampWhenFinished = true;
       action.play();
-      this.isAnimateOpen = false;
-      this.updateButtonStates();
+    };
+
+    if (this.rollerAction) {
+      reverseAction(this.rollerAction);
     } else if (this.actions && Object.keys(this.actions).length > 0) {
-      Object.values(this.actions).forEach((action) => {
-        const clip = action.getClip();
-        const duration = clip.duration ?? 0;
-
-        action.stop();
-        action.enabled = true;
-        action.time = duration;
-        this.mixer?.update(0);
-        action.timeScale = -1;
-        action.play();
-      });
-      this.isAnimateOpen = false;
-      this.updateButtonStates();
+      Object.values(this.actions).forEach(reverseAction);
     }
+
+    this.isAnimateOpen = false;
+    this.updateButtonStates();
   }
-  public toggleAnimate(): void {
-    if (!this.mixer) return;
 
-    if (this.isAnimateOpen) {
-      this.closeAnimate();
-    } else {
-      this.openAnimate();
+  public toggleAnimate(loopCount: number = 1): void {
+    if (!this.mixer) return;
+    this.isAnimateOpen ? this.closeAnimate() : this.openAnimate(loopCount);
+  }
+
+
+
+  public loopAnimate(loopCount: number = Infinity): void {
+     if (!this.mixer) return;
+
+    const loopAction = (action: THREE.AnimationAction) => {
+      action.stop();
+      action.enabled = true;
+      action.timeScale = 1;
+      action.reset();
+
+      // 🔁 Ping-pong loop: plays forward, then backward automatically
+      action.setLoop(THREE.LoopPingPong, Infinity);
+      action.clampWhenFinished = false;
+      action.play();
+    };
+
+    if (this.rollerAction) {
+      loopAction(this.rollerAction);
+    } else if (this.actions && Object.keys(this.actions).length > 0) {
+      Object.values(this.actions).forEach(loopAction);
     }
+
+    this.isAnimateOpen = true;
+    this.updateButtonStates();
+  }
+
+  public stopAll(): void {
+    if (this.rollerAction) this.rollerAction.stop();
+     Object.values(this.actions ?? {}).forEach((a) => a.stop());
+    this.isAnimateOpen = false;
+    this.updateButtonStates();
   }
   public getCanvasDataURL(): string | undefined {
     if (!this.renderer) {

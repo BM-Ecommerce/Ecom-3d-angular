@@ -199,7 +199,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('zoomLens', { static: false }) private zoomLensRef!: ElementRef<HTMLElement>;
   @ViewChild('stickyEl', { static: false }) stickyEl!: ElementRef<HTMLElement>;
 
-
+  public isLooping: boolean = false;
   isZooming = false;
   mainframe!: string;
   background_color_image_url!: string;
@@ -516,6 +516,23 @@ hasDescriptionContent = false;
   get isAnimateOpen(): boolean {
     return this.threeService.isAnimateOpen;
   }
+  onStopAnimate(): void {
+    this.threeService.stopAll();
+  }
+  onLoopAnimate(): void {
+   this.threeService.loopAnimate();
+  }
+  
+public onToggleLoopAnimate(): void {
+
+  if (this.isLooping) {
+    this.threeService.stopAll();
+    this.isLooping = false;
+  } else {
+    this.threeService.loopAnimate();
+    this.isLooping = true;
+  }
+}
   private setupVisualizer(productname: string): void {
     if (!this.canvasRef || !this.containerRef) return;
 
@@ -629,7 +646,6 @@ hasDescriptionContent = false;
           this.get_freesample();
           this.relatedframeimage =  data?.pi_frameimage ?? "";
          
-          console.log(this.relatedframeimage);
           let productBgImages: string[] = [];
           try {
             productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
@@ -687,7 +703,6 @@ hasDescriptionContent = false;
               this.frame_default_url = imageUrl;
               this.mainframe = imageUrl;
             }
-            console.log(this.relatedframeimage);
             return { image_url: imageUrl, is_default: isDefault };
           });
 
@@ -1903,7 +1918,6 @@ hasDescriptionContent = false;
         return of(null);
       })
     ).subscribe((FractionData: any) => {
-      console.log(FractionData);
       this.inchfractionselected = FractionData?.result?.inchfractionselected || 0;
       if (FractionData?.result?.inchfraction) {
         this.inchfraction_array = FractionData.result.inchfraction.map((item: any) => ({

@@ -59,7 +59,6 @@ export class RelatedproductComponent implements OnInit, OnChanges {
   ) { }
 
   ngOnInit(): void {
-    console.log(this.relatedproducts);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
