@@ -48,8 +48,12 @@ export class ThreeService implements OnDestroy {
   private actions?: { [key: string]: THREE.AnimationAction };
   public isAnimateOpen: boolean = false;
 
-
-  // New properties for 2D zoom
+  public fitMode: 'contain' | 'cover' | 'stretch' = 'cover'; 
+  public alignX: 'left' | 'center' | 'right' = 'center'; 
+  public alignY: 'top' | 'center' | 'bottom' = 'center';
+  public offsetU = 0;
+  public offsetV = 0;
+   public flipV = false;
   private zoomCamera!: THREE.OrthographicCamera;
   private mouseX = 0;
   private mouseY = 0;
@@ -701,62 +705,119 @@ export class ThreeService implements OnDestroy {
     }
   );
 }
-  private applyPatternToVenetian(texture: THREE.Texture): void {
-    if (!this.cube5Meshes.length) return;
+private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1): void {
+  if (!this.cube5Meshes.length) return;
 
-    const slatCount = this.cube5Meshes.length;
-    const firstSlat = this.cube5Meshes[0];
-    const bbox = new THREE.Box3().setFromObject(firstSlat);
-    const size = new THREE.Vector3();
-    bbox.getSize(size);
+  // --- Texture Setup ---
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+  texture.needsUpdate = true;
 
-    const isHorizontalSlats = size.x > size.y; // true if slats are wide
+  this.scene.updateMatrixWorld(true);
 
-    // Prepare texture settings
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-    texture.needsUpdate = true;
+  // Collect slat bounds
+  const slats = this.cube5Meshes.map(mesh => {
+    const bbox = new THREE.Box3().setFromObject(mesh);
+    return { mesh, bbox };
+  });
 
-    this.cube5Meshes.forEach((mesh, i) => {
-      // ✅ Auto-generate planar UVs if missing
-      if (!mesh.geometry.attributes['uv']) {
-        this.generatePlanarUVs(mesh.geometry);
-        console.log(`${mesh.name} → UVs generated`);
-      } else {
-        console.log(`${mesh.name} → UVs already exist`);
-      }
+  // Global bounds (including gaps)
+  const globalMinX = Math.min(...slats.map(s => s.bbox.min.x));
+  const globalMaxX = Math.max(...slats.map(s => s.bbox.max.x));
+  const globalMinY = Math.min(...slats.map(s => s.bbox.min.y));
+  const globalMaxY = Math.max(...slats.map(s => s.bbox.max.y));
 
-      // Clone texture per slat (for independent offsets)
-      const slatTexture = texture.clone();
-      slatTexture.needsUpdate = true;
-      slatTexture.wrapS = THREE.RepeatWrapping;
-      slatTexture.wrapT = THREE.RepeatWrapping;
+  const totalWidth = globalMaxX - globalMinX;
+  const totalHeight = globalMaxY - globalMinY;
 
-      // Apply pattern slice
-      if (isHorizontalSlats) {
-        slatTexture.repeat.set(1, 1 / slatCount);
-        slatTexture.offset.set(0, 1 - (i + 1) / slatCount); // flip vertically
-      } else {
-        slatTexture.repeat.set(1 / slatCount, 1);
-        slatTexture.offset.set(i / slatCount, 0);
-      }
+  // Aspect ratios
+  const imgW = (texture.image as HTMLImageElement)?.width || 1;
+  const imgH = (texture.image as HTMLImageElement)?.height || 1;
+  const imageAspect = imgW / imgH;
+  const blindsAspect = totalWidth / totalHeight;
+  const aspectRatio = imageAspect / blindsAspect;
 
-      // Apply material with texture
-      const mat = new THREE.MeshStandardMaterial({
-        map: slatTexture,
-        roughness: 0.8,
-        metalness: 0.2,
-        side: THREE.DoubleSide,
-      });
+  // Base UV scale
+  const zoom = 1 / Math.max(1e-6, patternScale);
+  let uScale = zoom;
+  let vScale = zoom;
 
-      mesh.material = mat;
-      (mesh.material as THREE.Material).needsUpdate = true;
+  // --- Fit Mode Handling ---
+  switch (this.fitMode) {
+    case 'contain':
+      if (aspectRatio >= 1) vScale *= blindsAspect / imageAspect;
+      else uScale *= imageAspect / blindsAspect;
+      break;
+    case 'cover':
+      if (aspectRatio >= 1) uScale *= imageAspect / blindsAspect;
+      else vScale *= blindsAspect / imageAspect;
+      break;
+    case 'stretch':
+      // leave as is
+      break;
+  }
+
+  // --- Alignment ---
+  let uCenter = 0.5;
+  let vCenter = 0.5;
+
+  if (this.alignX === 'left') uCenter = 0.25;
+  else if (this.alignX === 'right') uCenter = 0.75;
+
+  if (this.alignY === 'top') vCenter = 0.75;
+  else if (this.alignY === 'bottom') vCenter = 0.25;
+
+  uCenter += this.offsetU;
+  vCenter += this.offsetV;
+
+  // --- Apply per slat ---
+  for (const { mesh } of slats) {
+    const geom = mesh.geometry as THREE.BufferGeometry;
+    const pos = geom.attributes['position'] as THREE.BufferAttribute;
+    const uvs = new Float32Array(pos.count * 2);
+
+    for (let i = 0; i < pos.count; i++) {
+      const vtx = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
+      mesh.localToWorld(vtx);
+
+      let u = (vtx.x - globalMinX) / totalWidth;
+      let v = (vtx.y - globalMinY) / totalHeight;
+
+      if (this.flipV) v = 1 - v;
+
+      // Apply fit + offset
+      u = (u - 0.5) * uScale + uCenter;
+      v = (v - 0.5) * vScale + vCenter;
+
+      uvs[i * 2] = u;
+      uvs[i * 2 + 1] = v;
+    }
+
+    geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+    geom.attributes['uv'].needsUpdate = true;
+
+    // Dispose old material and apply new
+    if (Array.isArray(mesh.material)) {
+      mesh.material.forEach(m => m.dispose());
+    } else {
+      (mesh.material as THREE.Material)?.dispose?.();
+    }
+
+    mesh.material = new THREE.MeshStandardMaterial({
+      map: texture,
+      roughness: 0.6,
+      metalness: 0.1,
+      side: THREE.DoubleSide
     });
 
-    console.log(`✅ Applied pattern across ${slatCount} Venetian slats (${isHorizontalSlats ? 'horizontal' : 'vertical'})`);
+    (mesh.material as THREE.Material).needsUpdate = true;
   }
+
+  console.log('✅ Venetian pattern applied with correct scaling, alignment, and fit mode');
+}
+
   private generatePlanarUVs(geometry: THREE.BufferGeometry): void {
     geometry.computeBoundingBox();
     const bbox = geometry.boundingBox!;
