@@ -223,17 +223,16 @@ export class ThreeService implements OnDestroy {
         gltf.scene.traverse((child) => {
           if ((child as any).isMesh) {
             const mesh = child as THREE.Mesh;
-
+            mesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
             if (type === 'rollerblinds') {
-              console.log(mesh);
-              if (mesh.name.startsWith('Cylinder') || mesh.name.startsWith('Cube')) {
+              if (mesh.name.startsWith('Cylinder032') || mesh.name.startsWith('Cylinder027')|| mesh.name.startsWith('Cylinder028')) {
                 this.cube5Meshes.push(mesh);
               }
             } else if (type === 'venetian') {
-              if (mesh.name.startsWith('Cylinder') || mesh.name.startsWith('Cube')) {
+              if (mesh.name.startsWith('Cube')) {
                 mesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
                 (mesh.material as THREE.Material).needsUpdate = true;
-              } else if (mesh.name.startsWith('Boolean')) {
+              } else if (mesh.name.startsWith('Cylinder')) {
                 this.cube5Meshes.push(mesh);
               }
             } else {
@@ -629,31 +628,61 @@ export class ThreeService implements OnDestroy {
   }
 
   public updateTextures(backgroundUrl: string): void {
-    if (!backgroundUrl) return;
+  if (!backgroundUrl) return;
 
-    this.textureLoader.load(backgroundUrl, (texture) => {
+  // Force reload (bypass cache)
+  const urlWithCacheBust = `${backgroundUrl}?t=${Date.now()}`;
+
+  this.textureLoader.load(
+    urlWithCacheBust,
+    (texture) => {
       texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+      texture.needsUpdate = true;
 
-      if (this.textureMaterial) {
-        this.textureMaterial.dispose();
-      }
-
-      this.textureMaterial = new THREE.MeshStandardMaterial({
-        map: texture
+      // Create new material
+      const newMaterial = new THREE.MeshStandardMaterial({
+        map: texture,
+        roughness: 0.7,
+        metalness: 0.1,
+        side: THREE.DoubleSide
       });
 
-      // Validate type
       if (this.type === 'venetian') {
-        console.log("ssss");
         this.applyPatternToVenetian(texture);
-      } else if (this.cube5Meshes.length) {
+        return;
+      }
+
+      if (this.cube5Meshes.length > 0) {
         this.cube5Meshes.forEach((mesh) => {
-          mesh.material = this.textureMaterial!;
+          if (!mesh.geometry.attributes['uv']) {
+            this.generatePlanarUVs(mesh.geometry);
+            console.warn(`${mesh.name}: generated missing UVs`);
+          }
+
+          if (Array.isArray(mesh.material)) {
+              mesh.material.forEach((mat) => mat.dispose());
+            } else {
+              mesh.material.dispose();
+            }
+          mesh.material = newMaterial.clone(); // clone ensures independent updates
           (mesh.material as THREE.Material).needsUpdate = true;
         });
+
+        this.textureMaterial = newMaterial; // store for reuse
+        this.render();
+      } else {
+        console.warn('No target meshes found for texture application.');
       }
-    });
-  }
+    },
+    undefined,
+    (err) => {
+      console.error('Texture load error:', err);
+    }
+  );
+}
   private applyPatternToVenetian(texture: THREE.Texture): void {
     if (!this.cube5Meshes.length) return;
 

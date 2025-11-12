@@ -233,7 +233,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   isScrolled = false;
   unittypename = "";
   hasProspecContent = false;
-  hasDescriptionContent = false;
+hasDescriptionContent = false;
   relatedframeimage:string = ""
   netpricecomesfrom = "";
   is3DOn = false;
