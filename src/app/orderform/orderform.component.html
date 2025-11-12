@@ -12,8 +12,6 @@
       {{ errorMessage }}
     </div>
 
-
-
     <div id="configurator-root" class="product_visualizer_wrapper">
 
       <div class="visualizer-container">
@@ -32,8 +30,10 @@
                 <span class="price">{{ grossPrice }}</span>
               </div>
             </div>
+            <!-- Shutter Image -->
+            <app-configurator [shutterdata]="shutterdata" *ngIf="this.category == 5"></app-configurator>
             <div class="product_preview" #visualizerContainer (mousemove)="onMouseMove($event)"
-              (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">
+              (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()" *ngIf="this.category != 5">
               <div id="main-img" class="configuratorpreviewimage" style="height:480px; position: relative;">
                 <canvas #visualizerCanvas></canvas>
                 <div #zoomLens class="zoom-lens" [hidden]="!isZooming"></div>

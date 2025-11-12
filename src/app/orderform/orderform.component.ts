@@ -21,7 +21,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { HtmlTooltipDirective } from '../html-tooltip.directive';
 import { FreesampleComponent } from "../freesample/freesample.component";
-
+import { ConfiguratorComponent } from "../configurator/configurator.component";
 
 
 // Interfaces (kept as you had them)
@@ -183,7 +183,8 @@ interface FractionOption {
     MatIconModule,
     MatTooltipModule,
     HtmlTooltipDirective,
-    FreesampleComponent
+    FreesampleComponent,
+    ConfiguratorComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -214,6 +215,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   showFractions = false;
   product_details_arr: Record<string, string> = {};
   product_specs = '';
+  shutter_product_details :any;
   ecomproductname = '';
   product_description = '';
   unit_type_data: any[] = [];
@@ -237,6 +239,14 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   freesameple_status!: number | boolean;
   product_id!: number | string;
   freesample_price!: number | string;
+  shutterdata:any;
+  colorurl: string="";
+  shutter_type_name:string="";
+  hinge_colorurl :  string ="";
+  midrails: string="";
+  no_of_panels: string="";
+  slatsize : string="";
+  tiltrod : string="";
   siteurl = environment.site;
 
   get_freesample() {
@@ -561,6 +571,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       switchMap((productData: any) => {
         if (productData.result?.EcomProductlist?.length > 0) {
           const data: ProductDetails = productData.result.EcomProductlist[0];
+          this.shutter_product_details = productData.result.ShutterProductDetails;
           this.ecomproductname = data.pei_ecomProductName;
           this.productname = data.label;
           this.productdescription = data.pi_productdescription;
@@ -976,7 +987,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       this.get_freesample();
-
+      this.setShutterObject(field,null);
 
       return;
     }
@@ -1010,6 +1021,10 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
                 }
           }
       }
+        if(this.category == 5){
+          const chosenOptions = selectedOptions.length ? selectedOptions[selectedOptions.length - 1] : null;
+          this.setShutterObject(field,chosenOptions);
+        }
         this.updateFieldValues(field, selectedOptions, 'Array.isArrayOptions');
         this.cd.markForCheck();
       });
@@ -1112,6 +1127,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         this.freesample = { ...this.freesample, fabricid: this.fabricid, color_id: this.colorid };
         if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
            this.getRelatedProducts();
+        }
+        if(this.category == 5){
+           this.setShutterObject(field,selectedOption);
         }
         this.cd.markForCheck();
       });
@@ -2322,5 +2340,53 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
         }
         this.cd.markForCheck();
       });
+  }
+
+  private setShutterObject(field:any,selectedOption:any): any {
+    if(21 == field.fieldtypeid){
+      if (Array.isArray(this.shutter_product_details)) {
+          const shutter_type = this.shutter_product_details.find(
+            d => String(d.shuttertypeid) === String(field.optionid)
+          );
+          if(shutter_type?.shuttertypes && shutter_type?.shuttertypename){
+              this.shutter_type_name = shutter_type.shuttertypename;
+          }
+      }
+    }
+    const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
+    // Color URL
+    if(('color' == chosen_field_name || 'colour' == chosen_field_name || 'colours' == chosen_field_name)){
+        this.colorurl = selectedOption ? this.apiUrl + '/api/public' + selectedOption?.optionimage:'assets/default-shutter-img.png';
+    }
+   // Hinge Color URL
+    if(('hingecolours' == chosen_field_name || 'hingecolour' == chosen_field_name || 'hingecolors' == chosen_field_name)){
+          this.hinge_colorurl = selectedOption ? this.apiUrl + '/api/public' + selectedOption?.optionimage:'';
+    }
+    // Midrails
+    if('midrails' == chosen_field_name){
+       this.midrails = field.value;
+    }
+    // Number of panels
+    if('noofpanel' == chosen_field_name){
+       this.no_of_panels = field.value;
+    }
+    // Slat size
+    if('slatsize' == chosen_field_name){
+       this.slatsize = field.value;
+    }
+    // Tilt rod
+    if('tiltrod' == chosen_field_name){
+       this.tiltrod = field.value;
+    }
+    
+    this.shutterdata = {
+      "colorurl"             : this.colorurl,
+      "shutter_type_name"    : this.shutter_type_name,
+      "hinge_colorurl"       : this.hinge_colorurl,
+      "no_of_panels"         : this.no_of_panels,
+      "midrails"             : this.midrails,
+      "slatsize"             : this.slatsize,
+      "tiltrod"              : this.tiltrod,
+    };
   }
 }

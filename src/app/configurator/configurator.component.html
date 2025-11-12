@@ -1,0 +1,62 @@
+<div class="d-flex gap-2 flex-nowrap shutters-configurator" >
+<div class="col-md-6 col-sm-12 position-relative overflow-visible">
+  <div class="position-sticky sticky-top z-0">
+    <div class="product_preview configurator-preview" >
+      <div class="configurator-toggle-slats js-toggleShutters">
+        <mat-button-toggle-group name="slats" aria-label="Slats Toggle" [(ngModel)]="slatsState" (change)="slats(slatsState)" class="toggle_slats">
+          <mat-button-toggle value="close">Close slats</mat-button-toggle>
+          <mat-button-toggle value="open">Open slats</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+
+      <!-- Shutters Preview -->
+      <div class="preview">
+        <div class="scalingWrapper">
+          <div id="shutterspreview" class="panels-container" style="float: left;">
+            <div class="panels" data-panels="1">
+              <div class="panel hingeLeft panel--hinge-left" >
+                <div class="midpane">
+                  <div class="topRail">
+                    <span
+                      class="rail-bg"
+                      style="min-height: 30px; height: 30px;"
+                    ></span>
+                    <span class="mouseHole-top"></span>
+                  </div>
+
+                  <div class="midpane-fill"></div>
+
+                  <div class="bottomRail">
+                    <span
+                      class="rail-bg"
+                      style="min-height: 30px; height: 30px;"
+                    ></span>
+                    <span
+                      class="mouseHole-bottom"
+                      style="display: unset;"
+                    ></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+            <span id="headstyle"></span>
+            <input type="hidden" id="select_color_image" [value]="chosen_color_url" >
+            <input type="hidden" class="shuttertype" id="set_shuttertype" [value]="shutter_type_name">
+            <input type="hidden" id="select_hingecolor_image" [value]="chosen_hinge_colorurl" >
+            <input type="hidden" class="midrails" [value]="chosen_mid_rails" >
+            <input type="hidden" class="SlatWidth" [value]="chosen_slat_size" >
+            <input type="hidden" class="NumberOfPanels" [value]="chosen_no_of_panels" >
+            <input type="hidden" class="tiltrod" [value]="chosen_tilt_rod" >
+      </div>
+
+      <p class="preview-desc pt-2">
+        Diagram is for illustration only. Exact number of slats may change.
+      </p>
+    </div>
+
+    <div class="parameters_image_preview d-none"></div>
+  </div>
+</div>
+</div>
