@@ -72,12 +72,6 @@ export class ThreeService implements OnDestroy {
   private directionalLight?: THREE.DirectionalLight;
   private ambientLight?: THREE.AmbientLight;
   private fillLight?: THREE.PointLight;
-  private lightTransition?: {
-    start: number;
-    duration: number; // seconds
-    from: { ambient: number; directional: number; fill: number; exposure: number };
-    to: { ambient: number; directional: number; fill: number; exposure: number };
-  };
 
   constructor(private zone: NgZone) { }
 
