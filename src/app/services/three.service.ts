@@ -48,12 +48,14 @@ export class ThreeService implements OnDestroy {
   private actions?: { [key: string]: THREE.AnimationAction };
   public isAnimateOpen: boolean = false;
 
-  public fitMode: 'contain' | 'cover' | 'stretch' = 'cover'; 
-  public alignX: 'left' | 'center' | 'right' = 'center'; 
+  public fitMode: 'contain' | 'cover' | 'stretch' = 'cover';
+
+  public alignX: 'left' | 'center' | 'right' = 'center';
   public alignY: 'top' | 'center' | 'bottom' = 'center';
   public offsetU = 0;
   public offsetV = 0;
-   public flipV = false;
+
+  public flipV = false;
   private zoomCamera!: THREE.OrthographicCamera;
   private mouseX = 0;
   private mouseY = 0;
@@ -62,6 +64,11 @@ export class ThreeService implements OnDestroy {
   private readonly zoomFactor = 4;
 
   private animationFrameId?: number;
+
+  // Added: lighting references (so they can be adjusted if needed)
+  private directionalLight?: THREE.DirectionalLight;
+  private ambientLight?: THREE.AmbientLight;
+  private fillLight?: THREE.PointLight;
 
   constructor() { }
 
@@ -103,6 +110,13 @@ export class ThreeService implements OnDestroy {
       this.mixer = undefined;
     }
 
+    // remove lights if present
+    try {
+      if (this.directionalLight) this.scene.remove(this.directionalLight);
+      if (this.ambientLight) this.scene.remove(this.ambientLight);
+      if (this.fillLight) this.scene.remove(this.fillLight);
+    } catch { /* ignore */ }
+
     this.scene = new THREE.Scene();
     this.camera = null!;
     this.camera2d = null!;
@@ -125,6 +139,9 @@ export class ThreeService implements OnDestroy {
     this.clock = new THREE.Clock();
   }
 
+  // ------------------------------------------------------
+  // initialize: sets up scene, camera, renderer, controls
+  // ------------------------------------------------------
   public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
     this.resetState();
     const width = container.clientWidth;
@@ -149,6 +166,11 @@ export class ThreeService implements OnDestroy {
       antialias: true,
       preserveDrawingBuffer: true
     });
+
+    // --- SHADOWS: enable and set soft type ---
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height, false);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -163,12 +185,36 @@ export class ThreeService implements OnDestroy {
 
     this.controls.addEventListener('start', this.onCanvasMouseDown);
     this.controls.addEventListener('end', this.onCanvasMouseUp);
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    this.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(1, 1, 1).normalize();
-    this.scene.add(directionalLight);
+    // --- Dynamic lighting (brightened as requested) ---
+    // Ambient light - soft global illumination (increased)
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    this.scene.add(this.ambientLight);
+
+    // Directional light - main sunlight (casts shadows) (increased)
+    this.directionalLight = new THREE.DirectionalLight(0xffffff, 1.3);
+    this.directionalLight.position.set(5, 10, 5);
+    this.directionalLight.castShadow = true;
+
+    // Shadow quality
+    this.directionalLight.shadow.mapSize.width = 2048;
+    this.directionalLight.shadow.mapSize.height = 2048;
+    this.directionalLight.shadow.camera.near = 0.5;
+    this.directionalLight.shadow.camera.far = 100;
+    const d = 15;
+    (this.directionalLight.shadow as any).camera.left = -d;
+    (this.directionalLight.shadow as any).camera.right = d;
+    (this.directionalLight.shadow as any).camera.top = d;
+    (this.directionalLight.shadow as any).camera.bottom = -d;
+
+    this.scene.add(this.directionalLight);
+
+    // Fill light to soften shadows (slightly brighter)
+    this.fillLight = new THREE.PointLight(0xffffff, 0.35);
+    this.fillLight.position.set(-5, 5, -5);
+    this.fillLight.castShadow = false;
+    this.scene.add(this.fillLight);
+
     this.animate();
   }
 
@@ -198,6 +244,7 @@ export class ThreeService implements OnDestroy {
       (gltf) => {
         this.scene.add(gltf.scene);
 
+        // If animations exist, setup mixer and actions
         if (gltf.animations && gltf.animations.length > 0) {
           this.mixer = new THREE.AnimationMixer(gltf.scene);
           console.log(gltf.animations.length);
@@ -224,12 +271,47 @@ export class ThreeService implements OnDestroy {
           console.warn('ThreeService: no animations found in GLTF.');
         }
 
+        // Traverse scene: set materials, enable shadows, detect named meshes
         gltf.scene.traverse((child) => {
           if ((child as any).isMesh) {
             const mesh = child as THREE.Mesh;
-            mesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+
+            // Ensure using MeshStandardMaterial so lighting affects material
+            // If model already has a material, try to preserve it but convert to standard where possible
+            let mat = mesh.material as any;
+            if (!mat || mat.isMeshBasicMaterial) {
+              // Replace non-PBR/basic with a standard material to react to lights
+              mesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            } else if (mat.isMeshStandardMaterial) {
+              // ok: use existing
+            } else {
+              // convert if possible: fallback to MeshStandardMaterial using map if present
+              const map = mat.map ?? null;
+              mesh.material = new THREE.MeshStandardMaterial({
+                map,
+                color: mat.color ? (mat.color as THREE.Color).getHex() : 0xffffff
+              });
+            }
+
+            // --- MAKE MESH CAST/RECEIVE SHADOWS ---
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            // small material tweaks for parts likely metal/plastic
+            if ((mesh.name && /Rod|Metal|Frame|Tube|Cylinder/i.test(mesh.name))) {
+              const m = mesh.material as THREE.MeshStandardMaterial;
+              m.metalness = 0.7;
+              m.roughness = 0.2;
+              m.needsUpdate = true;
+            } else {
+              const m = mesh.material as THREE.MeshStandardMaterial;
+              m.metalness = m.metalness ?? 0.0;
+              m.roughness = m.roughness ?? 0.6;
+              m.needsUpdate = true;
+            }
+
             if (type === 'rollerblinds') {
-              if (mesh.name.startsWith('Cylinder032') || mesh.name.startsWith('Cylinder027')|| mesh.name.startsWith('Cylinder028')) {
+              if (mesh.name.startsWith('Cylinder032') || mesh.name.startsWith('Cylinder027') || mesh.name.startsWith('Cylinder028')) {
                 this.cube5Meshes.push(mesh);
               }
             } else if (type === 'venetian') {
@@ -237,6 +319,10 @@ export class ThreeService implements OnDestroy {
                 mesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
                 (mesh.material as THREE.Material).needsUpdate = true;
               } else if (mesh.name.startsWith('Cylinder')) {
+                this.cube5Meshes.push(mesh);
+              }
+            } else if (type === 'vertical') {
+              if (mesh.name.startsWith('Cylinder') && !mesh.name.startsWith('Cylinder024') && !mesh.name.startsWith('Cylinder025') && !mesh.name.startsWith('Cylinder026')) {
                 this.cube5Meshes.push(mesh);
               }
             } else {
@@ -265,13 +351,25 @@ export class ThreeService implements OnDestroy {
           }
         });
 
+        // If texture material exists (previously applied), reassign it to found meshes
         if (this.textureMaterial && this.cube5Meshes.length > 0) {
           this.cube5Meshes.forEach((mesh) => {
+            // dispose old
+            if (Array.isArray(mesh.material)) {
+              mesh.material.forEach((mat) => (mat as any).dispose && (mat as any).dispose());
+            } else {
+              (mesh.material as any).dispose && (mesh.material as any).dispose();
+            }
             mesh.material = this.textureMaterial!;
             (mesh.material as THREE.Material).needsUpdate = true;
+
+            // make sure shadows are still on
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
           });
         }
 
+        // Auto framing & camera adjustments
         try {
           const bbox = new THREE.Box3().setFromObject(gltf.scene);
           const size = bbox.getSize(new THREE.Vector3());
@@ -307,7 +405,10 @@ export class ThreeService implements OnDestroy {
           console.warn('Auto-framing failed: ', err);
         }
 
+        // Ensure roller state is set
         this.setRollerState(true);
+
+        // Reapply textureMaterial again if needed
         if (this.textureMaterial && this.cube5Meshes.length > 0) {
           this.cube5Meshes.forEach((mesh) => {
             mesh.material = this.textureMaterial!;
@@ -322,7 +423,7 @@ export class ThreeService implements OnDestroy {
     );
   }
 
- public openAnimate(loopCount: number = 1): void {
+  public openAnimate(loopCount: number = 1): void {
     if (!this.mixer || this.isAnimateOpen) return;
 
     const playAction = (action: THREE.AnimationAction) => {
@@ -345,7 +446,7 @@ export class ThreeService implements OnDestroy {
     this.updateButtonStates();
   }
 
-  public closeAnimate(): void {
+  public closeAnimate(instant: boolean = false): void {
     if (!this.mixer || !this.isAnimateOpen) return;
 
     const reverseAction = (action: THREE.AnimationAction) => {
@@ -354,12 +455,22 @@ export class ThreeService implements OnDestroy {
 
       action.stop();
       action.enabled = true;
-      action.time = duration;
-      this.mixer?.update(0);
-      action.timeScale = -1;
-      action.setLoop(THREE.LoopOnce, 0);
-      action.clampWhenFinished = true;
-      action.play();
+
+      if (instant) {
+        // Instantly jump to closed position (end frame)
+        action.time = 0;
+        this.mixer?.update(0);
+        action.play();
+        action.stop(); // stop immediately after jump
+      } else {
+        // Play reverse animation smoothly
+        action.time = duration;
+        this.mixer?.update(0);
+        action.timeScale = -1;
+        action.setLoop(THREE.LoopOnce, 0);
+        action.clampWhenFinished = true;
+        action.play();
+      }
     };
 
     if (this.rollerAction) {
@@ -374,13 +485,13 @@ export class ThreeService implements OnDestroy {
 
   public toggleAnimate(loopCount: number = 1): void {
     if (!this.mixer) return;
+    console.log(this.isAnimateOpen);
     this.isAnimateOpen ? this.closeAnimate() : this.openAnimate(loopCount);
   }
 
-
-
   public loopAnimate(loopCount: number = Infinity): void {
-     if (!this.mixer) return;
+
+    if (!this.mixer) return;
 
     const loopAction = (action: THREE.AnimationAction) => {
       action.stop();
@@ -406,10 +517,12 @@ export class ThreeService implements OnDestroy {
 
   public stopAll(): void {
     if (this.rollerAction) this.rollerAction.stop();
-     Object.values(this.actions ?? {}).forEach((a) => a.stop());
+
+    Object.values(this.actions ?? {}).forEach((a) => a.stop());
     this.isAnimateOpen = false;
     this.updateButtonStates();
   }
+
   public getCanvasDataURL(): string | undefined {
     if (!this.renderer) {
       return undefined;
@@ -417,6 +530,7 @@ export class ThreeService implements OnDestroy {
     this.render();
     return this.renderer.domElement.toDataURL('image/png');
   }
+
   private updateButtonStates(): void {
     // If you have direct references to buttons
     // if (this.openButton && this.closeButton) {
@@ -500,6 +614,10 @@ export class ThreeService implements OnDestroy {
       });
       this.frameMesh = new THREE.Mesh(frameGeometry, frameMaterial);
       this.frameMesh.position.z = 0;
+      // Frame in 2D doesn't need to cast shadows; keep as not casting for 2D flow
+      this.frameMesh.receiveShadow = false;
+      this.frameMesh.castShadow = false;
+
       this.scene.add(this.frameMesh);
 
       if (backgroundUrl) {
@@ -513,6 +631,8 @@ export class ThreeService implements OnDestroy {
           });
           this.backgroundMesh = new THREE.Mesh(bgGeometry, bgMaterial);
           this.backgroundMesh.position.z = -1;
+          this.backgroundMesh.receiveShadow = false;
+          this.backgroundMesh.castShadow = false;
           this.scene.add(this.backgroundMesh);
 
           // Fit background into transparent area of frame texture
@@ -649,7 +769,7 @@ export class ThreeService implements OnDestroy {
     this.render();
   }
 
-  public updateTextures(backgroundUrl: string): void {
+public updateTextures(backgroundUrl: string): void {
   if (!backgroundUrl) return;
 
   // Force reload (bypass cache)
@@ -664,19 +784,22 @@ export class ThreeService implements OnDestroy {
       texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
       texture.needsUpdate = true;
 
-      // Create new material
-      const newMaterial = new THREE.MeshStandardMaterial({
-        map: texture,
-        roughness: 0.7,
-        metalness: 0.1,
-        side: THREE.DoubleSide
-      });
-
-      if (this.type === 'venetian') {
-        this.applyPatternToVenetian(texture);
+      // For venetian/vertical blinds - use specialized pattern application
+      if (this.type === 'venetian' || this.type === 'vertical') {
+        if (this.isAnimateOpen) {
+          this.stopAll();
+          this.closeAnimate(true);
+          this.setRollerState(false);
+          setTimeout(() => {
+            this.applyPatternToVenetian(texture);
+          }, 200);
+        } else {
+          this.applyPatternToVenetian(texture);
+        }
         return;
       }
 
+      // For other types - preserve original material properties
       if (this.cube5Meshes.length > 0) {
         this.cube5Meshes.forEach((mesh) => {
           if (!mesh.geometry.attributes['uv']) {
@@ -684,16 +807,48 @@ export class ThreeService implements OnDestroy {
             console.warn(`${mesh.name}: generated missing UVs`);
           }
 
+          // Get the original material properties before disposing
+          const originalMaterial = mesh.material as THREE.MeshStandardMaterial;
+          
+          // Preserve original material properties for lighting
+          const newMaterial = new THREE.MeshStandardMaterial({
+            map: texture,
+            // Preserve original lighting properties
+            roughness: originalMaterial?.roughness ?? 0.7,
+            metalness: originalMaterial?.metalness ?? 0.1,
+            side: THREE.DoubleSide,
+            // Preserve other important properties
+            color: originalMaterial?.color ?? new THREE.Color(0xffffff),
+            envMap: originalMaterial?.envMap,
+            envMapIntensity: originalMaterial?.envMapIntensity,
+            normalMap: originalMaterial?.normalMap,
+            normalScale: originalMaterial?.normalScale,
+            aoMap: originalMaterial?.aoMap,
+            displacementMap: originalMaterial?.displacementMap
+          });
+
+          // Dispose old material
           if (Array.isArray(mesh.material)) {
-              mesh.material.forEach((mat) => mat.dispose());
-            } else {
-              mesh.material.dispose();
-            }
-          mesh.material = newMaterial.clone(); 
+            mesh.material.forEach((mat) => (mat as any).dispose?.());
+          } else {
+            (mesh.material as any)?.dispose?.();
+          }
+
+          mesh.material = newMaterial;
           (mesh.material as THREE.Material).needsUpdate = true;
+
+          // Ensure shadows remain enabled
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
         });
 
-        this.textureMaterial = newMaterial; 
+        this.textureMaterial = new THREE.MeshStandardMaterial({
+          map: texture,
+          roughness: 0.7,
+          metalness: 0.1,
+          side: THREE.DoubleSide
+        });
+
         this.render();
       } else {
         console.warn('No target meshes found for texture application.');
@@ -705,7 +860,8 @@ export class ThreeService implements OnDestroy {
     }
   );
 }
-private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1): void {
+
+  private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1): void {
   if (!this.cube5Meshes.length) return;
 
   // --- Texture Setup ---
@@ -717,13 +873,14 @@ private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1)
 
   this.scene.updateMatrixWorld(true);
 
-  // Collect slat bounds
+  // Collect slat bounds and original materials
   const slats = this.cube5Meshes.map(mesh => {
     const bbox = new THREE.Box3().setFromObject(mesh);
-    return { mesh, bbox };
+    const originalMaterial = mesh.material as THREE.MeshStandardMaterial;
+    return { mesh, bbox, originalMaterial };
   });
 
-  // Global bounds (including gaps)
+  // ... rest of your existing bounds calculation code remains the same ...
   const globalMinX = Math.min(...slats.map(s => s.bbox.min.x));
   const globalMaxX = Math.max(...slats.map(s => s.bbox.max.x));
   const globalMinY = Math.min(...slats.map(s => s.bbox.min.y));
@@ -732,19 +889,17 @@ private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1)
   const totalWidth = globalMaxX - globalMinX;
   const totalHeight = globalMaxY - globalMinY;
 
-  // Aspect ratios
+  // ... rest of your UV calculation code remains the same ...
   const imgW = (texture.image as HTMLImageElement)?.width || 1;
   const imgH = (texture.image as HTMLImageElement)?.height || 1;
   const imageAspect = imgW / imgH;
   const blindsAspect = totalWidth / totalHeight;
   const aspectRatio = imageAspect / blindsAspect;
 
-  // Base UV scale
   const zoom = 1 / Math.max(1e-6, patternScale);
   let uScale = zoom;
   let vScale = zoom;
 
-  // --- Fit Mode Handling ---
   switch (this.fitMode) {
     case 'contain':
       if (aspectRatio >= 1) vScale *= blindsAspect / imageAspect;
@@ -755,11 +910,9 @@ private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1)
       else vScale *= blindsAspect / imageAspect;
       break;
     case 'stretch':
-      // leave as is
       break;
   }
 
-  // --- Alignment ---
   let uCenter = 0.5;
   let vCenter = 0.5;
 
@@ -772,8 +925,8 @@ private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1)
   uCenter += this.offsetU;
   vCenter += this.offsetV;
 
-  // --- Apply per slat ---
-  for (const { mesh } of slats) {
+  // --- Apply per slat with preserved material properties ---
+  for (const { mesh, originalMaterial } of slats) {
     const geom = mesh.geometry as THREE.BufferGeometry;
     const pos = geom.attributes['position'] as THREE.BufferAttribute;
     const uvs = new Float32Array(pos.count * 2);
@@ -787,7 +940,6 @@ private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1)
 
       if (this.flipV) v = 1 - v;
 
-      // Apply fit + offset
       u = (u - 0.5) * uScale + uCenter;
       v = (v - 0.5) * vScale + vCenter;
 
@@ -798,24 +950,33 @@ private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1)
     geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     geom.attributes['uv'].needsUpdate = true;
 
-    // Dispose old material and apply new
+    // Dispose old material and apply new material with preserved properties
     if (Array.isArray(mesh.material)) {
-      mesh.material.forEach(m => m.dispose());
+      mesh.material.forEach(m => (m as any).dispose?.());
     } else {
-      (mesh.material as THREE.Material)?.dispose?.();
+      (mesh.material as any)?.dispose?.();
     }
 
+    // Create new material while preserving original lighting properties
     mesh.material = new THREE.MeshStandardMaterial({
       map: texture,
-      roughness: 0.6,
-      metalness: 0.1,
-      side: THREE.DoubleSide
+      // Preserve original material properties for proper lighting
+      roughness: originalMaterial?.roughness ?? 0.6,
+      metalness: originalMaterial?.metalness ?? 0.1,
+      side: THREE.DoubleSide,
+      color: originalMaterial?.color ?? new THREE.Color(0xffffff),
+      envMap: originalMaterial?.envMap,
+      envMapIntensity: originalMaterial?.envMapIntensity
     });
 
     (mesh.material as THREE.Material).needsUpdate = true;
+
+    // Ensure shadows remain enabled
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
   }
 
-  console.log('✅ Venetian pattern applied with correct scaling, alignment, and fit mode');
+  console.log('✅ Venetian pattern applied with correct scaling, alignment, and preserved lighting properties');
 }
 
   private generatePlanarUVs(geometry: THREE.BufferGeometry): void {
@@ -830,8 +991,9 @@ private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1)
     for (let i = 0; i < positions.count; i++) {
       const x = positions.getX(i);
       const y = positions.getY(i);
-      const u = (x - bbox.min.x) / size.x;
-      const v = (y - bbox.min.y) / size.y;
+      // Avoid divide by zero if size.x or size.y is 0
+      const u = size.x !== 0 ? (x - bbox.min.x) / size.x : 0;
+      const v = size.y !== 0 ? (y - bbox.min.y) / size.y : 0;
       uvs[i * 2] = u;
       uvs[i * 2 + 1] = v;
     }
@@ -855,6 +1017,10 @@ private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1)
         if (mesh) {
           mesh.material = newMaterial;
           (mesh.material as THREE.Material).needsUpdate = true;
+
+          // keep shadows for frame pieces as needed
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
         }
       });
     });
@@ -1053,5 +1219,4 @@ private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1)
 
     backgroundMesh.updateMatrixWorld(true);
   }
-
 }

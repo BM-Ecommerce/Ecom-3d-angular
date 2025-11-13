@@ -645,7 +645,13 @@ export class ConfiguratorComponent implements AfterViewInit, OnDestroy {
 
   panesectionli(count: number, minheight: number, slastsize: any): string {
     let html = '';
+    if(0 === this.shutter_type_name.toLowerCase().indexOf('tier') && 18 == count){
+      count = 14;
+    }
     let li_list_count = Math.abs(count - Number(slastsize || 0));
+    if(0 === this.shutter_type_name.toLowerCase().indexOf('half') ){
+      li_list_count = 15;
+    }
     html += '<div class="slats-pushrod">';
     html += '<ul class="paneSection slats">';
     for (let i = 0; i < li_list_count; i++) {
