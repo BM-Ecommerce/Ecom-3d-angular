@@ -26,6 +26,13 @@
                 <label class="price-label">Estimated Price:</label>
                 <span class="price">{{ grossPrice }}</span>
               </div>
+              <button type="button"
+                      mat-icon-button
+                      (click)="themeService.toggle()"
+                      [attr.aria-label]="isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'"
+                      title="Toggle theme">
+                <mat-icon>{{ isDarkTheme ? 'light_mode' : 'dark_mode' }}</mat-icon>
+              </button>
             </div>
             <!-- Shutter Image -->
             <app-configurator [shutterdata]="shutterdata" *ngIf="this.category == 5"></app-configurator>

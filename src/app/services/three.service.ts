@@ -62,6 +62,7 @@ export class ThreeService implements OnDestroy {
   private readonly zoomFactor = 4;
 
   private animationFrameId?: number;
+  private isDarkTheme = false; // UI-only; visualizer rendering stays constant
 
   constructor() { }
 
@@ -130,6 +131,7 @@ export class ThreeService implements OnDestroy {
     const width = container.clientWidth;
     const height = container.clientHeight;
     this.scene = new THREE.Scene();
+    // Keep a constant light background regardless of app theme
     this.scene.background = new THREE.Color(0xeeeeee);
 
     this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
@@ -170,6 +172,12 @@ export class ThreeService implements OnDestroy {
     directionalLight.position.set(1, 1, 1).normalize();
     this.scene.add(directionalLight);
     this.animate();
+  }
+
+  public applyTheme(isDark: boolean): void {
+    // Theme changes do not affect visualizer rendering; only store flag if needed elsewhere
+    this.isDarkTheme = isDark;
+    // No scene background updates here by design
   }
 
   public zoomIn(): void {
@@ -414,8 +422,16 @@ export class ThreeService implements OnDestroy {
     if (!this.renderer) {
       return undefined;
     }
-    this.render();
-    return this.renderer.domElement.toDataURL('image/png');
+    // Ensure exported image has a white background, independent of theme
+    const prevBg: THREE.Color | null | THREE.Texture = this.scene.background as any;
+    try {
+      this.scene.background = new THREE.Color(0xffffff);
+      this.render();
+      return this.renderer.domElement.toDataURL('image/png');
+    } finally {
+      this.scene.background = prevBg as any;
+      this.render();
+    }
   }
   private updateButtonStates(): void {
     // If you have direct references to buttons

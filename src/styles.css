@@ -17,3 +17,25 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 .owl-item:first-child .frame-card{
     margin-left:15px;
 }
+
+/* Dark theme overrides */
+html.dark-theme,
+body.dark-theme {
+  background-color: var(--surface-bg, #121212);
+  color: var(--text-color, #e5e5e5);
+}
+
+/* Ensure CDK overlay container stays transparent; only panels are themed */
+.cdk-overlay-container.dark-theme {
+  background-color: transparent !important;
+}
+.dark-theme .tooltip-container-sub {
+  background-color: #2a2a2a;
+  color: #e5e5e5;
+}
+.dark-theme .owl-theme .owl-nav [class*=owl-] {
+  color: #e5e5e5;
+}
+.dark-theme .owl-theme .owl-dots .owl-dot span {
+  background-color: #666;
+}

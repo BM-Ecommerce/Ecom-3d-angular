@@ -16,6 +16,16 @@
   --transition: all 0.3s ease;
 }
 
+/* Align component variables to dark theme when parent has .dark-theme */
+:host-context(.dark-theme) {
+  --text-color: #e5e5e5;
+  --heading-color: #cfe8ff;
+  --card-bg: #1e1e1e;
+  --border-color: #3a3a3a;
+  --background-color: #0f0f0f;
+  --dark-gray: #cfd8dc;
+}
+
 .tooltip-container {
     position: relative;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -24,7 +34,8 @@
 .blinds.container {
     max-width: 1250px;
     padding: 1rem;
-    background-color: #fff;
+    background-color: var(--surface-bg);
+    color: var(--text-color);
 }
 .productaname a {
     text-transform: none;
@@ -160,6 +171,7 @@ textarea {
     padding: 1.5rem;
     border: 1px solid var(--border-color);
     background: var(--card-bg);
+    color: var(--text-color);
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
 }
@@ -718,6 +730,8 @@ mat-button-toggle.mat-button-toggle-checked {
   margin-top: 10px;
 }
 
+/* Improve header contrast and separation in both themes */
+
 .mat-tab-label {
   color: var(--secondary-color);
   font-weight: 500;
@@ -755,7 +769,7 @@ button.mat-raised-button:hover {
   font-weight: 500;
 }
 .tabsproduct {
-    color: #333;
+    color: var(--text-color);
 }
 ::ng-deep .mat-ink-bar {
   background-color: var(--primary-color) !important; /* The underline color */
@@ -888,7 +902,7 @@ mat-button-toggle-group:disabled {
 }
 
 .related-product-card {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 10px;
   padding: 12px;
   box-shadow: 0px 4px 12px rgba(0,0,0,0.08);

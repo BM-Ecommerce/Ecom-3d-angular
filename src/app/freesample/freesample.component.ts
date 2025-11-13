@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { ApiService } from '../services/api.service';
-import Swal from 'sweetalert2';
+import { AlertService } from '../services/alert.service';
 import { environment } from '../../environments/environment';
 
 @Component({
@@ -23,6 +23,7 @@ export class FreesampleComponent implements OnInit, OnChanges {
   constructor(
     private cdr: ChangeDetectorRef,
     private apiService: ApiService,
+    private alert: AlertService,
   ) { }
 
   ngOnInit(): void {
@@ -67,18 +68,7 @@ export class FreesampleComponent implements OnInit, OnChanges {
     ).subscribe({
       next: (data) => {
         if (data.success) {
-          Swal.fire({
-            title: 'Added to Cart!',
-            text: 'Free Sample has been added successfully.',
-            icon: 'success',
-            showConfirmButton: false,
-            timer: 3000,
-            background: '#fefefe',
-            color: '#333',
-            customClass: {
-              popup: 'small-toast'
-            }
-          }).then(() => {
+          this.alert.toast('Added to Cart!', 'Free Sample has been added successfully.', 'success', 3000).then(() => {
             this.button_disable = false;
             this.cdr.detectChanges();
           });

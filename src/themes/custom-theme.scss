@@ -1,16 +1,16 @@
 @use '@angular/material' as mat;
+@include mat.core();
 
+$brand-primary: #3f90a8;
 
-$brand-primary: #3f90a8; 
-
-
+// Light theme
 $custom-primary: mat.define-palette((
   50:  lighten($brand-primary, 45%),
   100: lighten($brand-primary, 35%),
   200: lighten($brand-primary, 25%),
   300: lighten($brand-primary, 15%),
   400: lighten($brand-primary, 8%),
-  500: $brand-primary,          
+  500: $brand-primary,
   600: darken($brand-primary, 5%),
   700: darken($brand-primary, 10%),
   800: darken($brand-primary, 15%),
@@ -21,19 +21,52 @@ $custom-primary: mat.define-palette((
     900: #ffffff
   )
 ));
-
 $custom-accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
-
-
-$custom-theme: mat.define-light-theme((
+$light-theme: mat.define-light-theme((
   color: (
     primary: $custom-primary,
     accent: $custom-accent,
   )
 ));
 
-@include mat.all-component-themes($custom-theme);
+// Dark theme
+$dark-primary: mat.define-palette(mat.$blue-grey-palette);
+$dark-accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
+$dark-theme: mat.define-dark-theme((
+  color: (
+    primary: $dark-primary,
+    accent: $dark-accent,
+  )
+));
 
-:root {
-  --primary-color: #{$brand-primary}; 
+// Scope component themes under host classes for runtime toggle
+.light-theme {
+  @include mat.all-component-themes($light-theme);
+  // CSS variables for app usage
+  --primary-color: #{$brand-primary};
+  --surface-bg: #ffffff;
+  --text-color: #222222;
+  --secondary-color: #6c757d;
+  --secondary-hover: #5a6268;
+  --dark-gray: #343a40;
+  --border-color: #e0e0e0;
+  --background-color: #f7f7f7;
+  --card-bg: #ffffff;
+  --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+  --heading-color: #004e78;
+}
+
+.dark-theme {
+  @include mat.all-component-themes($dark-theme);
+  --primary-color: #{$brand-primary};
+  --surface-bg: #121212;
+  --text-color: #e5e5e5;
+  --secondary-color: #9aa0a6;
+  --secondary-hover: #b3b7bb;
+  --dark-gray: #cfd8dc;
+  --border-color: #3a3a3a;
+  --background-color: #0f0f0f;
+  --card-bg: #1e1e1e;
+  --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.6);
+  --heading-color: #cfe8ff;
 }

@@ -11,7 +11,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { ThreeService } from '../services/three.service';;
 import { HttpClient } from '@angular/common/http';
-import Swal from 'sweetalert2';
+import { AlertService } from '../services/alert.service';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
 import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime } from 'rxjs/operators';
@@ -24,6 +24,7 @@ import { FreesampleComponent } from "../freesample/freesample.component";
 import { ConfiguratorComponent } from "../configurator/configurator.component";
 import { CarouselModule } from 'ngx-owl-carousel-o';
 import { RelatedproductComponent } from '../relatedproduct/relatedproduct.component';
+import { ThemeService } from '../services/theme.service';
 
 // Interfaces (kept as you had them)
 // Interfaces
@@ -199,6 +200,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
   public isLooping: boolean = false;
   isZooming = false;
+  isDarkTheme = false;
   mainframe!: string;
   background_color_image_url!: string;
   private destroy$ = new Subject<void>();
@@ -407,6 +409,8 @@ hasDescriptionContent = false;
     private cd: ChangeDetectorRef,
     private threeService: ThreeService,
     private http: HttpClient,
+    private alert: AlertService,
+    public themeService: ThemeService,
   ) {
     // initial minimal group; will be replaced in initializeFormControls
     this.orderForm = this.fb.group({
@@ -419,6 +423,14 @@ hasDescriptionContent = false;
   }
 
   ngOnInit(): void {
+    // Sync Three.js background with current theme
+    this.themeService.isDark$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((isDark) => {
+        this.isDarkTheme = isDark;
+        try { this.threeService.applyTheme(isDark); } catch {}
+      });
+
     const queryParams = this.route.snapshot.queryParams;
     // Check if running on localhost
     const isLocalhost = window.location.hostname === 'localhost';
@@ -731,8 +743,19 @@ public onToggleLoopAnimate(): void {
           this.parameters_data = response.data || [];
           this.apiUrl = params.api_url;
           this.routeParams = params;
-        this.chosenAccessoriesFieldId = this.routeParams.fabric_id;
-        this.chosenAccessoriesOptionId = this.routeParams.pricing_group;
+          this.chosenAccessoriesFieldId = this.routeParams.fabric_id;
+          this.chosenAccessoriesOptionId = this.routeParams.pricing_group;
+
+          // Initialize fabric/color from route params if provided
+          if (this.routeParams && this.routeParams.fabric_id != null && this.routeParams.fabric_id !== '') {
+            this.fabricid = Number(this.routeParams.fabric_id);
+          }
+          if (this.routeParams && this.routeParams.color_id != null && this.routeParams.color_id !== '') {
+            this.colorid = Number(this.routeParams.color_id);
+          }
+
+          // Initialize related products input for child component
+          this.get_relatedproduct_data();
           this.netpricecomesfrom = response.netpricecomesfrom;
           this.costpricecomesfrom = response.costpricecomesfrom;
           this.initializeFormControls();
@@ -2000,18 +2023,7 @@ public onToggleLoopAnimate(): void {
     ).subscribe({
       next: (response) => {
         if (response.success) {
-          Swal.fire({
-            title: 'Added to Cart!',
-            text: 'Your product has been added successfully.',
-            icon: 'success',
-            showConfirmButton: false,
-            timer: 3000,
-            background: '#fefefe',
-            color: '#333',
-            customClass: {
-              popup: 'small-toast'
-            }
-          }).then(() => {
+          this.alert.toast('Added to Cart!', 'Your product has been added successfully.', 'success', 3000).then(() => {
             window.location.href = this.routeParams.site + '/cart';
           });
 
