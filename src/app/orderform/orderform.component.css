@@ -676,6 +676,13 @@ mat-button-toggle.mat-button-toggle-checked {
     .product {
         margin-bottom: 1rem;
     }
+    .visualizer-controls{
+        bottom: 20px;
+        top: unset;
+        flex-direction: row;
+        left: 50%;
+        transform: translateX(-50%);
+    }
 }
 
 @media (min-width: 768px) and (max-width: 991px) {
@@ -953,3 +960,4 @@ mat-button-toggle-group:disabled {
 .multiple-frame-list-button {
     cursor: pointer;
 }
+

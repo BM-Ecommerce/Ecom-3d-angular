@@ -1,4 +1,4 @@
-import { Injectable, ElementRef, OnDestroy } from '@angular/core';
+import { Injectable, ElementRef, OnDestroy, NgZone } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -13,6 +13,8 @@ export class ThreeService implements OnDestroy {
   private renderer!: THREE.WebGLRenderer;
   private controls!: OrbitControls;
   private canvasEl: HTMLCanvasElement | null = null;
+  // Track currently loaded model root for proper disposal on reload
+  private currentModelRoot?: THREE.Object3D;
 
   private readonly onCanvasMouseDown = () => {
     this.canvasEl?.classList.remove('grab');
@@ -62,6 +64,7 @@ export class ThreeService implements OnDestroy {
   private isZooming = false;
   private readonly lensRadius = 100;
   private readonly zoomFactor = 4;
+  private holeCache = new Map<string, { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number; found: boolean }>();
 
   private animationFrameId?: number;
 
@@ -69,8 +72,14 @@ export class ThreeService implements OnDestroy {
   private directionalLight?: THREE.DirectionalLight;
   private ambientLight?: THREE.AmbientLight;
   private fillLight?: THREE.PointLight;
+  private lightTransition?: {
+    start: number;
+    duration: number; // seconds
+    from: { ambient: number; directional: number; fill: number; exposure: number };
+    to: { ambient: number; directional: number; fill: number; exposure: number };
+  };
 
-  constructor() { }
+  constructor(private zone: NgZone) { }
 
   ngOnDestroy(): void {
     this.resetState();
@@ -91,6 +100,10 @@ export class ThreeService implements OnDestroy {
     }
 
     if (this.controls) {
+      try {
+        this.controls.removeEventListener('start', this.onCanvasMouseDown);
+        this.controls.removeEventListener('end', this.onCanvasMouseUp);
+      } catch { /* ignore */ }
       try { this.controls.dispose(); } catch { /* ignore */ }
     }
 
@@ -117,6 +130,15 @@ export class ThreeService implements OnDestroy {
       if (this.fillLight) this.scene.remove(this.fillLight);
     } catch { /* ignore */ }
 
+    // remove and dispose any previously loaded model
+    try {
+      if (this.currentModelRoot && this.scene) {
+        this.scene.remove(this.currentModelRoot);
+        this.disposeObject(this.currentModelRoot);
+        this.currentModelRoot = undefined;
+      }
+    } catch { /* ignore */ }
+
     this.scene = new THREE.Scene();
     this.camera = null!;
     this.camera2d = null!;
@@ -137,6 +159,30 @@ export class ThreeService implements OnDestroy {
     this.isZooming = false;
     this.rollerAction = null;
     this.clock = new THREE.Clock();
+  }
+
+  // Dispose a subtree of the scene graph
+  private disposeObject(object: THREE.Object3D) {
+    object.traverse((child: any) => {
+      if (child.isMesh) {
+        const mesh = child as THREE.Mesh;
+        try { mesh.geometry?.dispose?.(); } catch { /* ignore */ }
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of materials) {
+          if (!m) continue;
+          try {
+            const texKeys = ['map','normalMap','aoMap','roughnessMap','metalnessMap','emissiveMap','bumpMap','displacementMap','alphaMap','envMap'];
+            for (const k of texKeys) {
+              const t = (m as any)[k];
+              if (t && typeof t.dispose === 'function') {
+                try { t.dispose(); } catch { /* ignore */ }
+              }
+            }
+            m.dispose?.();
+          } catch { /* ignore */ }
+        }
+      }
+    });
   }
 
   // ------------------------------------------------------
@@ -163,8 +209,7 @@ export class ThreeService implements OnDestroy {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvasEl,
       alpha: true,
-      antialias: true,
-      preserveDrawingBuffer: true
+      antialias: true
     });
 
     // --- SHADOWS: enable and set soft type ---
@@ -175,7 +220,8 @@ export class ThreeService implements OnDestroy {
     this.renderer.setSize(width, height, false);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1;
-    this.renderer.outputColorSpace = (THREE as any).SRGBColorSpace ?? THREE.SRGBColorSpace;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace as any;
+    (this.renderer as any).physicallyCorrectLights = true;
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
@@ -215,7 +261,8 @@ export class ThreeService implements OnDestroy {
     this.fillLight.castShadow = false;
     this.scene.add(this.fillLight);
 
-    this.animate();
+    // Run RAF loop outside Angular to avoid triggering change detection
+    this.zone.runOutsideAngular(() => this.animate());
   }
 
   public zoomIn(): void {
@@ -236,18 +283,28 @@ export class ThreeService implements OnDestroy {
     }
   }
 
-  type!: string;
-  public loadGltfModel(gltfUrl: string, type: string): void {
+  type!: 'rollerblinds' | 'venetian' | 'vertical' | 'generic';
+  public loadGltfModel(gltfUrl: string, type: 'rollerblinds' | 'venetian' | 'vertical' | 'generic'): void {
     this.type = type;
+    // Clear previous targets when reloading
+    this.cube5Meshes = [];
     this.gltfLoader.load(
       gltfUrl,
       (gltf) => {
+        // Remove previous model if any
+        if (this.currentModelRoot) {
+          this.scene.remove(this.currentModelRoot);
+          this.disposeObject(this.currentModelRoot);
+          this.currentModelRoot = undefined;
+        }
+
         this.scene.add(gltf.scene);
+        this.currentModelRoot = gltf.scene;
 
         // If animations exist, setup mixer and actions
         if (gltf.animations && gltf.animations.length > 0) {
           this.mixer = new THREE.AnimationMixer(gltf.scene);
-          console.log(gltf.animations.length);
+          // Prefer mapping by clip name; still support generic fallback
           if (gltf.animations.length === 2) {
             const clip = gltf.animations[0];
             this.rollerAction = this.mixer.clipAction(clip);
@@ -315,10 +372,7 @@ export class ThreeService implements OnDestroy {
                 this.cube5Meshes.push(mesh);
               }
             } else if (type === 'venetian') {
-              if (mesh.name.startsWith('Cube')) {
-                mesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
-                (mesh.material as THREE.Material).needsUpdate = true;
-              } else if (mesh.name.startsWith('Cylinder')) {
+              if (mesh.name.startsWith('Cylinder')) {
                 this.cube5Meshes.push(mesh);
               }
             } else if (type === 'vertical') {
@@ -568,13 +622,12 @@ export class ThreeService implements OnDestroy {
     this.renderer = new THREE.WebGLRenderer({
       canvas: canvas.nativeElement,
       alpha: true,
-      antialias: true,
-      preserveDrawingBuffer: true
+      antialias: true
     });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(window.devicePixelRatio);
 
-    this.animate();
+    this.zone.runOutsideAngular(() => this.animate());
   }
 
   public createObjects(frameUrl: string, backgroundUrl: string): void {
@@ -696,7 +749,7 @@ export class ThreeService implements OnDestroy {
             (this.backgroundMesh.material as THREE.Material).dispose();
           }
 
-          const bgGeometry = new THREE.PlaneGeometry(0.225 * viewWidth, 0.5341 * viewHeight);
+          const bgGeometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
           const bgMaterial = new THREE.MeshBasicMaterial({
             map: bgTexture,
             transparent: false
@@ -721,6 +774,7 @@ export class ThreeService implements OnDestroy {
     const height = container.clientHeight;
 
     if (this.renderer) {
+      this.renderer.setPixelRatio(window.devicePixelRatio);
       this.renderer.setSize(width, height, false);
     }
 
@@ -799,56 +853,44 @@ public updateTextures(backgroundUrl: string): void {
         return;
       }
 
-      // For other types - preserve original material properties
+      // For other types - preserve original material properties, use a shared material
       if (this.cube5Meshes.length > 0) {
-        this.cube5Meshes.forEach((mesh) => {
+        const first = this.cube5Meshes[0];
+        if (!first.geometry.attributes['uv']) {
+          this.generatePlanarUVs(first.geometry);
+        }
+        const base = (first.material as THREE.MeshStandardMaterial) || new THREE.MeshStandardMaterial();
+
+        const shared = new THREE.MeshStandardMaterial({
+          map: texture,
+          roughness: base.roughness ?? 0.7,
+          metalness: base.metalness ?? 0.1,
+          side: THREE.DoubleSide,
+          color: base.color ?? new THREE.Color(0xffffff),
+          envMap: base.envMap,
+          envMapIntensity: base.envMapIntensity,
+          normalMap: base.normalMap,
+          normalScale: base.normalScale,
+          aoMap: base.aoMap,
+          displacementMap: base.displacementMap
+        });
+
+        for (const mesh of this.cube5Meshes) {
           if (!mesh.geometry.attributes['uv']) {
             this.generatePlanarUVs(mesh.geometry);
-            console.warn(`${mesh.name}: generated missing UVs`);
           }
-
-          // Get the original material properties before disposing
-          const originalMaterial = mesh.material as THREE.MeshStandardMaterial;
-          
-          // Preserve original material properties for lighting
-          const newMaterial = new THREE.MeshStandardMaterial({
-            map: texture,
-            // Preserve original lighting properties
-            roughness: originalMaterial?.roughness ?? 0.7,
-            metalness: originalMaterial?.metalness ?? 0.1,
-            side: THREE.DoubleSide,
-            // Preserve other important properties
-            color: originalMaterial?.color ?? new THREE.Color(0xffffff),
-            envMap: originalMaterial?.envMap,
-            envMapIntensity: originalMaterial?.envMapIntensity,
-            normalMap: originalMaterial?.normalMap,
-            normalScale: originalMaterial?.normalScale,
-            aoMap: originalMaterial?.aoMap,
-            displacementMap: originalMaterial?.displacementMap
-          });
-
-          // Dispose old material
           if (Array.isArray(mesh.material)) {
-            mesh.material.forEach((mat) => (mat as any).dispose?.());
+            mesh.material.forEach((m) => (m as any).dispose?.());
           } else {
             (mesh.material as any)?.dispose?.();
           }
-
-          mesh.material = newMaterial;
+          mesh.material = shared;
           (mesh.material as THREE.Material).needsUpdate = true;
-
-          // Ensure shadows remain enabled
           mesh.castShadow = true;
           mesh.receiveShadow = true;
-        });
+        }
 
-        this.textureMaterial = new THREE.MeshStandardMaterial({
-          map: texture,
-          roughness: 0.7,
-          metalness: 0.1,
-          side: THREE.DoubleSide
-        });
-
+        this.textureMaterial = shared;
         this.render();
       } else {
         console.warn('No target meshes found for texture application.');
@@ -1052,6 +1094,13 @@ public updateTextures(backgroundUrl: string): void {
     loop();
   }
 
+  public stopAnimationLoop(): void {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = undefined;
+    }
+  }
+
   public setZoom(x: number, y: number): void {
     this.mouseX = x;
     this.mouseY = y;
@@ -1115,6 +1164,10 @@ public updateTextures(backgroundUrl: string): void {
    * Returns bounds in image pixel space: { minX, minY, maxX, maxY, width, height }
    */
   private detectTransparentRegion(image: HTMLImageElement, alphaThreshold = 10) {
+    const cacheKey = (image as any).currentSrc || (image as any).src;
+    if (cacheKey && this.holeCache.has(cacheKey)) {
+      return this.holeCache.get(cacheKey)!;
+    }
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d")!;
     canvas.width = image.width;
@@ -1145,12 +1198,15 @@ public updateTextures(backgroundUrl: string): void {
       }
     }
 
+    let result: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number; found: boolean };
     if (!foundAny) {
       // No transparent pixels found — return full image as fallback (empty hole)
-      return { minX: 0, minY: 0, maxX: image.width, maxY: image.height, width: image.width, height: image.height, found: false };
+      result = { minX: 0, minY: 0, maxX: image.width, maxY: image.height, width: image.width, height: image.height, found: false };
+    } else {
+      result = { minX, minY, maxX, maxY, width: image.width, height: image.height, found: true };
     }
-
-    return { minX, minY, maxX, maxY, width: image.width, height: image.height, found: true };
+    if (cacheKey) this.holeCache.set(cacheKey, result);
+    return result;
   }
 
   /**

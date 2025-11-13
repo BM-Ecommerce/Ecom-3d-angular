@@ -558,7 +558,7 @@ public onToggleLoopAnimate(): void {
       } else if(productname.toLowerCase().includes('wood')) {
           this.threeService.loadGltfModel('assets/woodenblinds.glb', 'venetian');
       }else {
-        this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'rollerdoor');
+        this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'generic');
       }
 
     } else {
