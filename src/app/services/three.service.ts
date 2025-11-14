@@ -278,198 +278,179 @@ export class ThreeService implements OnDestroy {
   }
 
   type!: 'rollerblinds' | 'venetian' | 'vertical' | 'generic';
-  public loadGltfModel(gltfUrl: string, type: 'rollerblinds' | 'venetian' | 'vertical' | 'generic'): void {
-    this.type = type;
-    // Clear previous targets when reloading
-    this.cube5Meshes = [];
-    this.gltfLoader.load(
-      gltfUrl,
-      (gltf) => {
-        // Remove previous model if any
-        if (this.currentModelRoot) {
-          this.scene.remove(this.currentModelRoot);
-          this.disposeObject(this.currentModelRoot);
-          this.currentModelRoot = undefined;
+public loadGltfModel(
+  gltfUrl: string,
+  type: 'rollerblinds' | 'venetian' | 'vertical' | 'generic'
+): void {
+  this.type = type;
+  this.cube5Meshes = [];
+
+  this.gltfLoader.load(
+    gltfUrl,
+    (gltf) => {
+      if (this.currentModelRoot) {
+        this.scene.remove(this.currentModelRoot);
+        this.disposeObject(this.currentModelRoot);
+        this.currentModelRoot = undefined;
+      }
+
+      this.scene.add(gltf.scene);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
+      this.scene.add(ambientLight);
+
+      // Strong directional light (creates highlights)
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+      dirLight.position.set(10, 10, 10);
+      dirLight.castShadow = true;
+
+      this.scene.add(dirLight);
+      this.currentModelRoot = gltf.scene;
+
+      if (gltf.animations && gltf.animations.length > 0) {
+        this.mixer = new THREE.AnimationMixer(gltf.scene);
+
+        if (gltf.animations.length === 2) {
+          const clip = gltf.animations[0];
+          this.rollerAction = this.mixer.clipAction(clip);
+          this.rollerAction.loop = THREE.LoopOnce;
+          this.rollerAction.clampWhenFinished = true;
+          this.actions = undefined;
+        } else {
+          this.actions = {};
+          this.rollerAction = undefined;
+
+          gltf.animations.forEach((clip) => {
+            const action = this.mixer!.clipAction(clip);
+            action.loop = THREE.LoopOnce;
+            action.clampWhenFinished = true;
+            this.actions![clip.name] = action;
+          });
         }
+      } else {
+        this.mixer = undefined;
+        this.rollerAction = null;
+      }
 
-        this.scene.add(gltf.scene);
-        this.currentModelRoot = gltf.scene;
+      gltf.scene.traverse((child) => {
+        if ((child as any).isMesh) {
+          const mesh = child as THREE.Mesh;
 
-        // If animations exist, setup mixer and actions
-        if (gltf.animations && gltf.animations.length > 0) {
-          this.mixer = new THREE.AnimationMixer(gltf.scene);
-          // Prefer mapping by clip name; still support generic fallback
-          if (gltf.animations.length === 2) {
-            const clip = gltf.animations[0];
-            this.rollerAction = this.mixer.clipAction(clip);
-            this.rollerAction.clampWhenFinished = true;
-            this.rollerAction.loop = THREE.LoopOnce;
-            this.actions = undefined;
-          } else {
-            this.actions = {};
-            this.rollerAction = undefined;
+          let mat = mesh.material as any;
 
-            gltf.animations.forEach((clip) => {
-              const action = this.mixer!.clipAction(clip);
-              action.loop = THREE.LoopOnce;
-              action.clampWhenFinished = true;
-              this.actions![clip.name] = action;
+          if (!mat || !mat.isMeshStandardMaterial) {
+            mesh.material = new THREE.MeshStandardMaterial({
+              map: mat?.map ?? null,
+              color: mat?.color ? mat.color.getHex() : 0xffffff
             });
           }
-        } else {
-          this.mixer = undefined;
-          this.rollerAction = null;
-          console.warn('ThreeService: no animations found in GLTF.');
-        }
 
-        // Traverse scene: set materials, enable shadows, detect named meshes
-        gltf.scene.traverse((child) => {
-          if ((child as any).isMesh) {
-            const mesh = child as THREE.Mesh;
+          const m = mesh.material as THREE.MeshStandardMaterial;
 
-            // Ensure using MeshStandardMaterial so lighting affects material
-            // If model already has a material, try to preserve it but convert to standard where possible
-            let mat = mesh.material as any;
-            if (!mat || mat.isMeshBasicMaterial) {
-              // Replace non-PBR/basic with a standard material to react to lights
-              mesh.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
-            } else if (mat.isMeshStandardMaterial) {
-              // ok: use existing
-            } else {
-              // convert if possible: fallback to MeshStandardMaterial using map if present
-              const map = mat.map ?? null;
-              mesh.material = new THREE.MeshStandardMaterial({
-                map,
-                color: mat.color ? (mat.color as THREE.Color).getHex() : 0xffffff
-              });
+          m.metalness = 0.6;
+          m.roughness = 0.3;
+          m.needsUpdate = true;
+
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+
+
+          if (type === 'rollerblinds') {
+            if (
+              mesh.name.startsWith('Cylinder032') ||
+              mesh.name.startsWith('Cylinder027') ||
+              mesh.name.startsWith('Cylinder028')
+            ) {
+              this.cube5Meshes.push(mesh);
             }
-
-            // --- MAKE MESH CAST/RECEIVE SHADOWS ---
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-
-            // small material tweaks for parts likely metal/plastic
-            if ((mesh.name && /Rod|Metal|Frame|Tube|Cylinder/i.test(mesh.name))) {
-              const m = mesh.material as THREE.MeshStandardMaterial;
-              m.metalness = 0.7;
-              m.roughness = 0.2;
-              m.needsUpdate = true;
-            } else {
-              const m = mesh.material as THREE.MeshStandardMaterial;
-              m.metalness = m.metalness ?? 0.0;
-              m.roughness = m.roughness ?? 0.6;
-              m.needsUpdate = true;
+          } else if (type === 'venetian') {
+            if (mesh.name.startsWith('Cylinder') && !mesh.name.startsWith('Cylinder032') && !mesh.name.startsWith('Cylinder031') && !mesh.name.startsWith('Cylinder033') && !mesh.name.startsWith('Cylinder034')) {
+              this.cube5Meshes.push(mesh);
             }
-
-            if (type === 'rollerblinds') {
-              if (mesh.name.startsWith('Cylinder032') || mesh.name.startsWith('Cylinder027') || mesh.name.startsWith('Cylinder028')) {
+          } else if (type === 'vertical') {
+            if (
+              mesh.name.startsWith('Cylinder') &&
+              !mesh.name.startsWith('Cylinder024') &&
+              !mesh.name.startsWith('Cylinder025') &&
+              !mesh.name.startsWith('Cylinder026')
+            ) {
+              this.cube5Meshes.push(mesh);
+            }
+          } else {
+            const parent = mesh.parent;
+            const grandParent = parent?.parent;
+            if (parent && grandParent && grandParent.name === 'Cube_5') {
+              const index = parent.children.indexOf(child);
+              if (index === 1) {
                 this.cube5Meshes.push(mesh);
               }
-            } else if (type === 'venetian') {
-              if (mesh.name.startsWith('Cylinder')) {
-                this.cube5Meshes.push(mesh);
-              }
-            } else if (type === 'vertical') {
-              if (mesh.name.startsWith('Cylinder') && !mesh.name.startsWith('Cylinder024') && !mesh.name.startsWith('Cylinder025') && !mesh.name.startsWith('Cylinder026')) {
-                this.cube5Meshes.push(mesh);
-              }
-            } else {
-              const parent = mesh.parent;
-              const grandParent = parent?.parent;
-              if (parent && grandParent && grandParent.name === 'Cube_5') {
-                const index = parent.children.indexOf(child);
-                if (index === 1) {
-                  this.cube5Meshes.push(mesh);
-                } else {
-                  mesh.material = new THREE.MeshStandardMaterial({ color: 0x000000 });
-                  (mesh.material as THREE.Material).needsUpdate = true;
-                }
-              }
-
-              if (mesh.name === 'Cube_4') {
-                this.cube4Mesh = mesh;
-              } else if (mesh.name === 'Cube_3') {
-                this.cube3Mesh = mesh;
-              } else if (mesh.name === 'Cube_2') {
-                this.cube2Mesh = mesh;
-              } else if (mesh.name === 'Cube') {
-                this.cubeMesh = mesh;
-              }
             }
+
+            if (mesh.name === 'Cube_4') this.cube4Mesh = mesh;
+            if (mesh.name === 'Cube_3') this.cube3Mesh = mesh;
+            if (mesh.name === 'Cube_2') this.cube2Mesh = mesh;
+            if (mesh.name === 'Cube') this.cubeMesh = mesh;
           }
+        }
+      });
+
+      if (this.textureMaterial && this.cube5Meshes.length > 0) {
+        this.cube5Meshes.forEach((mesh) => {
+          mesh.material = this.textureMaterial!;
+          (mesh.material as THREE.Material).needsUpdate = true;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
         });
-
-        // If texture material exists (previously applied), reassign it to found meshes
-        if (this.textureMaterial && this.cube5Meshes.length > 0) {
-          this.cube5Meshes.forEach((mesh) => {
-            // dispose old
-            if (Array.isArray(mesh.material)) {
-              mesh.material.forEach((mat) => (mat as any).dispose && (mat as any).dispose());
-            } else {
-              (mesh.material as any).dispose && (mesh.material as any).dispose();
-            }
-            mesh.material = this.textureMaterial!;
-            (mesh.material as THREE.Material).needsUpdate = true;
-
-            // make sure shadows are still on
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-          });
-        }
-
-        // Auto framing & camera adjustments
-        try {
-          const bbox = new THREE.Box3().setFromObject(gltf.scene);
-          const size = bbox.getSize(new THREE.Vector3());
-          const center = bbox.getCenter(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z);
-          const safeMax = maxDim > 0 ? maxDim : 1;
-          gltf.scene.position.x += -center.x;
-          gltf.scene.position.y += -center.y;
-          gltf.scene.position.z += -center.z;
-
-          if (this.camera && this.camera.isPerspectiveCamera) {
-            const fov = this.camera.fov * (Math.PI / 180);
-            const aspect = this.camera.aspect;
-            const distance = safeMax / (2 * Math.tan(fov / 2));
-            const framingMultiplier = 1.45;
-            this.camera.position.set(0, 0, distance * framingMultiplier);
-            this.camera.near = Math.max(0.01, safeMax / 1000);
-            this.camera.far = Math.max(1000, safeMax * 100);
-            this.camera.updateProjectionMatrix();
-
-            if (this.controls) {
-              this.controls.target.set(0, 0, 0);
-              this.controls.update();
-              const fitDist = distance * framingMultiplier;
-              this.controls.minDistance = Math.max(0.1, fitDist * 0.5);
-              this.controls.maxDistance = Math.max(10, fitDist * 5);
-            }
-
-            this.initialCameraPosition = this.camera.position.clone();
-            this.initialControlsTarget = this.controls ? this.controls.target.clone() : new THREE.Vector3(0, 0, 0);
-          }
-        } catch (err) {
-          console.warn('Auto-framing failed: ', err);
-        }
-
-        // Ensure roller state is set
-        this.setRollerState(true);
-
-        // Reapply textureMaterial again if needed
-        if (this.textureMaterial && this.cube5Meshes.length > 0) {
-          this.cube5Meshes.forEach((mesh) => {
-            mesh.material = this.textureMaterial!;
-            (mesh.material as THREE.Material).needsUpdate = true;
-          });
-        }
-      },
-      undefined,
-      (error) => {
-        console.error(error);
       }
-    );
-  }
+      try {
+        const bbox = new THREE.Box3().setFromObject(gltf.scene);
+        const size = bbox.getSize(new THREE.Vector3());
+        const center = bbox.getCenter(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const safeMax = maxDim > 0 ? maxDim : 1;
+
+        gltf.scene.position.sub(center);
+
+        if (this.camera && this.camera.isPerspectiveCamera) {
+          const fov = this.camera.fov * (Math.PI / 180);
+          const distance = safeMax / (2 * Math.tan(fov / 2));
+          const finalDist = distance * 1.45;
+
+          this.camera.position.set(0, 0, finalDist);
+          this.camera.near = Math.max(0.01, safeMax / 1000);
+          this.camera.far = Math.max(1000, safeMax * 100);
+          this.camera.updateProjectionMatrix();
+
+          if (this.controls) {
+            this.controls.target.set(0, 0, 0);
+            this.controls.update();
+            this.controls.minDistance = finalDist * 0.5;
+            this.controls.maxDistance = finalDist * 5;
+          }
+
+          this.initialCameraPosition = this.camera.position.clone();
+          this.initialControlsTarget = this.controls
+            ? this.controls.target.clone()
+            : new THREE.Vector3(0, 0, 0);
+        }
+      } catch (err) {
+        console.warn('Auto-framing failed:', err);
+      }
+      this.setRollerState(true);
+      if (this.textureMaterial && this.cube5Meshes.length > 0) {
+        this.cube5Meshes.forEach((mesh) => {
+          mesh.material = this.textureMaterial!;
+          (mesh.material as THREE.Material).needsUpdate = true;
+        });
+      }
+    },
+
+    undefined,
+
+    (error) => {
+      console.error(error);
+    }
+  );
+}
 
   public openAnimate(loopCount: number = 1): void {
     if (!this.mixer || this.isAnimateOpen) return;
@@ -832,35 +813,38 @@ public updateTextures(backgroundUrl: string): void {
       texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
       texture.needsUpdate = true;
 
-      // For venetian/vertical blinds - use specialized pattern application
+      // 🔹 SPECIAL CASE: venetian / vertical -> use your existing per-slat UV logic
       if (this.type === 'venetian' || this.type === 'vertical') {
         if (this.isAnimateOpen) {
           this.stopAll();
           this.closeAnimate(true);
           this.setRollerState(false);
+
           setTimeout(() => {
             this.applyPatternToVenetian(texture);
           }, 200);
         } else {
           this.applyPatternToVenetian(texture);
         }
-        return;
+        return; // important: don’t continue into generic path
       }
 
-      // For other types - preserve original material properties, use a shared material
+      // 🔹 GENERIC / ROLLER path
       if (this.cube5Meshes.length > 0) {
         const first = this.cube5Meshes[0];
+
         if (!first.geometry.attributes['uv']) {
           this.generatePlanarUVs(first.geometry);
         }
+
         const base = (first.material as THREE.MeshStandardMaterial) || new THREE.MeshStandardMaterial();
 
         const shared = new THREE.MeshStandardMaterial({
           map: texture,
-          roughness: base.roughness ?? 0.7,
-          metalness: base.metalness ?? 0.1,
+          roughness: base.roughness ?? 0.4,
           side: THREE.DoubleSide,
           color: base.color ?? new THREE.Color(0xffffff),
+
           envMap: base.envMap,
           envMapIntensity: base.envMapIntensity,
           normalMap: base.normalMap,
@@ -873,11 +857,14 @@ public updateTextures(backgroundUrl: string): void {
           if (!mesh.geometry.attributes['uv']) {
             this.generatePlanarUVs(mesh.geometry);
           }
+
+          // safe dispose: Material | Material[]
           if (Array.isArray(mesh.material)) {
-            mesh.material.forEach((m) => (m as any).dispose?.());
-          } else {
-            (mesh.material as any)?.dispose?.();
+            mesh.material.forEach(m => m.dispose());
+          } else if (mesh.material) {
+            mesh.material.dispose();
           }
+
           mesh.material = shared;
           (mesh.material as THREE.Material).needsUpdate = true;
           mesh.castShadow = true;
@@ -896,11 +883,9 @@ public updateTextures(backgroundUrl: string): void {
     }
   );
 }
-
-  private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1): void {
+ private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1): void {
   if (!this.cube5Meshes.length) return;
 
-  // --- Texture Setup ---
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -909,14 +894,12 @@ public updateTextures(backgroundUrl: string): void {
 
   this.scene.updateMatrixWorld(true);
 
-  // Collect slat bounds and original materials
   const slats = this.cube5Meshes.map(mesh => {
     const bbox = new THREE.Box3().setFromObject(mesh);
     const originalMaterial = mesh.material as THREE.MeshStandardMaterial;
     return { mesh, bbox, originalMaterial };
   });
 
-  // ... rest of your existing bounds calculation code remains the same ...
   const globalMinX = Math.min(...slats.map(s => s.bbox.min.x));
   const globalMaxX = Math.max(...slats.map(s => s.bbox.max.x));
   const globalMinY = Math.min(...slats.map(s => s.bbox.min.y));
@@ -925,7 +908,6 @@ public updateTextures(backgroundUrl: string): void {
   const totalWidth = globalMaxX - globalMinX;
   const totalHeight = globalMaxY - globalMinY;
 
-  // ... rest of your UV calculation code remains the same ...
   const imgW = (texture.image as HTMLImageElement)?.width || 1;
   const imgH = (texture.image as HTMLImageElement)?.height || 1;
   const imageAspect = imgW / imgH;
@@ -961,7 +943,6 @@ public updateTextures(backgroundUrl: string): void {
   uCenter += this.offsetU;
   vCenter += this.offsetV;
 
-  // --- Apply per slat with preserved material properties ---
   for (const { mesh, originalMaterial } of slats) {
     const geom = mesh.geometry as THREE.BufferGeometry;
     const pos = geom.attributes['position'] as THREE.BufferAttribute;
@@ -986,34 +967,35 @@ public updateTextures(backgroundUrl: string): void {
     geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     geom.attributes['uv'].needsUpdate = true;
 
-    // Dispose old material and apply new material with preserved properties
     if (Array.isArray(mesh.material)) {
-      mesh.material.forEach(m => (m as any).dispose?.());
+      mesh.material.forEach(mat => mat.dispose());
     } else {
-      (mesh.material as any)?.dispose?.();
+      mesh.material.dispose();
     }
 
-    // Create new material while preserving original lighting properties
     mesh.material = new THREE.MeshStandardMaterial({
       map: texture,
-      // Preserve original material properties for proper lighting
-      roughness: originalMaterial?.roughness ?? 0.6,
+
+      roughness: originalMaterial?.roughness ?? 0.5,
       metalness: originalMaterial?.metalness ?? 0.1,
-      side: THREE.DoubleSide,
       color: originalMaterial?.color ?? new THREE.Color(0xffffff),
-      envMap: originalMaterial?.envMap,
-      envMapIntensity: originalMaterial?.envMapIntensity
+
+      side: THREE.DoubleSide,
+
+      // ⭐ BRIGHTNESS FIX
+      emissive: new THREE.Color(0xffffff),
+      emissiveIntensity: 0.1, // tweak between 0.35 - 0.7
     });
 
-    (mesh.material as THREE.Material).needsUpdate = true;
-
-    // Ensure shadows remain enabled
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+
+    (mesh.material as THREE.Material).needsUpdate = true;
   }
 
-  console.log('✅ Venetian pattern applied with correct scaling, alignment, and preserved lighting properties');
+  console.log('Venetian pattern applied with brightness correction ✔');
 }
+
 
   private generatePlanarUVs(geometry: THREE.BufferGeometry): void {
     geometry.computeBoundingBox();

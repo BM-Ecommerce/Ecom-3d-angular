@@ -392,11 +392,18 @@ hasDescriptionContent = false;
     mouseDrag: true,
     autoWidth: true,
     touchDrag: true,
+    center: true,
     pullDrag: true,
     margin: 20,
     dots: false, 
     navSpeed: 700,
     navText: ['<', '>'],
+    responsive: {
+      0: { items: 1 },
+      400: { items: 1 },
+      740: { items: 3 },
+      940: { items: 5 }
+    },
     nav: true
   };
 
