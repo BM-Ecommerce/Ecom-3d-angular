@@ -874,11 +874,6 @@ mat-button-toggle-group:disabled {
 .hide_section{
     display: none !important;
 }
-.product-header {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-}
-
 .related-products-container {
   margin-top: 20px;
 }
