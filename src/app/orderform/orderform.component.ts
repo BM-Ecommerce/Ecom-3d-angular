@@ -402,7 +402,6 @@ hasDescriptionContent = false;
     autoWidth: true,
     touchDrag: true,
     pullDrag: true,
-    margin: 20,
     dots: false, 
     navSpeed: 700,
     navText: ['<', '>'],
@@ -563,11 +562,11 @@ public onToggleLoopAnimate(): void {
       ) {
         this.threeService.loadGltfModel('assets/venetianblinds.glb', 'venetian');
       } else if(productname.toLowerCase().includes('vertical')) {
-          this.threeService.loadGltfModel('assets/verticalblinds.glb', 'venetian');
+          this.threeService.loadGltfModel('assets/verticalblinds.glb', 'vertical');
       } else if(productname.toLowerCase().includes('wood')) {
           this.threeService.loadGltfModel('assets/woodenblinds.glb', 'venetian');
       }else {
-        this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'rollerdoor');
+        this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'generic');
       }
 
     } else {
