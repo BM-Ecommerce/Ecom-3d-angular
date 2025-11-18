@@ -1057,7 +1057,8 @@ public onToggleLoopAnimate(): void {
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       this.get_freesample();
       this.setShutterObject(field,null);
-
+      this.background_color_image_url = "";
+      this.setupVisualizer(this.productname);
       return;
     }
 
