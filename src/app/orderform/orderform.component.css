@@ -801,7 +801,9 @@ mat-button-toggle-group:disabled {
     cursor: not-allowed !important;
     opacity: 0.7 !important;
 }
-
+.product-icon {
+  transition: transform 0.3s ease;
+}
 .info-icon {
   color: #757575;
   font-size: 18px;

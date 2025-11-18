@@ -25,6 +25,8 @@ import { ConfiguratorComponent } from "../configurator/configurator.component";
 import { CarouselModule } from 'ngx-owl-carousel-o';
 import { RelatedproductComponent } from '../relatedproduct/relatedproduct.component';
 import { MatButtonToggleChange } from '@angular/material/button-toggle';
+import { DomSanitizer } from '@angular/platform-browser';
+import { MatIconRegistry } from '@angular/material/icon';
 
 // Interfaces (kept as you had them)
 // Interfaces
@@ -415,6 +417,8 @@ hasDescriptionContent = false;
     private cd: ChangeDetectorRef,
     private threeService: ThreeService,
     private http: HttpClient,
+    private matIconRegistry: MatIconRegistry,
+    private sanitizer: DomSanitizer
   ) {
     // initial minimal group; will be replaced in initializeFormControls
     this.orderForm = this.fb.group({
@@ -527,6 +531,7 @@ hasDescriptionContent = false;
   
   onAnimate() {
     this.threeService.toggleAnimate();
+    this.registerProductIcon();
   }
   get isAnimateOpen(): boolean {
     return this.threeService.isAnimateOpen;
@@ -583,6 +588,7 @@ public onToggleLoopAnimate(): void {
     if (this.is3DOn && this.background_color_image_url) {
       this.threeService.updateTextures(this.background_color_image_url);
     }
+     this.registerProductIcon();
     setTimeout(() => this.onWindowResize(), 0);
   }
   @HostListener('window:resize')
@@ -643,6 +649,7 @@ public onToggleLoopAnimate(): void {
           this.shutter_product_details = productData.result.ShutterProductDetails;
           this.ecomproductname = data.pei_ecomProductName;
           this.productname = data.label;
+          this.productslug = this.productname.toLowerCase().replace(/ /g, '-');
           this.productdescription = data.pi_productdescription;
           this.pei_prospec = data.pei_prospec;
           this.hasProspecContent = this.hasContent(this.pei_prospec);
@@ -2505,6 +2512,18 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
         }
       }
     }
+  }
+  registerProductIcon() {
+    ['up', 'down'].forEach(state => {
+      const iconName = `${this.productslug}-${state}`;
+      const path = `assets/icons/${iconName}.svg`;
+      console.log(iconName);
+      console.log(path);
+      this.matIconRegistry.addSvgIcon(
+        iconName,
+        this.sanitizer.bypassSecurityTrustResourceUrl(path)
+      );
+    });
   }
   accessoriesImageSelectedData(field:any,option:any,set_value = false){
     const control = this.orderForm.get(`field_${field.fieldid}`);

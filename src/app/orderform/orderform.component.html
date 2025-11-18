@@ -44,15 +44,19 @@
                   <button *ngIf="is3DOn" type="button" mat-icon-button (click)="zoomOut()" aria-label="Zoom out">
                     <mat-icon>zoom_out</mat-icon>
                   </button>
-                  <button *ngIf="is3DOn"
-                                  type="button"
-                                  mat-icon-button
-                                  (click)="onAnimate()"
-                                  aria-label="Toggle Roller">
-                            <mat-icon>
-                               {{ isAnimateOpen ? 'door_sliding' : 'door_front' }}
-                            </mat-icon>
-                          </button>
+                      <button *ngIf="is3DOn"
+                              type="button"
+                              mat-icon-button
+                              (click)="onAnimate()"
+                              aria-label="Toggle Roller">
+
+                        <mat-icon
+                           [svgIcon]="productslug + '-' + (isAnimateOpen ? 'up' : 'down')"
+                        class="product-icon"
+                        [ngClass]="{ 'up': isAnimateOpen }">
+                      </mat-icon>
+
+                      </button>
                           <button *ngIf="is3DOn"
                                 type="button"
                                 mat-icon-button
@@ -285,7 +289,7 @@
                   </label>
                   <div class="color-grid">
                     <div *ngFor="let option of option_data[field.fieldid]" class="color-item" [class.color_selected]="this.selected_img_option == option.optionid" (click)="onImageClick(option,field)">
-                      <img [src]="apiUrl + '/api/public' + option.optionimage" [title]="option.optionname" [alt]="option.optionname" />
+                      <img [src]="apiUrl + '/api/public' + option.optionimage"  (error)="onImageError($event)" [title]="option.optionname" [alt]="option.optionname" />
                       <div class="circle-check" *ngIf="this.selected_img_option == option.optionid">✓</div>
                       <div><b>{{option.optionname}}</b></div>
                     </div>
