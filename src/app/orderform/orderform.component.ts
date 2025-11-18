@@ -24,6 +24,7 @@ import { FreesampleComponent } from "../freesample/freesample.component";
 import { ConfiguratorComponent } from "../configurator/configurator.component";
 import { CarouselModule } from 'ngx-owl-carousel-o';
 import { RelatedproductComponent } from '../relatedproduct/relatedproduct.component';
+import { MatButtonToggleChange } from '@angular/material/button-toggle';
 
 // Interfaces (kept as you had them)
 // Interfaces
@@ -254,6 +255,14 @@ hasDescriptionContent = false;
   slatsize : string="";
   tiltrod : string="";
   siteurl = environment.site;
+  selected_img_option:number = 0;
+  selected_list_data:any = {};
+  shutter_selected_img_options:any={};
+  list_value:string = "list";
+  shutter_color_list_value:string="list";
+  shutter_hinge_color_list_value:string="list";
+  hinge_color_field_names:any[] = ['hingecolors','hingecolour','hingecolours'];
+  color_field_names:any[] = ['colours','colour','color'];
 
   get_freesample() {
     this.freesample = {
@@ -743,7 +752,7 @@ public onToggleLoopAnimate(): void {
           this.dropField = this.parameters_data.find(f => [9, 10, 12, 32].includes(f.fieldtypeid));
           this.unitField = this.parameters_data.find(f => f.fieldtypeid === 34);
           this.get_freesample();
-		  this.show_image_icons = true;
+		      this.show_image_icons = true;
           if(2 == this.category){
                 this.show_image_icons = false;
           }
@@ -1785,6 +1794,27 @@ public onToggleLoopAnimate(): void {
         this.dropField.dropfraction = `0_${unitName}_${this.inchfractionselected}_0`;
       }
     }
+
+    if(((field.fieldtypeid == 5 && field.fieldlevel == 2) || (field.fieldtypeid === 20 && field.fieldlevel == 1))){
+      this.selected_img_option = targetField.optionid;
+    }
+
+    if(field.fieldtypeid == 3){
+      // Shutter
+      if(this.category == 5){
+          const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
+          if(this.hinge_color_field_names.includes(chosen_field_name)){
+            this.shutter_selected_img_options.hingecolour = targetField.optionid;
+          }
+          if(this.color_field_names.includes(chosen_field_name)){
+            this.shutter_selected_img_options.color = targetField.optionid;
+          }
+     }
+    }
+     // Accessories
+     if(field.fieldtypeid == 3 && this.category == 2){
+        this.selected_list_data[field.fieldid] = this.accessoriesImageSelectedData(field,targetField);
+     }
     this.get_freesample()
   }
 
@@ -2032,7 +2062,6 @@ public onToggleLoopAnimate(): void {
     colorname: string
   ): string {
     let extras = '';
-
     if (fabricname && colorname) {
       extras = `${fabricname} ${colorname}`;
     } else if (fabricname) {
@@ -2040,7 +2069,9 @@ public onToggleLoopAnimate(): void {
     } else if (colorname) {
       extras = colorname;
     }
-
+    if(2 == this.category && 'single_view' != this.routeParams?.fabric){
+      extras = this.routeParams?.fabric.replace(/-/g, ' ');
+    }
     return extras ? `${ecomproductname} - ${extras}` : ecomproductname;
   }
   private getVat(): Observable<any> {
@@ -2378,7 +2409,6 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
   }
   hideFrameImage():boolean{
     if('single_view' != this.routeParams?.fabric && 2 == this.category){
-
       return true;
     }
     return false;
@@ -2418,11 +2448,11 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
     }
     const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
     // Color URL
-    if(('color' == chosen_field_name || 'colour' == chosen_field_name || 'colours' == chosen_field_name)){
+    if(this.color_field_names.includes(chosen_field_name)){
         this.colorurl = selectedOption ? this.apiUrl + '/api/public' + selectedOption?.optionimage:'assets/default-shutter-img.png';
     }
    // Hinge Color URL
-    if(('hingecolours' == chosen_field_name || 'hingecolour' == chosen_field_name || 'hingecolors' == chosen_field_name)){
+    if(this.hinge_color_field_names.includes(chosen_field_name)){
           this.hinge_colorurl = selectedOption ? this.apiUrl + '/api/public' + selectedOption?.optionimage:'';
     }
     // Midrails
@@ -2451,5 +2481,160 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
       "slatsize"             : this.slatsize,
       "tiltrod"              : this.tiltrod,
     };
+  }
+  onImageClick(option: any, field: any) {
+    // Accessories type
+    if(this.category == 2){
+        // Set list data before image selection.
+        this.selected_list_data[field.fieldid] = this.accessoriesImageSelectedData(field,option);
+        this.accessoriesImageSelectedData(field,option,true);
+    }else{
+      // Except Accessories type
+      if (field.selection === 1) {
+        // Multi-select → array always
+        const currentValue = this.orderForm.get(`field_${field.fieldid}`)?.value || [];
+        this.orderForm.get(`field_${field.fieldid}`)?.setValue([...currentValue, option.optionid]);
+      } else {
+        const control = this.orderForm.get(`field_${field.fieldid}`);
+        if (control){
+          if (control.value === option.optionid) {
+              control.setValue(null);
+          } else {
+              control.setValue(option.optionid);
+          }
+        }
+      }
+    }
+  }
+  accessoriesImageSelectedData(field:any,option:any,set_value = false){
+    const control = this.orderForm.get(`field_${field.fieldid}`);
+        if (!control) return [];
+        // Initialize the changed value
+        let changed_val: any[] = [];
+        if (field.selection === 1) {
+          // Multi-select → toggle option in array
+          const currentValue: any[] = control.value || [];
+          const newValue = [...currentValue]; // copy array
+          const index = newValue.indexOf(option.optionid);
+          if (index === -1) {
+            // Add if not present
+            newValue.push(option.optionid);
+          } else {
+            // Remove if already present
+            newValue.splice(index, 1);
+          }
+          if(set_value){
+            control.setValue(newValue);
+          }
+          changed_val = newValue;
+        } else {
+          // Single-select → toggle value
+          if (control.value === option.optionid) {
+            // Deselect if clicked again
+            if(set_value){
+              control.setValue(null);
+            }
+            changed_val = [];
+          } else {
+            if(set_value){
+              control.setValue(option.optionid);
+            }
+            changed_val = [option.optionid]; // store as array for consistency
+          }
+        }
+        return changed_val;
+  }
+  isColorSection(field:any,is_color_list_toggle = false):boolean{
+    if('list' == this.list_value && !is_color_list_toggle){
+        return false;        
+    }
+    if(field.fieldtypeid == 5 && field.fieldlevel == 2){
+      return true;
+    }
+    if (field.fieldtypeid === 20 && field.fieldlevel == 1) {
+      return true;
+    }
+    return false;
+  }
+  toggle_list_view(field:any,event: MatButtonToggleChange){
+    this.list_value = 'image' == event.value ? 'image' : 'list';
+  }
+  isShutterColorSection(field:any,is_list_toggle = false):boolean{
+    if(this.category != 5){
+      return false;
+    }
+    const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
+    if (this.color_field_names.includes(chosen_field_name)){
+      if(this.shutter_color_list_value && 'list' == this.shutter_color_list_value && !is_list_toggle){
+          return false;
+      }
+      return true;
+    }
+    if(this.hinge_color_field_names.includes(chosen_field_name)){
+      if(this.shutter_hinge_color_list_value && 'list' == this.shutter_hinge_color_list_value && !is_list_toggle){
+          return false;
+      }
+      return true;
+    }
+    return false;
+  }
+  toggle_shutter_color_list_view(field:any,event: MatButtonToggleChange){
+    const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
+    if (this.color_field_names.includes(chosen_field_name)){
+      this.shutter_color_list_value = 'image' == event.value ? 'image' : 'list';
+    }
+    if (this.hinge_color_field_names.includes(chosen_field_name)){
+      this.shutter_hinge_color_list_value = 'image' == event.value ? 'image' : 'list';
+    }
+  }
+  shutter_color_list_view(field:any):string{
+    const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
+    if(this.shutter_color_list_value && this.color_field_names.includes(chosen_field_name)){
+      return this.shutter_color_list_value;
+    }
+
+    if(this.shutter_hinge_color_list_value && this.hinge_color_field_names.includes(chosen_field_name)){
+      return this.shutter_hinge_color_list_value;
+    }
+    return 'list';
+  }
+  is_shutter_color_list_view(field:any,option:any):boolean{
+    if(this.category != 5){
+      return false;
+    }
+
+    const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
+    if(this.shutter_selected_img_options.hingecolour && this.hinge_color_field_names.includes(chosen_field_name)){
+      return this.shutter_selected_img_options.hingecolour == option.optionid;
+    }
+    if(this.shutter_selected_img_options.color && this.color_field_names.includes(chosen_field_name)){
+      return this.shutter_selected_img_options.color == option.optionid;
+    }
+    return false;
+  }
+  is_accessories_list_view(field:any,option:any):boolean{
+    if (this.category !== 2) return false;
+    const value = this.selected_list_data[field.fieldid];
+    // If no value, return false
+    if (!value) return false;
+
+    if (Array.isArray(value)) {
+        // Ensure all elements are defined before calling toString
+        return value.some(v => v != null && v.toString() === option.optionid.toString());
+      } else {
+        return value != null && value.toString() === option.optionid.toString();
+      }
+  }
+  isAccessoriesListSection(field:any):boolean{
+    if(2 != this.category){
+      return false;
+    }
+    return 'image' == this.list_value;
+  }
+  showListViewButton(field:any):boolean{  
+    if(2 == this.category){
+      return true;
+    }
+    return false;
   }
 }

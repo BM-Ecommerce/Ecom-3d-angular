@@ -112,13 +112,18 @@
 
             <div class="blinds-measurement">
             </div>
-
-            <div *ngFor="let field of parameters_data; trackBy: trackByFieldId"
+            <div *ngFor="let field of parameters_data; trackBy: trackByFieldId;let i = index"
               [ngSwitch]="get_field_type_name(field.fieldtypeid)">
               <div *ngIf="field.showfieldecomonjob == 1">
-
+                <!-- List/Grid view - Accessories -->
+                <div class="list_view_wrapper" *ngIf="(0 == i) && showListViewButton(field)">
+                  <mat-button-toggle-group name="accessories_list_view" [value]="'image' == list_value ? 'image' : 'list'" (change)="toggle_list_view(field,$event)" appearance="standard">
+                    <mat-button-toggle value="list" aria-label="List">List</mat-button-toggle>
+                    <mat-button-toggle value="image" aria-label="Image">Grid</mat-button-toggle>
+                  </mat-button-toggle-group>
+                </div>
                 <!-- Unit Type -->
-    <div *ngSwitchCase="'unit_type'" [class]="getClassNameAccessories(field)">
+    <div *ngSwitchCase="'unit_type'" id="unit_type_section_wrapper" [class]="getClassNameAccessories(field)">
                   <div class="parameter-wrapper inline-toggle radio">
                     <span class="mat-label" id="example-toggle-group-label">
                       {{ field.fieldname }}
@@ -168,9 +173,16 @@
                 </div>
 
                 <!-- List -->
-    <div *ngSwitchCase="'list'" [class]="getClassNameAccessories(field)">
+    <div *ngSwitchCase="'list'" [class]="getClassNameAccessories(field)" id="list_section_wrapper">
+      <!-- List/Grid view - Shutter -->
+      <div class="list_view_wrapper" *ngIf="isShutterColorSection(field,true)">
+        <mat-button-toggle-group name="shutter_color_list_view" [value]="shutter_color_list_view(field)" (change)="toggle_shutter_color_list_view(field,$event)" appearance="standard">
+          <mat-button-toggle value="list" aria-label="List">List</mat-button-toggle>
+          <mat-button-toggle value="image" aria-label="Image">Grid</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
       <div class="parameter-wrapper" [class]="getClassNameAccessories(field,true)">
-                    <mat-form-field>
+                    <mat-form-field [class.hide_section]="isShutterColorSection(field) || isAccessoriesListSection(field)">
                       <mat-label>
                         {{ field.fieldname }}
                         <span class="icon-wrapper">
@@ -196,12 +208,42 @@
                       </mat-select>
                     </mat-form-field>
                   </div>
+                  <div *ngIf="isShutterColorSection(field) || isAccessoriesListSection(field)" class="list-image-field-wrapper" [ngClass]="getClassNameAccessories(field, true)">
+                  <label>
+                    {{ field.fieldname }}
+                    <span class="icon-wrapper">
+                      <mat-icon
+                        *ngIf="hasContent(field.fieldInformation)"
+                        [appHtmlTooltip]="field.fieldInformation"
+                        [hideDelay]="1000"
+                        class="info-icon"
+                        [attr.aria-label]="'Information about ' + field.fieldname">
+                        info_outline
+                      </mat-icon>
+                    </span>
+                  </label>
+                  <div class="color-grid">
+                    <div *ngFor="let option of option_data[field.fieldid]" class="color-item" [class.color_selected]="is_shutter_color_list_view(field,option) || is_accessories_list_view(field,option)" (click)="onImageClick(option,field)">
+                      <img [src]="apiUrl + '/api/public' + option.optionimage" (error)="onImageError($event)" [title]="option.optionname" [alt]="option.optionname" />
+                      <div class="circle-check" *ngIf="is_shutter_color_list_view(field,option) || is_accessories_list_view(field,option)">✓</div>
+                      <div class="list_view_name_section"><b>{{option.optionname}}</b></div>
+                    </div>
+                  </div>
+                </div>
+                  
                 </div>
 
                 <!-- Materials -->
-    <div *ngSwitchCase="'materials'" [class]="getClassNameAccessories(field)">
-                  <div class="parameter-wrapper">
-                    <mat-form-field>
+    <div *ngSwitchCase="'materials'" id="materials_section_wrapper" [class]="getClassNameAccessories(field)">
+                  <!-- List/Grid view - Blinds with fabrics and slates -->
+                  <div class="color_list_view_wrapper" *ngIf="isColorSection(field,true)">
+                      <mat-button-toggle-group name="color_list_view" [value]="'image' == list_value ? 'image' : 'list'" (change)="toggle_list_view(field,$event)" appearance="standard">
+                        <mat-button-toggle value="list" aria-label="List">List</mat-button-toggle>
+                        <mat-button-toggle value="image" aria-label="Image">Grid</mat-button-toggle>
+                      </mat-button-toggle-group>
+                   </div>
+                  <div class="parameter-wrapper" [class.parameter_color_wrapper]="isColorSection(field)">
+                     <mat-form-field [class.hide_section]="isColorSection(field)">
                       <mat-label>
                         {{ field.fieldname }}
                         <span class="icon-wrapper">
@@ -226,7 +268,30 @@
                       </mat-select>
                     </mat-form-field>
                   </div>
+
+                <div *ngIf="isColorSection(field)" class="color-image-field-wrapper">
+                  <label>
+                    {{ field.fieldname }}
+                    <span class="icon-wrapper">
+                      <mat-icon
+                        *ngIf="hasContent(field.fieldInformation)"
+                        [appHtmlTooltip]="field.fieldInformation"
+                        [hideDelay]="1000"
+                        class="info-icon"
+                        [attr.aria-label]="'Information about ' + field.fieldname">
+                        info_outline
+                      </mat-icon>
+                    </span>
+                  </label>
+                  <div class="color-grid">
+                    <div *ngFor="let option of option_data[field.fieldid]" class="color-item" [class.color_selected]="this.selected_img_option == option.optionid" (click)="onImageClick(option,field)">
+                      <img [src]="apiUrl + '/api/public' + option.optionimage" [title]="option.optionname" [alt]="option.optionname" />
+                      <div class="circle-check" *ngIf="this.selected_img_option == option.optionid">✓</div>
+                      <div><b>{{option.optionname}}</b></div>
+                    </div>
+                  </div>
                 </div>
+           </div>
 
                 <!-- Number -->
     <div *ngSwitchCase="'number'" [class]="getClassNameAccessories(field)">
