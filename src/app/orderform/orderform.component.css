@@ -498,6 +498,16 @@ canvas {
   height: 100% !important;
   display: block;
 }
+
+#main-img {
+  overflow: visible;
+}
+
+#main-img canvas {
+  width: auto !important;
+  height: auto !important;
+  display: block;
+}
 .blindmatrix-v4-slider {
   display: flex;
   overflow-x: auto;
