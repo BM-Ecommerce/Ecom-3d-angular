@@ -478,7 +478,7 @@ textarea {
     padding-bottom: unset!important;
     background: var(--card-bg);
     border-radius: var(--border-radius);
-    padding: 25px 0;
+    margin: 25px 0;
 }
 
 .product_preview.zooming {
@@ -516,7 +516,10 @@ canvas {
 /* Responsive visualizer container */
 .configuratorpreviewimage {
   position: relative;
-  height: 480px;
+  height: 400px;
+}
+.configuratorpreviewimage.view3d{
+  height: 500px;
 }
 .blindmatrix-v4-slider {
   display: flex;
