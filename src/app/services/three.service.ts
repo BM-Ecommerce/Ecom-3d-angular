@@ -13,6 +13,8 @@ export class ThreeService implements OnDestroy {
   private renderer!: THREE.WebGLRenderer;
   private controls!: OrbitControls;
   private canvasEl: HTMLCanvasElement | null = null;
+  private containerEl?: HTMLElement;
+  private resizeObserver?: any;
   // Track currently loaded model root for proper disposal on reload
   private currentModelRoot?: THREE.Object3D;
 
@@ -185,6 +187,7 @@ export class ThreeService implements OnDestroy {
   // ------------------------------------------------------
   public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
     this.resetState();
+    this.containerEl = container;
     const width = container.clientWidth;
     const height = container.clientHeight;
     this.scene = new THREE.Scene();
@@ -258,6 +261,15 @@ export class ThreeService implements OnDestroy {
 
     // Run RAF loop outside Angular to avoid triggering change detection
     this.zone.runOutsideAngular(() => this.animate());
+
+    // Observe container resize for responsive rendering
+    try {
+      const RO: any = (window as any).ResizeObserver;
+      if (RO) {
+        this.resizeObserver = new RO(() => this.onResize(container));
+        this.resizeObserver.observe(container);
+      }
+    } catch { /* ignore */ }
   }
 
   public zoomIn(): void {
@@ -616,6 +628,7 @@ public loadGltfModel(
 
   public initialize2d(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
     this.resetState();
+    this.containerEl = container;
 
     const width = container.clientWidth;
     const height = container.clientHeight;
@@ -641,6 +654,15 @@ public loadGltfModel(
     this.renderer.setPixelRatio(window.devicePixelRatio);
 
     this.zone.runOutsideAngular(() => this.animate());
+
+    // Observe container resize for responsive rendering (2D)
+    try {
+      const RO: any = (window as any).ResizeObserver;
+      if (RO) {
+        this.resizeObserver = new RO(() => this.onResize(container));
+        this.resizeObserver.observe(container);
+      }
+    } catch { /* ignore */ }
   }
 
   public createObjects(frameUrl: string, backgroundUrl: string): void {
@@ -768,7 +790,8 @@ public loadGltfModel(
             transparent: false
           });
           this.backgroundMesh = new THREE.Mesh(bgGeometry, bgMaterial);
-          this.backgroundMesh.position.z = 0;
+          // ensure background stays behind the frame to avoid z-fighting
+          this.backgroundMesh.position.z = -1;
           this.scene.add(this.backgroundMesh);
 
           // Fit background into transparent area of frame texture (use new frameTexture)
@@ -829,7 +852,8 @@ public loadGltfModel(
       mesh.geometry.dispose();
       mesh.geometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
     };
-    if (!this.camera2d) {
+    // In 2D mode, resize the planes to keep aspect-fit with new container size
+    if (this.camera2d) {
       resizeMesh(this.frameMesh);
       resizeMesh(this.backgroundMesh);
     }

@@ -508,9 +508,15 @@ canvas {
   overflow: hidden;
 }
 #main-img canvas {
-  width: auto !important;
-  height: auto !important;
+  width: 100% !important;
+  height: 100% !important;
   display: block;
+}
+
+/* Responsive visualizer container */
+.configuratorpreviewimage {
+  position: relative;
+  height: 480px;
 }
 .blindmatrix-v4-slider {
   display: flex;
@@ -701,12 +707,21 @@ mat-button-toggle.mat-button-toggle-checked {
         left: 50%;
         transform: translateX(-50%);
     }
+    .configuratorpreviewimage {
+      height: 55vh;
+    }
 }
 
 @media (min-width: 768px) and (max-width: 991px) {
     .product-title span {
         font-size: 1.4rem;
     }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+  .configuratorpreviewimage {
+    height: min(55vh, 560px);
+  }
 }
 
 

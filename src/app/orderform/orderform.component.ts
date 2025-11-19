@@ -578,7 +578,7 @@ public onToggleLoopAnimate(): void {
     } else {
       this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
       if (this.mainframe) {
-        this.threeService.createObjects(this.mainframe, this.background_color_image_url);
+        this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
       }
     }
     setTimeout(() => this.onWindowResize(), 0);
