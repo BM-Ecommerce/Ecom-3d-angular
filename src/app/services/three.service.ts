@@ -588,10 +588,13 @@ public loadGltfModel(
   }
 
   public stopAll(): void {
-    if (this.rollerAction) this.rollerAction.stop();
-
-    Object.values(this.actions ?? {}).forEach((a) => a.stop());
-    this.isAnimateOpen = true;
+    if (this.rollerAction){
+      this.rollerAction.stop();
+      this.isAnimateOpen = true;
+    }else{
+      Object.values(this.actions ?? {}).forEach((a) => a.stop());
+      this.isAnimateOpen = false;
+    }
   }
 
   public getCanvasDataURL(): string | undefined {
