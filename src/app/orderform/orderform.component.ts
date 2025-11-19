@@ -1018,7 +1018,7 @@ public onToggleLoopAnimate(): void {
                 : [];
             } else if (field.fieldtypeid === 20) {
               valueToSet = +params.color_id || '';
-            } else if (field.fieldtypeid === 5) {
+            } else if (field.fieldtypeid === 5 || field.fieldtypeid === 21) {
               valueToSet = +params.fabric_id || '';
             } else {
               valueToSet = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')

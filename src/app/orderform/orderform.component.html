@@ -215,6 +215,7 @@
                   <div *ngIf="isShutterColorSection(field) || isAccessoriesListSection(field)" class="list-image-field-wrapper" [ngClass]="getClassNameAccessories(field, true)">
                   <label>
                     {{ field.fieldname }}
+                    <span class="required" *ngIf="field.mandatory == 1">*</span>
                     <span class="icon-wrapper">
                       <mat-icon
                         *ngIf="hasContent(field.fieldInformation)"
@@ -228,8 +229,10 @@
                   </label>
                   <div class="color-grid">
                     <div *ngFor="let option of option_data[field.fieldid]" class="color-item" [class.color_selected]="is_shutter_color_list_view(field,option) || is_accessories_list_view(field,option)" (click)="onImageClick(option,field)">
-                      <img [src]="apiUrl + '/api/public' + option.optionimage" (error)="onImageError($event)" [title]="option.optionname" [alt]="option.optionname" />
-                      <div class="circle-check" *ngIf="is_shutter_color_list_view(field,option) || is_accessories_list_view(field,option)">✓</div>
+                      <div>
+                        <img [src]="apiUrl + '/api/public' + option.optionimage" (error)="onImageError($event)" [title]="option.optionname" [alt]="option.optionname" />
+                        <div class="circle-check" *ngIf="is_shutter_color_list_view(field,option) || is_accessories_list_view(field,option)">✓</div>
+                      </div>
                       <div class="list_view_name_section"><b>{{option.optionname}}</b></div>
                     </div>
                   </div>
@@ -276,6 +279,7 @@
                 <div *ngIf="isColorSection(field)" class="color-image-field-wrapper">
                   <label>
                     {{ field.fieldname }}
+                    <span class="required" *ngIf="field.mandatory == 1">*</span>
                     <span class="icon-wrapper">
                       <mat-icon
                         *ngIf="hasContent(field.fieldInformation)"
@@ -289,8 +293,10 @@
                   </label>
                   <div class="color-grid">
                     <div *ngFor="let option of option_data[field.fieldid]" class="color-item" [class.color_selected]="this.selected_img_option == option.optionid" (click)="onImageClick(option,field)">
-                      <img [src]="apiUrl + '/api/public' + option.optionimage"  (error)="onImageError($event)" [title]="option.optionname" [alt]="option.optionname" />
-                      <div class="circle-check" *ngIf="this.selected_img_option == option.optionid">✓</div>
+                      <div>
+                        <img [src]="apiUrl + '/api/public' + option.optionimage"  (error)="onImageError($event)" [title]="option.optionname" [alt]="option.optionname" />
+                        <div class="circle-check" *ngIf="this.selected_img_option == option.optionid">✓</div>
+                      </div>
                       <div><b>{{option.optionname}}</b></div>
                     </div>
                   </div>
