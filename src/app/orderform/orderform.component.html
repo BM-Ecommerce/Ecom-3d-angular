@@ -479,7 +479,8 @@
               </mat-expansion-panel>
             </mat-accordion>
             <app-freesample [freesampledata]="freesample"
-              *ngIf="freesample?.status == 1 && freesample?.color_id !=0 "></app-freesample>
+                *ngIf="(freesample?.status == 1 && freesample?.color_id != 0) || category == 3 || category == 4">
+            </app-freesample>
             <div class="guides-buttons">
               <a mat-stroked-button color="primary" target="_blank" href="/measuring-guide/">
                 Measuring Guide
