@@ -537,6 +537,9 @@ hasDescriptionContent = false;
   get isAnimateOpen(): boolean {
     return this.threeService.isAnimateOpen;
   }
+  get isPaused(): boolean {
+    return this.threeService.isPaused;
+  }
   onStopAnimate(): void {
     this.threeService.stopAll();
   }
@@ -544,7 +547,7 @@ hasDescriptionContent = false;
    this.threeService.loopAnimate();
   }
   
-public onToggleLoopAnimate(): void {
+  public onToggleLoopAnimate(): void {
 
   if (this.isLooping) {
     this.threeService.stopAll();
@@ -553,7 +556,11 @@ public onToggleLoopAnimate(): void {
     this.threeService.loopAnimate();
     this.isLooping = true;
   }
+  
 }
+onTogglePauseLoop(): void {
+    this.threeService.togglePause();
+  }
   private setupVisualizer(productname: string): void {
     if (!this.canvasRef || !this.containerRef) return;
 

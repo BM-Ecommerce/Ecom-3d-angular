@@ -50,6 +50,7 @@ export class ThreeService implements OnDestroy {
   private actions?: { [key: string]: THREE.AnimationAction };
   public isAnimateOpen: boolean = false;
   public isLooping: boolean = false;
+  public isPaused: boolean = false;
 
   public fitMode: 'contain' | 'cover' | 'stretch' = 'cover';
 
@@ -352,6 +353,7 @@ public loadGltfModel(
       // Start with animations closed
       this.isAnimateOpen = false;
       this.isLooping = false;
+      this.isPaused = false;
 
       gltf.scene.traverse((child) => {
         if ((child as any).isMesh) {
@@ -589,6 +591,7 @@ public loadGltfModel(
 
     this.isAnimateOpen = true;
     this.isLooping = true;
+    this.isPaused = false;
   }
 
   public stopAll(): void {
@@ -600,6 +603,45 @@ public loadGltfModel(
       this.isAnimateOpen = false;
     }
     this.isLooping = false;
+    this.isPaused = false;
+  }
+
+  public pauseAnimation(): void {
+    if (!this.mixer || !this.isLooping || this.isPaused) return;
+
+    const pause = (action: THREE.AnimationAction) => {
+      try { (action as any).paused = true; } catch {}
+    };
+
+    if (this.rollerAction) {
+      pause(this.rollerAction);
+    } else if (this.actions && Object.keys(this.actions).length > 0) {
+      Object.values(this.actions).forEach(pause);
+    }
+
+    this.isPaused = true;
+  }
+
+  public resumeAnimation(): void {
+    if (!this.mixer || !this.isLooping || !this.isPaused) return;
+
+    const resume = (action: THREE.AnimationAction) => {
+      try { (action as any).paused = false; } catch {}
+    };
+
+    if (this.rollerAction) {
+      resume(this.rollerAction);
+    } else if (this.actions && Object.keys(this.actions).length > 0) {
+      Object.values(this.actions).forEach(resume);
+    }
+
+    this.isPaused = false;
+  }
+
+  // Toggle pause/resume while looping
+  public togglePause(): void {
+    if (!this.isLooping) return;
+    this.isPaused ? this.resumeAnimation() : this.pauseAnimation();
   }
 
   public getCanvasDataURL(): string | undefined {

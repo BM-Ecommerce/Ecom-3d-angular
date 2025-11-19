@@ -522,7 +522,8 @@ canvas {
 .btn-disabled {
   pointer-events: none;     
   opacity: 0.4;              
-  cursor: not-allowed;      
+  cursor: not-allowed;
+  display: none;     
 }
 .frame-item {
   flex: 0 0 auto;
