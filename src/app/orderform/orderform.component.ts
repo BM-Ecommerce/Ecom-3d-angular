@@ -2528,8 +2528,6 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
     ['up', 'down'].forEach(state => {
       const iconName = `${this.iconname}-${state}`;
       const path = `assets/icons/${iconName}.svg`;
-      console.log(iconName);
-      console.log(path);
       this.matIconRegistry.addSvgIcon(
         iconName,
         this.sanitizer.bypassSecurityTrustResourceUrl(path)

@@ -421,6 +421,7 @@ public loadGltfModel(
           mesh.receiveShadow = true;
         });
       }
+     
       try {
         const bbox = new THREE.Box3().setFromObject(gltf.scene);
         const size = bbox.getSize(new THREE.Vector3());
@@ -455,7 +456,8 @@ public loadGltfModel(
       } catch (err) {
         console.warn('Auto-framing failed:', err);
       }
-      this.setRollerState(true);
+    
+      this.forceAllAnimationsClosed();
       if (this.textureMaterial && this.cube5Meshes.length > 0) {
         this.cube5Meshes.forEach((mesh) => {
           mesh.material = this.textureMaterial!;
@@ -471,7 +473,31 @@ public loadGltfModel(
     }
   );
 }
+  private forceAllAnimationsClosed(): void {
+  if (!this.mixer) return;
 
+  if (this.rollerAction) {
+    this.rollerAction.stop();
+    this.rollerAction.enabled = true;
+    this.rollerAction.reset();
+    this.rollerAction.time = 0;
+    this.mixer.update(0);
+    this.rollerAction.stop();
+    this.setRollerState(true);
+    return;
+  }
+
+  if (this.actions) {
+    Object.values(this.actions).forEach(action => {
+      action.stop();
+      action.enabled = true;
+      action.reset();
+      action.time = 0;
+    });
+
+    this.mixer.update(0);
+  }
+}
   public openAnimate(loopCount: number = 1): void {
     if (!this.mixer || this.isAnimateOpen) return;
 
