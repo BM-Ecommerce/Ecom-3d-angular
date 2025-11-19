@@ -519,7 +519,11 @@ canvas {
   scrollbar-width: thin;
   scrollbar-color: var(--primary-color) transparent;
 }
-
+.btn-disabled {
+  pointer-events: none;     
+  opacity: 0.4;              
+  cursor: not-allowed;      
+}
 .frame-item {
   flex: 0 0 auto;
   margin-right: 10px;

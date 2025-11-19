@@ -48,7 +48,8 @@
                               type="button"
                               mat-icon-button
                               (click)="onAnimate()"
-                              aria-label="Toggle Roller">
+                              aria-label="Toggle Animate"
+                              [ngClass]="{ 'btn-disabled': isLooping }">
 
                         <mat-icon
                            [svgIcon]="iconname + '-' + (isAnimateOpen ? 'up' : 'down')"
