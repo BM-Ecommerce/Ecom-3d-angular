@@ -2584,7 +2584,7 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
     }
     return false;
   }
-  toggle_list_view(field:any,event: MatButtonToggleChange){
+  toggle_list_view(event: MatButtonToggleChange){
     this.list_value = 'image' == event.value ? 'image' : 'list';
   }
   isShutterColorSection(field:any,is_list_toggle = false):boolean{
@@ -2659,7 +2659,7 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
     }
     return 'image' == this.list_value;
   }
-  showListViewButton(field:any):boolean{  
+  showListViewButton():boolean{  
     if(2 == this.category){
       return true;
     }

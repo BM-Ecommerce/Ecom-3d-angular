@@ -113,20 +113,20 @@
 
           <div class="product-info">
             <div class='blindmatrix-v4-error-messages-wrapper'></div>
-            <h3>Please enter your measurements</h3>
-
+            <h3 *ngIf="category == 2">Please choose your options</h3>
+            <h3 *ngIf="category != 2">Please enter your measurements</h3>
+            <!-- List/Grid view - Accessories -->
+             <div class="list_view_wrapper" *ngIf="showListViewButton()">
+                  <mat-button-toggle-group name="accessories_list_view" [value]="'image' == list_value ? 'image' : 'list'" (change)="toggle_list_view($event)" appearance="standard">
+                    <mat-button-toggle value="list" aria-label="List">List</mat-button-toggle>
+                    <mat-button-toggle value="image" aria-label="Image">Grid</mat-button-toggle>
+                  </mat-button-toggle-group>
+             </div>
             <div class="blinds-measurement">
             </div>
             <div *ngFor="let field of parameters_data; trackBy: trackByFieldId;let i = index"
               [ngSwitch]="get_field_type_name(field.fieldtypeid)">
               <div *ngIf="field.showfieldecomonjob == 1">
-                <!-- List/Grid view - Accessories -->
-                <div class="list_view_wrapper" *ngIf="(0 == i) && showListViewButton(field)">
-                  <mat-button-toggle-group name="accessories_list_view" [value]="'image' == list_value ? 'image' : 'list'" (change)="toggle_list_view(field,$event)" appearance="standard">
-                    <mat-button-toggle value="list" aria-label="List">List</mat-button-toggle>
-                    <mat-button-toggle value="image" aria-label="Image">Grid</mat-button-toggle>
-                  </mat-button-toggle-group>
-                </div>
                 <!-- Unit Type -->
     <div *ngSwitchCase="'unit_type'" id="unit_type_section_wrapper" [class]="getClassNameAccessories(field)">
                   <div class="parameter-wrapper inline-toggle radio">
@@ -245,7 +245,7 @@
     <div *ngSwitchCase="'materials'" id="materials_section_wrapper" [class]="getClassNameAccessories(field)">
                   <!-- List/Grid view - Blinds with fabrics and slates -->
                   <div class="color_list_view_wrapper" *ngIf="isColorSection(field,true)">
-                      <mat-button-toggle-group name="color_list_view" [value]="'image' == list_value ? 'image' : 'list'" (change)="toggle_list_view(field,$event)" appearance="standard">
+                      <mat-button-toggle-group name="color_list_view" [value]="'image' == list_value ? 'image' : 'list'" (change)="toggle_list_view($event)" appearance="standard">
                         <mat-button-toggle value="list" aria-label="List">List</mat-button-toggle>
                         <mat-button-toggle value="image" aria-label="Image">Grid</mat-button-toggle>
                       </mat-button-toggle-group>
