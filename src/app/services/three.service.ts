@@ -49,6 +49,7 @@ export class ThreeService implements OnDestroy {
   private rollerAction?: THREE.AnimationAction | null = null;
   private actions?: { [key: string]: THREE.AnimationAction };
   public isAnimateOpen: boolean = false;
+  public isLooping: boolean = false;
 
   public fitMode: 'contain' | 'cover' | 'stretch' = 'cover';
 
@@ -350,6 +351,7 @@ public loadGltfModel(
 
       // Start with animations closed
       this.isAnimateOpen = false;
+      this.isLooping = false;
 
       gltf.scene.traverse((child) => {
         if ((child as any).isMesh) {
@@ -558,6 +560,7 @@ public loadGltfModel(
 
   public toggleAnimate(loopCount: number = 1): void {
     if (!this.mixer) return;
+    if (this.isLooping) return; // disable toggle while looping
     console.log(this.isAnimateOpen);
     this.isAnimateOpen ? this.closeAnimate() : this.openAnimate(loopCount);
   }
@@ -585,6 +588,7 @@ public loadGltfModel(
     }
 
     this.isAnimateOpen = true;
+    this.isLooping = true;
   }
 
   public stopAll(): void {
@@ -595,6 +599,7 @@ public loadGltfModel(
       Object.values(this.actions ?? {}).forEach((a) => a.stop());
       this.isAnimateOpen = false;
     }
+    this.isLooping = false;
   }
 
   public getCanvasDataURL(): string | undefined {
