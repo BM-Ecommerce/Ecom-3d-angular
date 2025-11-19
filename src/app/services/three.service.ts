@@ -492,7 +492,6 @@ public loadGltfModel(
     }
 
     this.isAnimateOpen = true;
-    this.updateButtonStates();
   }
 
   public closeAnimate(instant: boolean = false): void {
@@ -529,7 +528,6 @@ public loadGltfModel(
     }
 
     this.isAnimateOpen = false;
-    this.updateButtonStates();
   }
 
   public toggleAnimate(loopCount: number = 1): void {
@@ -561,7 +559,6 @@ public loadGltfModel(
     }
 
     this.isAnimateOpen = true;
-    this.updateButtonStates();
   }
 
   public stopAll(): void {
@@ -569,7 +566,6 @@ public loadGltfModel(
 
     Object.values(this.actions ?? {}).forEach((a) => a.stop());
     this.isAnimateOpen = true;
-    this.updateButtonStates();
   }
 
   public getCanvasDataURL(): string | undefined {
@@ -580,20 +576,8 @@ public loadGltfModel(
     return this.renderer.domElement.toDataURL('image/png');
   }
 
-  private updateButtonStates(): void {
-    // If you have direct references to buttons
-    // if (this.openButton && this.closeButton) {
-    //   this.openButton.disabled = this.isAnimateOpen;
-    //   this.closeButton.disabled = !this.isAnimateOpen;
-    // }
-
-    // Or if you're using template references, emit events or use a service
-    console.log(`Roller is now ${this.isAnimateOpen ? 'OPEN' : 'CLOSED'}`);
-  }
-
   public setRollerState(isOpen: boolean): void {
     this.isAnimateOpen = isOpen;
-    this.updateButtonStates();
   }
 
   public initialize2d(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
