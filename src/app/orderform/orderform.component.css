@@ -707,9 +707,10 @@ mat-button-toggle.mat-button-toggle-checked {
         left: 50%;
         transform: translateX(-50%);
     }
-    .configuratorpreviewimage {
-      height: 55vh;
-    }
+    /* 2D: no static height on mobile/tablet; computed from frame aspect */
+    .configuratorpreviewimage { height: auto; }
+    /* 3D: keep previous static height on mobile */
+    #main-img.view3d.configuratorpreviewimage { height: 55vh; }
 }
 
 @media (min-width: 768px) and (max-width: 991px) {
@@ -719,9 +720,10 @@ mat-button-toggle.mat-button-toggle-checked {
 }
 
 @media (min-width: 992px) and (max-width: 1199px) {
-  .configuratorpreviewimage {
-    height: min(55vh, 560px);
-  }
+  /* 2D: avoid static height on tablet as well */
+  .configuratorpreviewimage { height: auto; }
+  /* 3D: keep original tablet height */
+  #main-img.view3d.configuratorpreviewimage { height: min(55vh, 560px); }
 }
 
 

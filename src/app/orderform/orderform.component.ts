@@ -199,6 +199,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('visualizerContainer', { static: false }) private containerRef!: ElementRef<HTMLElement>;
   @ViewChild('zoomLens', { static: false }) private zoomLensRef!: ElementRef<HTMLElement>;
   @ViewChild('stickyEl', { static: false }) stickyEl!: ElementRef<HTMLElement>;
+  @ViewChild('mainImg', { static: false }) private mainImgRef!: ElementRef<HTMLElement>;
 
   public isLooping: boolean = false;
   isZooming = false;
@@ -579,6 +580,7 @@ public onToggleLoopAnimate(): void {
       this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
       if (this.mainframe) {
         this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+        this.update2DContainerHeightFromFrame();
       }
     }
     setTimeout(() => this.onWindowResize(), 0);
@@ -590,6 +592,13 @@ public onToggleLoopAnimate(): void {
       this.threeService.updateTextures(this.background_color_image_url);
     }
      this.registerProductIcon();
+    if (this.is3DOn) {
+      if (this.mainImgRef?.nativeElement) {
+        this.mainImgRef.nativeElement.style.removeProperty('height');
+      }
+    } else {
+      this.update2DContainerHeightFromFrame();
+    }
     setTimeout(() => this.onWindowResize(), 0);
   }
   @HostListener('window:resize')
@@ -597,6 +606,39 @@ public onToggleLoopAnimate(): void {
     if (this.containerRef) {
       this.threeService.onResize(this.containerRef.nativeElement);
     }
+    if (!this.is3DOn) {
+      this.update2DContainerHeightFromFrame();
+    }
+  }
+
+  // Adjusts the 2D container height on mobile/tablet to match the frame image aspect ratio
+  private update2DContainerHeightFromFrame(): void {
+    try {
+      if (!this.mainframe || this.is3DOn) return;
+      // Only apply on mobile/tablet
+      const isMobileTablet = window.innerWidth <= 1199;
+      if (!isMobileTablet) return;
+      const hostEl = this.mainImgRef?.nativeElement;
+      if (!hostEl) return;
+      const img = new Image();
+      const frameSrc = this.mainframe;
+      img.onload = () => {
+        const w = img.naturalWidth || img.width;
+        const h = img.naturalHeight || img.height;
+        if (!w || !h) return;
+        const aspect = w / h;
+        const containerWidth = hostEl.clientWidth || this.containerRef?.nativeElement?.clientWidth || 0;
+        if (!containerWidth) return;
+        const targetHeight = Math.max(1, Math.round(containerWidth / aspect));
+        hostEl.style.height = `${targetHeight}px`;
+        // Ensure renderer/camera pick up new size
+        if (this.containerRef) {
+          this.threeService.onResize(this.containerRef.nativeElement);
+        }
+        this.cd.markForCheck();
+      };
+      img.src = frameSrc;
+    } catch { /* ignore */ }
   }
   zoomIn(): void {
     if (this.is3DOn) {
@@ -1292,6 +1334,7 @@ public onToggleLoopAnimate(): void {
 
     if (this.threeService) {
       this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+      this.update2DContainerHeightFromFrame();
     }
   }
   public getFrameImageUrl(product_img: any): string {
