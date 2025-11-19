@@ -315,6 +315,13 @@ public loadGltfModel(
           this.rollerAction.loop = THREE.LoopOnce;
           this.rollerAction.clampWhenFinished = true;
           this.actions = undefined;
+          // Ensure closed pose at start: stop at time 0
+          this.rollerAction.stop();
+          this.rollerAction.enabled = true;
+          this.rollerAction.reset();
+          this.rollerAction.time = 0;
+          this.mixer.update(0);
+          this.rollerAction.stop();
         } else {
           this.actions = {};
           this.rollerAction = undefined;
@@ -325,11 +332,24 @@ public loadGltfModel(
             action.clampWhenFinished = true;
             this.actions![clip.name] = action;
           });
+
+          // Ensure all clips are at closed pose (time 0) and not playing
+          Object.values(this.actions).forEach(action => {
+            action.stop();
+            action.enabled = true;
+            action.reset();
+            action.time = 0;
+            this.mixer!.update(0);
+            action.stop();
+          });
         }
       } else {
         this.mixer = undefined;
         this.rollerAction = null;
       }
+
+      // Start with animations closed
+      this.isAnimateOpen = false;
 
       gltf.scene.traverse((child) => {
         if ((child as any).isMesh) {
@@ -486,7 +506,7 @@ public loadGltfModel(
       action.enabled = true;
 
       if (instant) {
-        // Instantly jump to closed position (end frame)
+        // Instantly jump to closed position (start frame @ t=0)
         action.time = 0;
         this.mixer?.update(0);
         action.play();
@@ -548,7 +568,7 @@ public loadGltfModel(
     if (this.rollerAction) this.rollerAction.stop();
 
     Object.values(this.actions ?? {}).forEach((a) => a.stop());
-    this.isAnimateOpen = false;
+    this.isAnimateOpen = true;
     this.updateButtonStates();
   }
 
