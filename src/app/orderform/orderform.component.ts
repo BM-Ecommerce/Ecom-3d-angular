@@ -1105,10 +1105,14 @@ public onToggleLoopAnimate(): void {
         this.fabricid = 0;
         this.colorid = 0;
         this.updateMinMaxValidators(false);
+        this.background_color_image_url = "";
+        this.setupVisualizer(this.productname);
       }
       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
         this.colorid = 0;
         this.updateMinMaxValidators(false);
+        this.background_color_image_url = "";
+        this.setupVisualizer(this.productname);
       }
       if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
         this.get_relatedproduct_data();
@@ -1117,8 +1121,7 @@ public onToggleLoopAnimate(): void {
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       this.get_freesample();
       this.setShutterObject(field,null);
-      this.background_color_image_url = "";
-      this.setupVisualizer(this.productname);
+   
       return;
     }
 
@@ -1138,6 +1141,7 @@ public onToggleLoopAnimate(): void {
       ).subscribe(() => {
         // Accessories Type.
         if('single_view' != this.routeParams?.fabric && 2 == this.category){
+             console.log('eewrew');
             const selected_accessories_data = this.option_data[this.chosenAccessoriesFieldId];
             if(selected_accessories_data.length > 0){
                 var chosen_accessories_list:any = [];
@@ -1160,6 +1164,7 @@ public onToggleLoopAnimate(): void {
       });
 
     } else {
+      console.log('bvbvcb');
       const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
       if (!selectedOption) return;
 
@@ -1167,7 +1172,7 @@ public onToggleLoopAnimate(): void {
 
       if (canUpdate && (field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
         this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
-
+          console.log('cxvcvxcv');
         this.get_freesample();
         if (this.is3DOn) {
           this.threeService.updateTextures(this.background_color_image_url);
@@ -1186,6 +1191,7 @@ public onToggleLoopAnimate(): void {
       }
       // Accessories Type.
      if('single_view' != this.routeParams?.fabric && 2 == this.category){
+        console.log('bv4534543');
             const selected_accessories_data = this.option_data[this.chosenAccessoriesFieldId];
             if(selected_accessories_data.length > 0){
                 var chosen_accessories_list:any = [];
