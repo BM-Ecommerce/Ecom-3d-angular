@@ -661,14 +661,13 @@ mat-button-toggle.mat-button-toggle-checked {
 }
 
 @media (max-width: 991px) {
-    .slider-container {
-        display: none;
+    .slider-container{
+      bottom: 10px;
     }
-
-    .slider-container.show-mobile {
-        display: block;
+    .frame-card  img{
+      padding: 0px;
+      margin: 0px 0;
     }
-
     .toggle-frames-btn {
         display: block;
         margin: 0 auto 10px;

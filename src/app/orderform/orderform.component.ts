@@ -405,19 +405,13 @@ hasDescriptionContent = false;
       loop: false,
       mouseDrag: true,
       touchDrag: true,
-      autoWidth: false,
+      autoWidth: true,
       pullDrag: true,
       dots: false,
       navSpeed: 700,
       navText: ['<', '>'],
-      nav: true,
-      items: 3
+      nav: false
     };
-
-  toggleFrames(): void {
-    this.showFramesInMobile = !this.showFramesInMobile;
-  }
-
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
