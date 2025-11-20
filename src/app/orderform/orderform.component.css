@@ -1143,7 +1143,7 @@ mat-button-toggle-group:disabled {
 .show-order-details-contents tr {
   display: flex;
   align-items: center;
-  background: #ffffff;
+  background: var(--primary-color);
   margin: 2px 0;
   overflow: hidden;
   box-shadow: 0px 3px 10px rgba(0,0,0,0.08);
