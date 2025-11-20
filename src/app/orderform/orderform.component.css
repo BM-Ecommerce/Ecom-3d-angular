@@ -132,12 +132,21 @@ textarea {
 }
 
 .slider-container {
-    position: relative;
-    margin-top: 30px;
-    margin-bottom: 0;
-    padding-top: 8px;
-    padding-bottom: 0;
-    border-top: 1px solid var(--border-color);
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 500px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    padding: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.toggle-frames-btn {
+  display: none; 
 }
 
 .prev, .next {
@@ -469,16 +478,14 @@ textarea {
     gap: 1rem;
     align-items: center;
 }
-.product_preview canvas {
-    border-radius: 8px;
-}
+
 .product_preview {
     position: relative;
     cursor: crosshair;
     padding-bottom: unset!important;
     background: var(--card-bg);
     border-radius: var(--border-radius);
-    margin: 25px 0;
+    margin-top: 25px;
 }
 
 .product_preview.zooming {
@@ -516,7 +523,7 @@ canvas {
 /* Responsive visualizer container */
 .configuratorpreviewimage {
   position: relative;
-  height: 400px;
+  height: 500px;
 }
 .configuratorpreviewimage.view3d{
   height: 500px;
@@ -587,7 +594,7 @@ mat-button-toggle.mat-button-toggle-checked {
    font-size: 14px;
 }
 .frame-card  img{
-  padding: 6px;
+  padding: 2px;
   border-radius: 10px;
   cursor: pointer;
   margin: 10px 0;
@@ -600,12 +607,11 @@ mat-button-toggle.mat-button-toggle-checked {
 }
 .frame-card img {
   display: block;
-  height: 100px;
-  width: auto;
-  max-width: 150px;
   border-radius: 10px;
-  object-fit: contain;
+  object-fit: cover;
   transition: transform 0.25s ease;
+  height: 100%;
+  width: 50px;
 }
 
 .frame-card.selected img{
@@ -655,6 +661,27 @@ mat-button-toggle.mat-button-toggle-checked {
 }
 
 @media (max-width: 991px) {
+    .slider-container {
+        display: none;
+    }
+
+    .slider-container.show-mobile {
+        display: block;
+    }
+
+    .toggle-frames-btn {
+        display: block;
+        margin: 0 auto 10px;
+        padding: 10px 20px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        position: absolute;
+        bottom: 10px;
+        right: 0;
+    }
     .parameter-wrapper.inline-toggle.radio {
         flex-direction: column;
         gap: 10px;

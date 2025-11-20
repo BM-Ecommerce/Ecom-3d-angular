@@ -82,7 +82,8 @@
                 </div>
               </div>
             </div>
-          <div *ngIf="!is3DOn" class="slider-container">
+          <button class="toggle-frames-btn" (click)="toggleFrames()">Show Frames</button>
+           <div *ngIf="!is3DOn" class="slider-container" [class.show-mobile]="showFramesInMobile">
               <owl-carousel-o [options]="customOptions">
                 <ng-template carouselSlide *ngFor="let product_img of product_img_array">
                   <div 

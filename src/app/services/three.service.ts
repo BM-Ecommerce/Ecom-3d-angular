@@ -65,8 +65,8 @@ export class ThreeService implements OnDestroy {
   private mouseX = 0;
   private mouseY = 0;
   private isZooming = false;
-  private readonly lensRadius = 100;
-  private readonly zoomFactor = 4;
+  private readonly lensRadius = 50;
+  private readonly zoomFactor = 12;
   private holeCache = new Map<string, { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number; found: boolean }>();
 
   private animationFrameId?: number;

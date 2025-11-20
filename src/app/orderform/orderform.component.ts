@@ -400,17 +400,23 @@ hasDescriptionContent = false;
   grossPricenum: number = 0;
   private priceUpdate = new Subject<void>();
   private rulesorderitem: any[] = [];
+  public showFramesInMobile = false;
   customOptions: any = {
-    loop: false,
-    mouseDrag: true,
-    autoWidth: true,
-    touchDrag: true,
-    pullDrag: true,
-    dots: false, 
-    navSpeed: 700,
-    navText: ['<', '>'],
-    nav: true
-  };
+      loop: false,
+      mouseDrag: true,
+      touchDrag: true,
+      autoWidth: false,
+      pullDrag: true,
+      dots: false,
+      navSpeed: 700,
+      navText: ['<', '>'],
+      nav: true,
+      items: 3
+    };
+
+  toggleFrames(): void {
+    this.showFramesInMobile = !this.showFramesInMobile;
+  }
 
   constructor(
     private apiService: ApiService,
