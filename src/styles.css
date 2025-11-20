@@ -14,6 +14,7 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
     color: blue!important;
     text-decoration: none;
 }
-.owl-item:first-child .frame-card{
-    margin-left:15px;
+
+.slider-container .owl-stage-outer.ng-star-inserted {
+    display: none;
 }

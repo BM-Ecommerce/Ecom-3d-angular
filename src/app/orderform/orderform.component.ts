@@ -400,18 +400,17 @@ hasDescriptionContent = false;
   grossPricenum: number = 0;
   private priceUpdate = new Subject<void>();
   private rulesorderitem: any[] = [];
-  customOptions: any = {
-    loop: false,
-    mouseDrag: true,
-    autoWidth: true,
-    touchDrag: true,
-    pullDrag: true,
-    dots: false, 
-    navSpeed: 700,
-    navText: ['<', '>'],
-    nav: true
-  };
-
+customOptions = {
+  loop: false,
+  mouseDrag: false,
+  touchDrag: false,
+  pullDrag: false,
+  nav: true,
+  dots: false,
+  items: 1,
+  navText: ['<', '>'],
+  navSpeed: 700
+};
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
@@ -648,7 +647,16 @@ public onToggleLoopAnimate(): void {
   openAnimate() {
     this.threeService.openAnimate();
   }
+onSlideChanged(event: any) {
+  if (!event || event.startPosition === undefined) return;
 
+  const index = event.startPosition;
+  const selected = this.product_img_array[index];
+
+  if (selected) {
+    this.onFrameChange(this.getFrameImageUrl(selected));
+  }
+}
   closeAnimate() {
     this.threeService.closeAnimate();
   }
