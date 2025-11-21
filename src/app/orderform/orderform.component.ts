@@ -27,6 +27,7 @@ import { RelatedproductComponent } from '../relatedproduct/relatedproduct.compon
 import { MatButtonToggleChange } from '@angular/material/button-toggle';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconRegistry } from '@angular/material/icon';
+import * as htmlToImage from 'html-to-image';
 
 // Interfaces (kept as you had them)
 // Interfaces
@@ -1267,6 +1268,7 @@ public onToggleLoopAnimate(): void {
         }
         if(this.category == 5){
            this.setShutterObject(field,selectedOption);
+           this.setShutterImage();
         }
         this.cd.markForCheck();
       });
@@ -2078,7 +2080,12 @@ public onToggleLoopAnimate(): void {
 
     this.isSubmitting = true;
     this.errorMessage = null;
-    const visualizerImage = this.threeService.getCanvasDataURL();
+    let visualizerImage: string | undefined;
+    if (this.category === 5) {
+      visualizerImage = (document.getElementById('previewImageField') as HTMLInputElement).value;
+    } else {
+      visualizerImage = this.threeService.getCanvasDataURL(); // string already
+    }
 
     this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site,
       this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname),
@@ -2714,5 +2721,21 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
       return true;
     }
     return false;
+  }
+  setShutterImage() {
+    const element = document.getElementById('shutterspreview');
+    if (!element) return;
+    htmlToImage.toPng(element, { pixelRatio: 2 })
+      .then((dataUrl: string) => {
+        const hiddenField = document.getElementById('previewImageField') as HTMLInputElement;
+        if (hiddenField) {
+          hiddenField.value = dataUrl;
+        }
+
+        console.log("Hidden field updated with image URL");
+      })
+      .catch(error => {
+        console.error("Image conversion failed", error);
+      });
   }
 }
