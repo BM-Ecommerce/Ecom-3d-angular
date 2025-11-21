@@ -561,8 +561,9 @@ public onToggleLoopAnimate(): void {
 
     if (this.is3DOn) {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
-
-      if (productname.toLowerCase().includes('roller blinds')) {
+        if(productname.toLowerCase().includes('perfect fit roller')){
+            this.threeService.loadGltfModel('assets/perfectfitroller.glb', 'rollerblinds');
+        }else if (productname.toLowerCase().includes('roller blinds')) {
         this.threeService.loadGltfModel('assets/rollerblinds.glb', 'rollerblinds');
       } else if (
         productname.toLowerCase().includes('venetian') ||
