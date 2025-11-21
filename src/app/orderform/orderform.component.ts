@@ -539,6 +539,9 @@ hasDescriptionContent = false;
   get isAnimateOpen(): boolean {
     return this.threeService.isAnimateOpen;
   }
+  get hideAnimation(): boolean{
+    return this.threeService.hideAnimation;
+  }
   onStopAnimate(): void {
     this.threeService.stopAll();
   }

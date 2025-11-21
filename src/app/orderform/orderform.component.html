@@ -44,7 +44,7 @@
                   <button *ngIf="is3DOn" type="button" mat-icon-button (click)="zoomOut()" aria-label="Zoom out">
                     <mat-icon>zoom_out</mat-icon>
                   </button>
-                      <button *ngIf="is3DOn"
+                      <button *ngIf="is3DOn && !hideAnimation"
                               type="button"
                               mat-icon-button
                               (click)="onAnimate()"
@@ -58,7 +58,7 @@
                       </mat-icon>
 
                       </button>
-                          <button *ngIf="is3DOn"
+                          <button *ngIf="is3DOn && !hideAnimation"
                                 type="button"
                                 mat-icon-button
                                 (click)="onToggleLoopAnimate()"

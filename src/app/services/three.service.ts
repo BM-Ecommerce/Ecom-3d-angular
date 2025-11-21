@@ -59,7 +59,7 @@ export class ThreeService implements OnDestroy {
   public alignY: 'top' | 'center' | 'bottom' = 'center';
   public offsetU = 0;
   public offsetV = 0;
-
+  public hideAnimation:boolean = false;
   public flipV = false;
   private zoomCamera!: THREE.OrthographicCamera;
   private mouseX = 0;
@@ -320,6 +320,7 @@ public loadGltfModel(
       this.currentModelRoot = gltf.scene;
 
       if (gltf.animations && gltf.animations.length > 0) {
+        this.hideAnimation = false;
         this.mixer = new THREE.AnimationMixer(gltf.scene);
 
         if (gltf.animations.length === 2) {
@@ -357,6 +358,7 @@ public loadGltfModel(
           });
         }
       } else {
+        this.hideAnimation = true;
         this.mixer = undefined;
         this.rollerAction = null;
       }
