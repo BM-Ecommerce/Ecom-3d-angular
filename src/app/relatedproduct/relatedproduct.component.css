@@ -132,3 +132,6 @@ mat-button-toggle.mat-button-toggle-checked {
 ::ng-deep mat-button-toggle-group.viewmode {
   margin: 0 10px;
 }
+.related-products-bodycontainer {
+    padding: 10px;
+}

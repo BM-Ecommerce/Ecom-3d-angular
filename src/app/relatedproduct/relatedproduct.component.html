@@ -1,94 +1,96 @@
 <div *ngIf="related_products.length > 0" class="related-products-container">
     <div class="related-products-headcontainer">
       <h2 class="rp-title">Related Products</h2>
-   <div class="related-products-view-controls">
-      <mat-button-toggle-group
-        name="viewModerelated"
-        [value]="gridView ? 'grid' : 'slider'"
-        (change)="relatedProductsView()"
-        appearance="standard"
-        class ="viewmode"
-      >
-        <mat-button-toggle value="grid" aria-label="Grid View">
-          <mat-icon>grid_on</mat-icon>
-        </mat-button-toggle>
-
-        <mat-button-toggle value="slider" aria-label="Slider View">
-          <mat-icon>view_carousel</mat-icon>
-        </mat-button-toggle>
-      </mat-button-toggle-group>
-       <mat-button-toggle-group
-          name="withFrame"
-          [value]="showframe ? 'withframe' : 'withoutframe'"
-          (change)="showframeView()"
+      <div class="related-products-view-controls">
+        <mat-button-toggle-group
+          name="viewModerelated"
+          [value]="gridView ? 'grid' : 'slider'"
+          (change)="relatedProductsView()"
           appearance="standard"
+          class ="viewmode"
         >
-          <mat-button-toggle value="withframe" aria-label="Show Frame">
-            <mat-icon>crop_square</mat-icon>
+          <mat-button-toggle value="grid" aria-label="Grid View">
+            <mat-icon>grid_on</mat-icon>
           </mat-button-toggle>
 
-          <mat-button-toggle value="withoutframe" aria-label="Hide Frame">
-            <mat-icon>crop_free</mat-icon>
+          <mat-button-toggle value="slider" aria-label="Slider View">
+            <mat-icon>view_carousel</mat-icon>
           </mat-button-toggle>
         </mat-button-toggle-group>
-    </div>
-    </div>
-  <owl-carousel-o *ngIf="!gridView" [options]="customOptions2">
-    <ng-template carouselSlide *ngFor="let product of related_products">
-      <a
-        [href]="buildVisualizerUrl(product)"
-        class="rp-link related-product-card"
-        target="_blank"
-      >
-        <div class="rp-image-box">
-        <img
-            [attr.data-img]="imgpath + product.colorimage"
-            [style.background-image]="showframe ? 'url(' + imgpath + product.colorimage + ')' : null"
-            [src]="showframe ? relatedframeimage : (imgpath + product.colorimage)"
-            alt="{{ product.productname }}"
-            (error)="onImageError($event)"
-          />
-        </div>
+          <mat-button-toggle-group
+            name="withFrame"
+            [value]="showframe ? 'withframe' : 'withoutframe'"
+            (change)="showframeView()"
+            appearance="standard"
+          >
+            <mat-button-toggle value="withframe" aria-label="Show Frame">
+              <mat-icon>crop_square</mat-icon>
+            </mat-button-toggle>
 
-        <div class="rp-info">
-          <p class="rp-name">
-            {{ product.productname }}
-            <span class="rp-fabric">{{ product.fabricname }}</span>
-            <span class="rp-color">{{ product.colorname }}</span>
-          </p>
-
-          <p class="rp-price" *ngIf="product.minprice">
-            From: {{currencySymbol}}{{ product.minprice }}
-          </p>
-        </div>
-      </a>
-    </ng-template>
-  </owl-carousel-o>
-  <div class="related-products-grid" *ngIf="gridView">
-  <div class="related-product-card" *ngFor="let product of related_products">
-    <a [href]="buildVisualizerUrl(product)" class="rp-link" target="_blank">
-      <div class="rp-image-box">
-       <img
-        [attr.data-img]="imgpath + product.colorimage"
-        [style.background-image]="showframe ? 'url(' + imgpath + product.colorimage + ')' : null"
-        [src]="showframe ? relatedframeimage : (imgpath + product.colorimage)"
-        alt="{{ product.productname }}"
-        (error)="onImageError($event)"
-      />
+            <mat-button-toggle value="withoutframe" aria-label="Hide Frame">
+              <mat-icon>crop_free</mat-icon>
+            </mat-button-toggle>
+          </mat-button-toggle-group>
       </div>
+    </div>
+    <div class="related-products-bodycontainer">
+      <owl-carousel-o *ngIf="!gridView" [options]="customOptions2">
+        <ng-template carouselSlide *ngFor="let product of related_products">
+          <a
+            [href]="buildVisualizerUrl(product)"
+            class="rp-link related-product-card"
+            target="_blank"
+          >
+            <div class="rp-image-box">
+            <img
+                [attr.data-img]="imgpath + product.colorimage"
+                [style.background-image]="showframe ? 'url(' + imgpath + product.colorimage + ')' : null"
+                [src]="showframe ? relatedframeimage : (imgpath + product.colorimage)"
+                alt="{{ product.productname }}"
+                (error)="onImageError($event)"
+              />
+            </div>
 
-      <div class="rp-info">
-        <p class="rp-name">
-          {{ product.productname }}
-          <span class="rp-fabric">{{ product.fabricname }}</span>
-          <span class="rp-color">{{ product.colorname }}</span>
-        </p>
+            <div class="rp-info">
+              <p class="rp-name">
+                {{ product.productname }}
+                <span class="rp-fabric">{{ product.fabricname }}</span>
+                <span class="rp-color">{{ product.colorname }}</span>
+              </p>
 
-        <p class="rp-price" *ngIf="product.minprice">
-          From: {{ currencySymbol }}{{ product.minprice }}
-        </p>
-      </div>
-    </a>
+              <p class="rp-price" *ngIf="product.minprice">
+                From: {{currencySymbol}}{{ product.minprice }}
+              </p>
+            </div>
+          </a>
+        </ng-template>
+      </owl-carousel-o>
+      <div class="related-products-grid" *ngIf="gridView">
+        <div class="related-product-card" *ngFor="let product of related_products">
+          <a [href]="buildVisualizerUrl(product)" class="rp-link" target="_blank">
+            <div class="rp-image-box">
+            <img
+              [attr.data-img]="imgpath + product.colorimage"
+              [style.background-image]="showframe ? 'url(' + imgpath + product.colorimage + ')' : null"
+              [src]="showframe ? relatedframeimage : (imgpath + product.colorimage)"
+              alt="{{ product.productname }}"
+              (error)="onImageError($event)"
+            />
+            </div>
+
+            <div class="rp-info">
+              <p class="rp-name">
+                {{ product.productname }}
+                <span class="rp-fabric">{{ product.fabricname }}</span>
+                <span class="rp-color">{{ product.colorname }}</span>
+              </p>
+
+              <p class="rp-price" *ngIf="product.minprice">
+                From: {{ currencySymbol }}{{ product.minprice }}
+              </p>
+            </div>
+          </a>
+        </div>
+    </div>
   </div>
-</div>
 </div>
