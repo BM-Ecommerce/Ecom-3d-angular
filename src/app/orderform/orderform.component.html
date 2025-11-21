@@ -82,7 +82,7 @@
                 </div>
               </div>
             </div>
-           <div *ngIf="!is3DOn" class="slider-container">
+           <div *ngIf="!is3DOn && category != 5 " class="slider-container">
               <owl-carousel-o [options]="customOptions">
                 <ng-template carouselSlide *ngFor="let product_img of product_img_array">
                   <div 

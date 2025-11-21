@@ -578,6 +578,10 @@ public onToggleLoopAnimate(): void {
           this.threeService.loadGltfModel('assets/verticalblinds.glb', 'vertical');
       } else if(productname.toLowerCase().includes('wood')) {
           this.threeService.loadGltfModel('assets/woodenblinds.glb', 'venetian');
+      } else if(productname.toLowerCase().includes('day and night')) {
+          this.threeService.loadGltfModel('assets/daynight.glb', 'daynight');
+      }else if(productname.toLowerCase().includes('roman')) {
+          this.threeService.loadGltfModel('assets/romanblinds.glb', 'roman');
       }else {
         this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'generic');
       }
@@ -622,8 +626,7 @@ public onToggleLoopAnimate(): void {
     try {
       if (!this.mainframe || this.is3DOn) return;
       // Only apply on mobile/tablet
-      const isMobileTablet = window.innerWidth <= 1199;
-      if (!isMobileTablet) return;
+    
       const hostEl = this.mainImgRef?.nativeElement;
       if (!hostEl) return;
       const img = new Image();
@@ -1698,7 +1701,7 @@ public onToggleLoopAnimate(): void {
     const fieldInState = this.parameters_data.find(
       f => f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
     );
-
+ 
     const targetField = fieldInState || field;
     const control = this.orderForm.get(`field_${targetField.fieldid}`);
     const currentValue = control ? control.value : null;
@@ -1760,6 +1763,7 @@ public onToggleLoopAnimate(): void {
     }
     if (currentValue === null || currentValue === undefined || currentValue === '' ||
       (Array.isArray(currentValue) && currentValue.length === 0)) {
+  
       if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
         targetField.labelname = targetField.fieldname ?? '';
         targetField.valueid = selectedOption?.fieldoptionlinkid ? String(selectedOption.fieldoptionlinkid) : '';
@@ -1779,7 +1783,6 @@ public onToggleLoopAnimate(): void {
     } else if (selectedOption !== null) {
       if (Array.isArray(selectedOption)) {
         if ([14, 34, 17, 13, 4].includes(field.fieldtypeid)) {
-
           const ids = selectedOption.map(opt => String(opt.optionid)).join(',');
           targetField.value = ids;
           targetField.optiondefault = ids;
@@ -1803,11 +1806,10 @@ public onToggleLoopAnimate(): void {
 
       else if (selectedOption && selectedOption.optionname) {
         targetField.labelname = targetField.fieldname ?? '';
-
         targetField.valueid = selectedOption?.fieldoptionlinkid ? String(selectedOption.fieldoptionlinkid) : '';
 
         targetField.optionid = String(selectedOption.optionid);
-        if ([17, 13].includes(field.fieldtypeid)) {
+        if ([17, 13,34].includes(field.fieldtypeid)) {
           targetField.value = String(selectedOption.optionid);
           targetField.valuename = String(selectedOption.optionname);
         } else {
@@ -1917,7 +1919,7 @@ public onToggleLoopAnimate(): void {
       if (values[key] !== this.previousFormValue[key]) {
         const fieldId = parseInt(key.replace('field_', ''), 10);
         const field = this.parameters_data.find(f => f.fieldid === fieldId);
-
+   
         if (field && [3, 5, 20, 21].includes(field.fieldtypeid)) {
           // Trigger selection change handler
           this.handleOptionSelectionChange(params, field, values[key], false);
@@ -2071,6 +2073,9 @@ public onToggleLoopAnimate(): void {
       return;
     }
     this.jsondata = this.orderitemdata(false);
+    //console.log(this.jsondata);
+   
+
     if (!this.routeParams || !this.routeParams.site || !this.routeParams.cart_productid) {
       this.errorMessage = 'Missing required route parameters for cart submission.';
       this.isSubmitting = false;
@@ -2117,7 +2122,7 @@ public onToggleLoopAnimate(): void {
               popup: 'small-toast'
             }
           }).then(() => {
-            window.location.href = this.routeParams.site + '/cart';
+            //window.location.href = this.routeParams.site + '/cart';
           });
 
         } else {

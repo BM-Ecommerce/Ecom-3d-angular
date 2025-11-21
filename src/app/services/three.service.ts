@@ -290,10 +290,10 @@ export class ThreeService implements OnDestroy {
     }
   }
 
-  type!: 'rollerblinds' | 'venetian' | 'vertical' | 'generic';
+  type!: 'rollerblinds' | 'venetian' | 'vertical' | 'daynight' | 'roman' | 'generic';
 public loadGltfModel(
   gltfUrl: string,
-  type: 'rollerblinds' | 'venetian' | 'vertical' | 'generic'
+  type: 'rollerblinds' | 'venetian' | 'vertical' | 'daynight' | 'roman' | 'generic' 
 ): void {
   this.type = type;
   this.cube5Meshes = [];
@@ -411,7 +411,20 @@ public loadGltfModel(
             ) {
               this.cube5Meshes.push(mesh);
             }
-          } else {
+          }else if (type === 'daynight') { 
+             if (
+              mesh.name.startsWith('Cube')
+            ) {
+              this.cube5Meshes.push(mesh);
+            }
+          }else if (type === 'roman') { 
+             if (
+              mesh.name.startsWith('Roman_Curtais')
+            ) {
+              this.cube5Meshes.push(mesh);
+            }
+          }
+          else {
             const parent = mesh.parent;
             const grandParent = parent?.parent;
             if (parent && grandParent && grandParent.name === 'Cube_5') {
@@ -831,28 +844,10 @@ public loadGltfModel(
 
     const resizeMesh = (mesh: THREE.Mesh | undefined) => {
       if (!mesh) return;
-      const mat = mesh.material as THREE.MeshBasicMaterial;
-      const tex = mat.map;
-      if (!tex || !tex.image) return;
-
-      const imgWidth = tex.image.width;
-      const imgHeight = tex.image.height;
-      const aspect = imgWidth / imgHeight;
-
-      const canvasAspect = width / height;
-
-      let viewWidth: number, viewHeight: number;
-
-      if (aspect > canvasAspect) {
-        viewWidth = width;
-        viewHeight = viewWidth / aspect;
-      } else {
-        viewHeight = height;
-        viewWidth = viewHeight * aspect;
-      }
+ 
 
       mesh.geometry.dispose();
-      mesh.geometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
+      mesh.geometry = new THREE.PlaneGeometry(width, height);
     };
     // In 2D mode, resize the planes to keep aspect-fit with new container size
     if (this.camera2d) {
@@ -878,7 +873,7 @@ public updateTextures(backgroundUrl: string): void {
       texture.needsUpdate = true;
 
       // 🔹 SPECIAL CASE: venetian / vertical -> use your existing per-slat UV logic
-      if (this.type === 'venetian' || this.type === 'vertical') {
+      if (this.type === 'venetian' || this.type === 'vertical' || this.type === 'daynight' ) {
         if (this.isAnimateOpen) {
           this.stopAll();
           this.closeAnimate(true);
