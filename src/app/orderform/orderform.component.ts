@@ -405,9 +405,10 @@ hasDescriptionContent = false;
       loop: false,
       mouseDrag: true,
       touchDrag: true,
-      autoWidth: true,
+      autoWidth: false,
       pullDrag: true,
       dots: false,
+      items:3,
       navSpeed: 700,
       navText: ['<', '>'],
       nav: false
