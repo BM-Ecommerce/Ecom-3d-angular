@@ -2502,27 +2502,6 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
     return false;
   }
 
-  private getRelatedProducts(): void {
-
-    let relatedFabricId = this.fabricid;
-    let colorId = 0;
-
-    if (this.fabricFieldType === 5 || this.fabricFieldType === 20) {
-      colorId = this.colorid;
-    }
-
-    this.apiService.relatedProducts(this.routeParams, this.fabricFieldType , relatedFabricId, colorId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((response: any) => {
-        if (response && response.result) {
-          this.related_products = response.result;
-        } else {
-          this.related_products = [];
-        }
-        this.cd.markForCheck();
-      });
-  }
-
   private setShutterObject(field:any,selectedOption:any): any {
     if(21 == field.fieldtypeid){
       if (Array.isArray(this.shutter_product_details)) {
