@@ -2,21 +2,23 @@
     <div class="related-products-headcontainer">
       <h2 class="rp-title">Related Products</h2>
       <div class="related-products-view-controls">
-        <mat-button-toggle-group
-          name="viewModerelated"
-          [value]="gridView ? 'grid' : 'slider'"
-          (change)="relatedProductsView()"
-          appearance="standard"
-          class ="viewmode"
-        >
-          <mat-button-toggle value="grid" aria-label="Grid View">
-            <mat-icon>grid_on</mat-icon>
-          </mat-button-toggle>
+       <span class="related-products-sub-view-controls" *ngIf="related_products.length > 4">
+          <mat-button-toggle-group
+            name="viewModerelated"
+            [value]="gridView ? 'grid' : 'slider'"
+            (change)="relatedProductsView()"
+            appearance="standard"
+            class ="viewmode"
+          >
+            <mat-button-toggle value="grid" aria-label="Grid View">
+              <mat-icon>grid_on</mat-icon>
+            </mat-button-toggle>
 
-          <mat-button-toggle value="slider" aria-label="Slider View">
-            <mat-icon>view_carousel</mat-icon>
-          </mat-button-toggle>
-        </mat-button-toggle-group>
+            <mat-button-toggle value="slider" aria-label="Slider View">
+              <mat-icon>view_carousel</mat-icon>
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </span>
           <mat-button-toggle-group
             name="withFrame"
             [value]="showframe ? 'withframe' : 'withoutframe'"

@@ -87,6 +87,7 @@ export class RelatedproductComponent implements OnInit, OnChanges {
       .pipe(takeUntil(this.destroy$))
       .subscribe((response: any) => {
         this.related_products = response?.result || [];
+        this.gridView = this.related_products.length <= 4;
         this.cd.markForCheck();
       });
   }
