@@ -842,18 +842,6 @@ public loadGltfModel(
       this.camera2d.updateProjectionMatrix();
     }
 
-    const resizeMesh = (mesh: THREE.Mesh | undefined) => {
-      if (!mesh) return;
- 
-
-      mesh.geometry.dispose();
-      mesh.geometry = new THREE.PlaneGeometry(width, height);
-    };
-    // In 2D mode, resize the planes to keep aspect-fit with new container size
-    if (this.camera2d) {
-      resizeMesh(this.frameMesh);
-      resizeMesh(this.backgroundMesh);
-    }
     this.render();
   }
 
