@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Orderform Step-by-Step Flow (to Add to Cart)</title>
+  <link rel="stylesheet" href="./orderform-doc.css" />
+</head>
+<body>
+<header>
+  <h1>Orderform Step-by-Step Flow</h1>
+  <div class="muted">From first load to Add to Cart. Source: <span class="path">src/app/orderform/orderform.component.ts</span>, <span class="path">src/app/services/api.service.ts</span></div>
+</header>
+<main>
+
+<section>
+  <h2>How to Read</h2>
+  <p>Each step shows the exact API method used, URL pattern, headers, request payload, and the expected response shape, followed by how the component uses it and what it triggers next. Replace variables like <code>{api_url}</code>, <code>{product_id}</code>, <code>{recipeId}</code> with real values from runtime.</p>
+</section>
+
+<section>
+  <h2>Step 1 — Resolve Context</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Purpose</div><div>Resolve <code>api_url</code>, <code>api_key</code>, <code>api_name</code>, <code>site</code> from <span class="path">environment</span> and route params (path-based, query, or token exchange).</div>
+      <div>Notes</div><div>No network call unless token exchange is used (WP endpoint <code>/wp-json/blindmatrix/v1/get_visualizer_data?token={token}</code>), which returns the same fields.</div>
+      <div>Next</div><div>Step 2.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Step 2 — Get Product Data</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Method</div><div><code>GET</code> (standard)</div>
+      <div>URL</div><div><code>{api_url}/api/public/api/getproductsdetails/{product_id}</code></div>
+      <div>Headers</div><div><code>Accept: application/json</code>, <code>Content-Type: application/json</code>, <code>companyname: {api_name}</code>, <code>Ecommercekey: {api_key}</code>, <code>platform: Ecommerce</code></div>
+      <div>Query/Body</div><div>None</div>
+      <div>Response</div><div><code>{ result: { EcomProductlist: [...], ShutterProductDetails: [...] } }</code></div>
+    </div>
+    <h3>Used For</h3>
+    <ul>
+      <li>Set <code>productname</code>, <code>recipeid</code>, <code>category</code>, images (frame/background).</li>
+      <li>Initialize 2D/3D visualizer with default images/models.</li>
+    </ul>
+    <h3>Example Response Fragment</h3>
+    <pre>{
+  "result": {
+    "EcomProductlist": [{
+      "label": "Roller Blinds",
+      "recipeid": 321,
+      "pi_backgroundimage": "[\"/path/bg1.png\",\"/path/bg2.png\"]",
+      "pi_frameimage": "[\"/path/frame1.png\"]",
+      "pi_deafultimage": "{\"defaultimage\":{\"backgrounddefault\":\"bg1.png\",\"framedefault\":\"frame1.png\"}}",
+      "pi_category": "4"
+    }],
+    "ShutterProductDetails": []
+  }
+}</pre>
+  </div>
+</section>
+
+<section>
+  <h2>Step 3 — Setup Visualizer (2D/3D)</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Purpose</div><div>Initialize ThreeService with canvas/container; select model by <code>productname</code> keywords; or 2D mode with frame + background.</div>
+      <div>Network</div><div>No API request; loads static assets like <code>assets/rollerblinds.glb</code> and image URLs from Step 2.</div>
+      <div>Next</div><div>Step 4.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Step 4 — Get Product Parameters (Field Schema)</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Method</div><div><code>GET</code> (node)</div>
+      <div>URL</div><div><code>{api_url}/nodeapi/products/fields/withdefault/list/{recipeId}/1/0</code></div>
+      <div>Headers</div><div>Same as Step 2.</div>
+      <div>Response</div><div><code>[ { data: ProductField[], netpricecomesfrom, costpricecomesfrom } ]</code></div>
+    </div>
+    <h3>Used For</h3>
+    <ul>
+      <li>Build reactive form controls per field.</li>
+      <li>Identify special fields: unit (34), width (7/8/11/31), drop (9/10/12/32), qty (14), supplier (17), pricegroup (13).</li>
+      <li>Store <code>netpricecomesfrom</code> and <code>costpricecomesfrom</code> flags for pricing payload.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Step 5 — Filter Base Options (Context)</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Method</div><div><code>POST</code> (node)</div>
+      <div>URL</div><div><code>{api_url}/nodeapi/products/fields/filterbasedongeneraldata</code></div>
+      <div>Body</div>
+      <div>
+        <pre>{
+  "fieldtypeid": {fabricFieldType},
+  "productid": {product_id},
+  "pricegroup": {pricegroup},
+  "colorid": {colorid},
+  "fabricid": {fabricid},
+  "unittype": {unittype},
+  "customertype": "4",
+  ...
+}</pre>
+      </div>
+      <div>Response</div><div><code>[ { data: { optionarray: { [fieldid]: ids }, coloridsarray, selectsupplierid, ... } } ]</code></div>
+    </div>
+    <h3>Used For</h3>
+    <ul>
+      <li>Derive filter IDs used in Step 6 (<code>getOptionlist</code>).</li>
+      <li>May provide <code>selectsupplierid</code> to auto-set supplier.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Step 6 — Load Option Lists</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Method</div><div><code>POST</code> (node)</div>
+      <div>URL</div><div><code>{api_url}/nodeapi/products/get/fabric/options/list/{recipeId}/{level}/0/{fieldtype}/{fabriccolor}/{fieldid}/?page=1&amp;perpage=150</code></div>
+      <div>Body</div>
+      <div>
+        <pre>{
+  "customertype": 4,
+  "filterids": [/* from Step 5: data.optionarray or coloridsarray */],
+  "productionformulalist": [],
+  "productid": {product_id}
+}</pre>
+      </div>
+      <div>Response</div><div><code>[ { data: [ { optionsvalue: [ { optionid, optionname, optionimage, fieldoptionlinkid, pricegroupid, availableForEcommerce } ] } ] } ]</code></div>
+    </div>
+    <h3>Used For</h3>
+    <ul>
+      <li>Populate select-type fields: 3 (list), 5/20/21 (material/color families).</li>
+      <li>Filter out options where <code>availableForEcommerce === 0</code>.</li>
+      <li>Set initial defaults (including from route for fabric/color IDs).</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Step 7 — Set Special Field Defaults</h2>
+  <div class="card">
+    <ul>
+      <li>qty (14) → 1</li>
+      <li>unit (34) / pricegroup (13) / supplier (17) from options or defaults; may use <code>selectsupplierid</code> from Step 5.</li>
+      <li>Update internal <code>selected_option_data</code> for pricing.</li>
+      <li>Next: Step 8.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Step 8 — Get Min/Max Bounds</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Method</div><div><code>POST</code> (node)</div>
+      <div>URL</div><div><code>{api_url}/nodeapi/orderitems/check/widthdrop/minandmax/</code></div>
+      <div>Body</div>
+      <div>
+        <pre>{
+  "width": "0",
+  "drop": "0",
+  "unittype": {unittype},
+  "mode": "both",
+  "pricegroup": {pricegroup},
+  "colorid": "{coloridOrEmpty}",
+  "fieldtypeid": {fabricFieldType},
+  "productid": {product_id}
+}</pre>
+      </div>
+      <div>Response</div><div><code>{ data: { widthminmax: {min,max}, dropminmax: {min,max} } }</code></div>
+    </div>
+    <h3>Used For</h3>
+    <ul>
+      <li>Set Angular validators for width/drop fields; rerun on color/unit/pricegroup changes.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Step 9 — Get Recipe List (Ancillary)</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Method</div><div><code>GET</code> (node)</div>
+      <div>URL</div><div><code>{api_url}/nodeapi/products/recipe/list/{product_id}</code></div>
+      <div>Used For</div><div>Ancillary info; not required for pricing/cart.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Step 10 — Get Product Fraction List (Ancillary)</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Method</div><div><code>GET</code> (standard)</div>
+      <div>URL</div><div><code>{api_url}/api/public/api/appSetup/fractionlist/{product_id}</code></div>
+      <div>Used For</div><div>General fraction metadata; unit-specific fractions in Step 11.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Step 11 — Unit Change → Get Fraction Data</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Method</div><div><code>GET</code> (standard)</div>
+      <div>URL</div><div><code>{api_url}/api/public/api/appSetup/fractionlist/{product_id}/-1/{unittype}</code></div>
+      <div>Response</div><div><code>{ result: { inchfractionselected, inchfraction:[{ id, name, decimalvalue }] } }</code></div>
+      <div>Used For</div><div>Show/hide fraction selects and map fraction display text for width/drop.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Step 12 — Option Change → Filter + Subfields</h2>
+  <div class="card">
+    <ol>
+      <li>Re-run <b>filterbasedlist</b> for the affected field context (may update <code>selectsupplierid</code>).</li>
+      <li>If selected option has <code>subdatacount &gt; 0</code>, call <b>sublist</b> to fetch nested fields:</li>
+    </ol>
+    <div class="kv">
+      <div>Method</div><div><code>POST</code> (node)</div>
+      <div>URL</div><div><code>{api_url}/nodeapi/products/fields/list/0/{recipeId}/{level}/{fieldtype}/{masterparentfieldid}</code></div>
+      <div>Body</div>
+      <div>
+        <pre>{
+  "supplierid": {supplierid},
+  "productid": {product_id},
+  "optionid": [{selectedvalue}],
+  "subfieldoptionlinkid": [{optionlinkid}],
+  "productionformulalist": [],
+  "orderitemselectedvalues": { "{masterparentfieldid}": [{selectedvalue}] }
+}</pre>
+      </div>
+      <div>Response</div><div><code>[ { data: ProductField[] } ]</code></div>
+    </div>
+    <p>For each nested field that is list/material: fetch its options using <b>getOptionlist</b> (Step 6) with updated <code>level</code>.</p>
+    <p>Update visualizer textures if selections carry <code>optionimage</code> (e.g., color image).</p>
+  </div>
+</section>
+
+<section>
+  <h2>Step 13 — Debounced Price Calculation</h2>
+  <div class="card">
+    <ol>
+      <li><b>getVat</b></li>
+      <li>Optionally <b>calculateRules</b> with <code>rulemode=0</code> (rules) and then <code>rulemode=1</code> (formula) when configured.</li>
+      <li><b>getPrice</b> with accumulated context.</li>
+    </ol>
+
+    <h3>13.1 getVat</h3>
+    <div class="kv">
+      <div>Method</div><div><code>POST</code> (node)</div>
+      <div>URL</div><div><code>{api_url}/nodeapi/job/get/vat/percentage/orderitem</code></div>
+      <div>Body</div><div><pre>{ "productid": {product_id} }</pre></div>
+      <div>Response</div><div><code>{ data: vatPercentage, taxlist, vatselected, defaultsalestaxlabel }</code></div>
+    </div>
+
+    <h3>13.2 calculateRules</h3>
+    <div class="kv">
+      <div>Method</div><div><code>POST</code> (node)</div>
+      <div>URL</div><div><code>{api_url}/nodeapi/orderitems/calculate/rules</code></div>
+      <div>Body</div>
+      <div><pre>{
+  "vatpercentage": {vat},
+  "recipeid": {recipeId},
+  "productid": {product_id},
+  "orderitemdata": [ /* from form via orderitemdata(true) */ ],
+  "supplierid": {supplierid},
+  "mode": "pricetableprice" | "",
+  "width": {width},
+  "drop": {drop},
+  "pricegroup": [{pricegroup}],
+  "optiondata": [ /* selected_option_data */ ],
+  "unittype": {unittype},
+  "rulemode": 0 | 1,
+  "widthfieldtypeid": {widthFieldTypeId},
+  "dropfieldtypeid": {dropFieldTypeId},
+  "fabricid": {fabricid},
+  "colorid": {colorid}
+}</pre></div>
+      <div>Response</div><div>
+        <ul>
+          <li><code>ruleresults</code>: array of field updates (set option or text values).</li>
+          <li>When <code>rulemode=1</code>: <code>productionmaterialcostprice</code>, <code>productionmaterialnetprice</code>, <code>productionmaterialnetpricewithdiscount</code>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>13.3 getPrice</h3>
+    <div class="kv">
+      <div>Method</div><div><code>POST</code> (node)</div>
+      <div>URL</div><div><code>{api_url}/nodeapi/orderitems/calculate/option/price</code></div>
+      <div>Body</div><div><pre>{
+  "productid": {product_id},
+  "supplierid": {supplierid},
+  "mode": "pricetableprice" | "",
+  "width": {width},
+  "drop": {drop},
+  "pricegroup": [{pricegroup}],
+  "customertype": 4,
+  "optiondata": [ /* selected options */ ],
+  "unittype": {unittype},
+  "orderitemqty": 1,
+  "overridetype": 1,
+  "vatpercentage": {vat},
+  "rulescostpricecomesfrom": "{costpricecomesfrom}",
+  "rulesnetpricecomesfrom": "{netpricecomesfrom}",
+  "fabricfieldtype": {fabricFieldType},
+  "widthfieldtypeid": {widthFieldTypeId},
+  "dropfieldtypeid": {dropFieldTypeId},
+  "colorid": {colorid},
+  "fabricid": {fabricid},
+  "productionmaterialcostprice": {fromFormula?},
+  "productionmaterialnetprice": {fromFormula?},
+  "productionmaterialnetpricewithdiscount": {fromFormula?}
+}</pre></div>
+      <div>Response</div><div><code>{ fullpriceobject: { grossprice, ... }, currencysymbol }</code></div>
+    </div>
+    <p>Component shows <code>{currencysymbol}{grossprice.toFixed(2)}</code> and stores <code>pricedata = fullpriceobject</code>.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Step 14 — Related Products (Optional)</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Method</div><div><code>POST</code> (standard)</div>
+      <div>URL</div><div><code>{api_url}/api/public/api/fabriclistview/{category_id}/{product_id}/?page=1&amp;perpage=150</code></div>
+      <div>Body</div><div><pre>{ "related_fabric": {fabricidOrColorid}, "colorid": {colorid}, "productid": {product_id} }</pre></div>
+      <div>Response</div><div><code>{ result: [...] }</code></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Step 15 — Build Order Payloads</h2>
+  <div class="card">
+    <ul>
+      <li><b>orderitemdata(isForRulesCalculation)</b>: flattens current fields into array with <code>{ id, labelname, value, valueid, type, optionid, optionvalue, optionquantity, ... }</code>. For rules-calculation version, uses <code>valuename</code> for special types (34,17,13) and strips dimensions for free sample when requested.</li>
+      <li><b>selected_option_data</b>: array of <code>{ optionvalue, fieldtypeid, optionqty, fieldoptionlinkid, fieldid }</code> built as user selects options; used by pricing and rule endpoints.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Step 16 — Add to Cart</h2>
+  <div class="card">
+    <div class="kv">
+      <div>Method</div><div><code>POST</code> (form-urlencoded)</div>
+      <div>URL</div><div><code>{site}/wp-content/plugins/blindmatrix-v4-hub/api.php</code></div>
+      <div>Headers</div><div><code>Content-Type: application/x-www-form-urlencoded</code></div>
+      <div>Body</div>
+      <div><pre>action=add_to_cart&amp;
+product_id={cart_productid}&amp;
+form_data={JSON.stringify(orderitemdata(false))}&amp;
+cart_product_name={title}&amp;
+pricedata={JSON.stringify(fullpriceobject)}&amp;
+vatpercentage={vat}&amp;
+vatname={vatname}&amp;
+currenturl={window.location.href}&amp;
+product_name={productname}&amp;
+category_id={fabricFieldType}&amp;
+visualizer_image={dataUrlOrUrl}</pre></div>
+      <div>Response</div><div><code>{ success: boolean, message? }</code> → on success, navigate to <code>{site}/cart</code>.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Headers (All JSON APIs)</h2>
+  <div class="card">
+    <pre>{
+  "Accept": "application/json",
+  "Content-Type": "application/json",
+  "companyname": "{api_name}",
+  "platform": "Ecommerce",
+  "Ecommercekey": "{api_key}",
+  "activity": "{ \"ipaddress\": \"\", \"location\": \"\", \"devicenameversion\": \"\", \"browsernameversion\": \"\" }"
+}</pre>
+  </div>
+</section>
+
+<section>
+  <h2>End-to-End Diagram (Short)</h2>
+  <div class="card">
+    <pre>
+Load → getProductData → setupVisualizer
+     → getProductParameters
+     → (filterbasedlist → getOptionlist)*
+     → getminandmax
+     → getRecipeList/getFractionList
+
+On change: filterbasedlist → (sublist → getOptionlist)* → textures
+           getminandmax (dims bounds)
+           getFractionData (unit==inches)
+           getVat → [calculateRules] → getPrice
+
+Submit: addToCart → redirect /cart
+    </pre>
+  </div>
+</section>
+
+<section>
+  <h2>Notes & Tips</h2>
+  <ul>
+    <li>When color changes and provides <code>pricegroupid</code>, component updates pricegroup field to keep pricing consistent.</li>
+    <li>If a list field returns no ecommerce options, that control is removed to avoid invalid choices.</li>
+    <li>Rules may set values programmatically; UI updates without emitting further value changes to avoid loops.</li>
+  </ul>
+  <p class="muted">Open this file at <code>/assets/docs/orderform-steps.html</code> when served by your app.</p>
+</section>
+
+</main>
+</body>
+</html>
+
