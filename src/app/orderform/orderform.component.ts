@@ -1174,9 +1174,17 @@ public onToggleLoopAnimate(): void {
     } else {
       const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
       if (!selectedOption) return;
-
+      
       const canUpdate = !isInitial || (field.optiondefault && params.color_id);
 
+      if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
+        this.fabricid = value;
+        this.fabricname = selectedOption.optionname;
+      }
+      if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
+        this.colorid = value;
+        this.colorname = selectedOption.optionname;
+      }
       if (canUpdate && (field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
         this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
         this.get_freesample();

@@ -267,6 +267,7 @@ relatedProducts(
     }
 
     const payload = {
+      customertype: 4,
       filterids: filter,
       productionformulalist: [],
       productid: product_id || null,
