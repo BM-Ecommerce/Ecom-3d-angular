@@ -927,19 +927,26 @@ public onToggleLoopAnimate(): void {
       this.onFormChanges(values, this.routeParams);
     });
     this.parameters_data.forEach(field => {
-  if (this.get_field_type_name(field.fieldtypeid) === 'list') {
-    const id = field.fieldid;
+      const typeName = this.get_field_type_name(field.fieldtypeid);
+      if (["list", "materials"].includes(typeName)) {
+        const id = field.fieldid;
 
-        this.searchCtrl[id] = new FormControl('');
-        this.filteredOptions[id] = this.option_data[id] || [];
+        if (!this.searchCtrl[id]) {
+          this.searchCtrl[id] = new FormControl('');
+        }
 
+        if (!this.filteredOptions[id]) {
+          this.filteredOptions[id] = this.option_data[id] || [];
+        }
+
+        // Bind search to filter current option_data once it loads
         this.searchCtrl[id].valueChanges
           .pipe(debounceTime(200))
           .subscribe(searchText => {
             const term = (searchText || '').toLowerCase();
-
-            this.filteredOptions[id] = (this.option_data[id] || []).filter(
-              opt => opt.optionname.toLowerCase().includes(term)
+            const all = this.option_data[id] || [];
+            this.filteredOptions[id] = term === '' ? [...all] : all.filter(
+              opt => (opt?.optionname || '').toLowerCase().includes(term)
             );
           });
       }
