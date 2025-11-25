@@ -17,3 +17,10 @@ body { margin: 0; font-family: 'Poppins', sans-serif!important; }
     text-decoration: none;
 }
 
+/* Enforce 14px font size for all Angular Material form fields and labels */
+.mat-form-field, .mat-form-field * {
+    font-size: 14px !important;
+}
+.mat-label, .mat-form-field-label, .mat-input-element {
+    font-size: 14px !important;
+}
