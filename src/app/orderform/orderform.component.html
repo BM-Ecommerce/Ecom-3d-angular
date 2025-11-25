@@ -247,7 +247,7 @@
                 </div>
 
                 <!-- Materials -->
-    <div *ngSwitchCase="'materials'" id="materials_section_wrapper" [class]="getClassNameAccessories(field)">
+          <div *ngSwitchCase="'materials'" id="materials_section_wrapper" [class]="getClassNameAccessories(field)">
                   <!-- List/Grid view - Blinds with fabrics and slates -->
                   <div class="color_list_view_wrapper" *ngIf="isColorSection(field,true)">
                       <mat-button-toggle-group name="color_list_view" [value]="'image' == list_value ? 'image' : 'list'" (change)="toggle_list_view($event)" appearance="standard">
@@ -267,18 +267,38 @@
                           </mat-icon>
                         </span>
                       </mat-label>
-                      <mat-select [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid"
-                        [multiple]="field.selection == 1" [attr.aria-label]="field.fieldname">
-                        <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
-                        <mat-option *ngFor="let option of option_data[field.fieldid]" [value]="option.optionid">
+                   <mat-select 
+                      [formControlName]="'field_' + field.fieldid"
+                      [id]="'field_' + field.fieldid"
+                      [multiple]="field.selection == 1"
+                      [attr.aria-label]="field.fieldname">
+
+                      <ngx-mat-select-search
+                          *ngIf="searchCtrl[field.fieldid]"
+                          [formControl]="searchCtrl[field.fieldid]"
+                          placeholderLabel="Search..."
+                          noEntriesFoundLabel="No results found">
+                      </ngx-mat-select-search>
+
+                      <mat-option *ngIf="field.selection != 1" value="">
+                        Select Option
+                      </mat-option>
+
+                      <mat-option
+                          *ngFor="let option of (filteredOptions[field.fieldid] || option_data[field.fieldid])"
+                          [value]="option.optionid">
+
                           <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                            <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
-                              alt="{{ option.optionname }}" width="24" height="24"
-                              style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                              <img (error)="onImageError($event)"
+                                  [src]="apiUrl + '/api/public' + option.optionimage"
+                                  width="24" height="24"
+                                  style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
                           </ng-container>
+
                           {{ option.optionname }}
-                        </mat-option>
-                      </mat-select>
+                      </mat-option>
+
+                  </mat-select>
                     </mat-form-field>
                   </div>
 

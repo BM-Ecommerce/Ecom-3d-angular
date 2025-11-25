@@ -12,6 +12,7 @@ import { ApiService } from '../services/api.service';
 import { ThreeService } from '../services/three.service';;
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { FormControl } from '@angular/forms';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
 import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime } from 'rxjs/operators';
@@ -28,6 +29,8 @@ import { MatButtonToggleChange } from '@angular/material/button-toggle';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconRegistry } from '@angular/material/icon';
 import * as htmlToImage from 'html-to-image';
+import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
+
 
 // Interfaces (kept as you had them)
 // Interfaces
@@ -193,7 +196,8 @@ interface FractionOption {
     FreesampleComponent,
     ConfiguratorComponent,
     CarouselModule,
-    RelatedproductComponent
+    RelatedproductComponent,
+    NgxMatSelectSearchModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -230,6 +234,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   product_description = '';
   unit_type_data: any[] = [];
   parameters_arr: any[] = [];
+  searchCtrl: { [key: number]: FormControl } = {};
+  filteredOptions: { [key: number]: any[] } = {};
   pricedata: any[] = [];
   supplierOption: any;
   priceGroupOption: any;
@@ -473,27 +479,6 @@ hasDescriptionContent = false;
       });
 
 
-    } else {
-      // Production: get token from query param and call API
-      const token = queryParams['token'];
-      if (!token) {
-        console.error('Visualizer token is missing');
-        return;
-      }
-
-      const apiUrl = window.location.origin;
-
-      this.http.get(`${apiUrl}/wp-json/blindmatrix/v1/get_visualizer_data?token=${token}`)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (data: any) => {
-            this.img_file_path_url = data.api_url + '/api/public/';
-            this.fetchInitialData(data);
-          },
-          error: (err) => {
-            console.error('Invalid or expired visualizer token', err);
-          }
-        });
     }
     // Price updates remain the same
     this.priceUpdate.pipe(
@@ -941,6 +926,24 @@ public onToggleLoopAnimate(): void {
     ).subscribe(values => {
       this.onFormChanges(values, this.routeParams);
     });
+    this.parameters_data.forEach(field => {
+  if (this.get_field_type_name(field.fieldtypeid) === 'list') {
+    const id = field.fieldid;
+
+        this.searchCtrl[id] = new FormControl('');
+        this.filteredOptions[id] = this.option_data[id] || [];
+
+        this.searchCtrl[id].valueChanges
+          .pipe(debounceTime(200))
+          .subscribe(searchText => {
+            const term = (searchText || '').toLowerCase();
+
+            this.filteredOptions[id] = (this.option_data[id] || []).filter(
+              opt => opt.optionname.toLowerCase().includes(term)
+            );
+          });
+      }
+    });
   }
 
   /**
@@ -1057,6 +1060,9 @@ public onToggleLoopAnimate(): void {
           }
 
           this.option_data[field.fieldid] = filteredOptions;
+          if (!this.filteredOptions[field.fieldid] || this.filteredOptions[field.fieldid].length === 0) {
+              this.filteredOptions[field.fieldid] = [...filteredOptions];
+            }
           const control = this.orderForm.get(`field_${field.fieldid}`);
 
           if (control) {
@@ -1519,9 +1525,22 @@ public onToggleLoopAnimate(): void {
                 this.removeFieldSafely(subfield.fieldid);
                 return null;
               }
-
+                
               this.option_data[subfield.fieldid] = filteredOptions;
+              this.searchCtrl[subfield.fieldid] = new FormControl('');
+              this.filteredOptions[subfield.fieldid] = [...(this.option_data[subfield.fieldid] || [])];
 
+              this.searchCtrl[subfield.fieldid].valueChanges
+                .pipe(debounceTime(200))
+                .subscribe(searchText => {
+                  const term = (searchText || '').toLowerCase();
+                  const all = this.option_data[subfield.fieldid] || [];
+
+                  this.filteredOptions[subfield.fieldid] =
+                    term === '' ? [...all] : all.filter(opt =>
+                      opt.optionname.toLowerCase().includes(term)
+                    );
+                });
               // set default value safely (without emitting)
               const control = this.orderForm.get(`field_${subfield.fieldid}`);
               if (control) {

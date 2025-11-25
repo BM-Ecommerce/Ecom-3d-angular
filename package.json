@@ -25,6 +25,7 @@
     "@types/three": "^0.179.0",
     "gsap": "^3.13.0",
     "html-to-image": "^1.11.13",
+    "ngx-mat-select-search": "^4.1.1",
     "ngx-owl-carousel-o": "^14.0.2",
     "rxjs": "~7.5.0",
     "sweetalert2": "^11.24.1",
