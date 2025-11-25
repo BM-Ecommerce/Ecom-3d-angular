@@ -252,6 +252,8 @@ hasDescriptionContent = false;
   netpricecomesfrom = "";
   // Stepper state
   activeStepIndex = 0;
+  // Layout toggle: stepper vs normal (similar to enableSelectSearch)
+  public enableStepperLayout: boolean = true;
   is3DOn = false;
   recipeid: number = 0;
   category: number = 0;
@@ -2449,6 +2451,7 @@ public onToggleLoopAnimate(): void {
   }
 
   public isVisibleInCurrentStep(field: ProductField): boolean {
+    if (!this.enableStepperLayout) return true;
     switch (this.activeStepIndex) {
       case 0: return this.isFieldInMaterialStep(field);
       case 1: return this.isFieldInMeasurementsStep(field);

@@ -125,14 +125,14 @@
              </div>
             <div class="blinds-measurement">
             </div>
-            <mat-horizontal-stepper class="order-stepper" [linear]="false" labelPosition="bottom" [selectedIndex]="activeStepIndex" (selectionChange)="activeStepIndex = $event.selectedIndex">
+            <mat-horizontal-stepper *ngIf="enableStepperLayout" class="order-stepper" [linear]="false" labelPosition="bottom" [selectedIndex]="activeStepIndex" (selectionChange)="activeStepIndex = $event.selectedIndex">
               <mat-step label="Material"></mat-step>
               <mat-step label="Measurements"></mat-step>
               <mat-step label="Options"></mat-step>
               <mat-step label="Review"></mat-step>
             </mat-horizontal-stepper>
 
-            <div class="stepper-controls">
+            <div class="stepper-controls" *ngIf="enableStepperLayout">
               <button type="button"
                       mat-stroked-button
                       aria-label="Previous step"
@@ -501,22 +501,28 @@
 
 
 
-            <div class="price_wrapper" *ngIf="activeStepIndex === 3 && grossPricenum != 0 && isCalculatingPrice">
+            <div class="price_wrapper" *ngIf="(enableStepperLayout ? activeStepIndex === 3 : true) && grossPricenum != 0 && isCalculatingPrice">
               <div class="price_text">Your Price</div>
               <div class="showprice_wrapper">
                 <span class="price">{{ grossPrice }}</span>
               </div>
             </div>
 
-            <div class="variations_button" *ngIf="activeStepIndex === 3">
+            <div class="variations_button" *ngIf="enableStepperLayout ? activeStepIndex === 3 : true">
               <div class="quantity">
                 <button type="button" class="minus" (click)="decrementQty()">-</button>
                 <input type="number" formControlName="qty" title="Qty" size="4" inputmode="numeric" min="1"
                   aria-label="Quantity">
                 <button type="button" class="plus" (click)="incrementQty()">+</button>
               </div>
+              <button *ngIf="!enableStepperLayout" mat-raised-button color="primary" type="submit"
+                [disabled]="orderForm.invalid || isSubmitting || !isCalculatingPrice || grossPricenum === 0">
+                <mat-icon>shopping_cart</mat-icon>
+                <span *ngIf="isCalculatingPrice">{{ isSubmitting ? 'Adding...' : 'Add to Cart' }}</span>
+                <span *ngIf="!isCalculatingPrice">Calculating price...</span>
+              </button>
             </div>
-            <mat-accordion *ngIf="activeStepIndex === 3">
+            <mat-accordion *ngIf="enableStepperLayout ? activeStepIndex === 3 : true">
               <mat-expansion-panel>
                 <mat-expansion-panel-header>
                   <mat-panel-title>
@@ -536,8 +542,8 @@
               </mat-expansion-panel>
             </mat-accordion>
             <app-freesample [freesampledata]="freesample"
-              *ngIf="activeStepIndex === 3 && freesample?.status == 1 && freesample?.color_id !=0 && (category == 3 || category == 4)"></app-freesample>
-            <div class="guides-buttons" *ngIf="activeStepIndex === 3">
+              *ngIf="(enableStepperLayout ? activeStepIndex === 3 : true) && freesample?.status == 1 && freesample?.color_id !=0 && (category == 3 || category == 4)"></app-freesample>
+            <div class="guides-buttons" *ngIf="enableStepperLayout ? activeStepIndex === 3 : true">
               <a mat-stroked-button color="primary" target="_blank" href="/measuring-guide/">
                 Measuring Guide
               </a>
