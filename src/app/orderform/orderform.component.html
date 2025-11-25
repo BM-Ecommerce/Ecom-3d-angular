@@ -216,6 +216,9 @@
                               </span>
                         </mat-option>
                       </mat-select>
+                      <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
+                        This field is required.
+                      </mat-error>
                     </mat-form-field>
                   </div>
                   <div *ngIf="isShutterColorSection(field) || isAccessoriesListSection(field)" class="list-image-field-wrapper" [ngClass]="getClassNameAccessories(field, true)">
@@ -299,6 +302,9 @@
                       </mat-option>
 
                   </mat-select>
+                      <mat-error *ngIf="orderForm.get('field_' + field.fieldid)?.hasError('required')">
+                        This field is required.
+                      </mat-error>
                     </mat-form-field>
                   </div>
 

@@ -214,6 +214,23 @@ textarea {
     align-items: center;
 }
 
+/* Ensure Material form fields take full width and can show subscript (errors) */
+.parameter-wrapper mat-form-field {
+  width: 100%;
+}
+
+/* Avoid global reset breaking Angular Material inputs inside mat-form-field */
+.mat-mdc-form-field input.mat-mdc-input-element {
+  all: revert;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Keep error/hint line visible and wrapping nicely */
+.mat-mdc-form-field-subscript-wrapper {
+  white-space: normal;
+}
+
 .price_wrapper {
     display: block; /* Changed from none */
     text-align: center;
