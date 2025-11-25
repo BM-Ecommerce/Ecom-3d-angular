@@ -191,26 +191,6 @@ textarea {
     display: inline-block;
 }
 
-.order-stepper {
-  margin: 10px 0 20px;
-}
-
-.stepper-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  margin: 8px 0 20px;
-}
-
-.stepper-controls button mat-icon:first-child {
-  margin-right: 6px;
-}
-
-.stepper-controls button mat-icon:last-child {
-  margin-left: 6px;
-}
-
 .radio-group {
     display: flex;
 }
