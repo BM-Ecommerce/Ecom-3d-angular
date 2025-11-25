@@ -29,6 +29,7 @@ export class RelatedproductComponent implements OnInit, OnChanges {
   currencySymbol: string = '£';
   relatedframeimage: string = '';
   showframe: boolean = true;
+  isDesktop = false;
 
   imgpath = `${environment.apiUrl}/api/public/storage/attachments/${environment.apiName}/material/colour/`;
 
@@ -40,15 +41,15 @@ export class RelatedproductComponent implements OnInit, OnChanges {
     dots: false,
     autoplay: true,
     navSpeed: 700,
-    autoplayTimeout: 2500,  
-    autoplayHoverPause: true, 
-    autoplaySpeed: 800,   
+    autoplayTimeout: 2500,
+    autoplayHoverPause: true,
+    autoplaySpeed: 800,
     navText: ['<', '>'],
     responsive: {
-      0: { items: 1 },
-      400: { items: 2 },
-      740: { items: 3 },
-      940: { items: 5 }
+      0: { items: 1, center: true },      
+      400: { items: 2, center: true },   
+      740: { items: 3, center: true },    
+      940: { items: 5 }                   
     },
     nav: false
   };
@@ -59,6 +60,8 @@ export class RelatedproductComponent implements OnInit, OnChanges {
   ) { }
 
   ngOnInit(): void {
+    this.checkDevice();
+    window.addEventListener('resize', () => this.checkDevice());
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -87,7 +90,10 @@ export class RelatedproductComponent implements OnInit, OnChanges {
       .pipe(takeUntil(this.destroy$))
       .subscribe((response: any) => {
         this.related_products = response?.result || [];
-        this.gridView = this.related_products.length <= 4;
+
+        if (this.isDesktop) {
+          this.gridView = this.related_products.length <= 4;
+        }
         this.cd.markForCheck();
       });
   }
@@ -99,7 +105,9 @@ export class RelatedproductComponent implements OnInit, OnChanges {
   showframeView() {
     this.showframe = !this.showframe;
   }
-
+  checkDevice() {
+    this.isDesktop = window.innerWidth >= 1024; // Desktop breakpoint
+  }
   onImageError(event: Event) {
     const img = event.target as HTMLImageElement;
     img.src = 'assets/no-image.jpg';
