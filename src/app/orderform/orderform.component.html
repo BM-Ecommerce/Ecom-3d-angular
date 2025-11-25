@@ -285,7 +285,7 @@
                       </mat-option>
 
                       <mat-option
-                          *ngFor="let option of (filteredOptions[field.fieldid] || option_data[field.fieldid])"
+                          *ngFor="let option of (filteredOptions[field.fieldid] || option_data[field.fieldid]); trackBy: trackByOptionId"
                           [value]="option.optionid">
 
                           <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">

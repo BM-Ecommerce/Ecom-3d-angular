@@ -15,7 +15,7 @@ import Swal from 'sweetalert2';
 import { FormControl } from '@angular/forms';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { Subject, forkJoin, Observable, of, from } from 'rxjs';
-import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime } from 'rxjs/operators';
+import { switchMap, mergeMap, map, tap, catchError, takeUntil, finalize, toArray, concatMap, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -941,13 +941,18 @@ public onToggleLoopAnimate(): void {
 
         // Bind search to filter current option_data once it loads
         this.searchCtrl[id].valueChanges
-          .pipe(debounceTime(200), takeUntil(this.destroy$))
-          .subscribe(searchText => {
-            const term = (searchText || '').toString().toLowerCase().trim();
+          .pipe(
+            debounceTime(150),
+            map(v => (v || '').toString().toLowerCase().trim()),
+            distinctUntilChanged(),
+            takeUntil(this.destroy$)
+          )
+          .subscribe(term => {
             const all = this.option_data[id] || [];
             this.filteredOptions[id] = term === '' ? [...all] : all.filter(
               opt => (opt?.optionname || '').toLowerCase().includes(term)
             );
+            this.cd.markForCheck();
           });
       }
     });
@@ -1073,6 +1078,7 @@ public onToggleLoopAnimate(): void {
           this.filteredOptions[field.fieldid] = existingSearch === ''
             ? [...all]
             : all.filter((opt: any) => (opt?.optionname || '').toLowerCase().includes(existingSearch));
+          this.cd.markForCheck();
           const control = this.orderForm.get(`field_${field.fieldid}`);
 
           if (control) {
@@ -1548,15 +1554,18 @@ public onToggleLoopAnimate(): void {
                 : allSub.filter((opt: any) => (opt?.optionname || '').toLowerCase().includes(currentTerm));
 
               this.searchCtrl[subfield.fieldid].valueChanges
-                .pipe(debounceTime(200), takeUntil(this.destroy$))
-                .subscribe(searchText => {
-                  const term = (searchText || '').toString().toLowerCase().trim();
+                .pipe(
+                  debounceTime(150),
+                  map(v => (v || '').toString().toLowerCase().trim()),
+                  distinctUntilChanged(),
+                  takeUntil(this.destroy$)
+                )
+                .subscribe(term => {
                   const all = this.option_data[subfield.fieldid] || [];
-
-                  this.filteredOptions[subfield.fieldid] =
-                    term === '' ? [...all] : all.filter(opt =>
-                      opt.optionname.toLowerCase().includes(term)
-                    );
+                  this.filteredOptions[subfield.fieldid] = term === '' ? [...all] : all.filter(opt =>
+                    (opt?.optionname || '').toLowerCase().includes(term)
+                  );
+                  this.cd.markForCheck();
                 });
               // set default value safely (without emitting)
               const control = this.orderForm.get(`field_${subfield.fieldid}`);
@@ -2394,6 +2403,10 @@ public onToggleLoopAnimate(): void {
 
   trackByFieldId(index: number, field: ProductField): number {
     return field.fieldid;
+  }
+
+  trackByOptionId(index: number, opt: any): any {
+    return opt?.optionid ?? index;
   }
 
 
