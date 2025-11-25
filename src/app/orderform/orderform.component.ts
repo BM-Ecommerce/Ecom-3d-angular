@@ -151,6 +151,8 @@ interface ProductOption {
   pricegroupid: string;
   optioncode?: string;
   optionquantity?: any;
+  unitcost?:any;
+  hasprice?:any;
   forchildfieldoptionlinkid?: string;
 }
 interface SelectProductOption {

@@ -202,6 +202,7 @@
                       <mat-select [formControlName]="'field_' + field.fieldid" [id]="'field_' + field.fieldid"
                         [multiple]="field.selection == 1" [attr.aria-label]="field.fieldname">
                         <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
+                      
                         <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
                           [value]="option.optionid">
                           <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
@@ -210,6 +211,9 @@
                               style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
                           </ng-container>
                           {{ option.optionname }}
+                            <span *ngIf="option.unitcost > 0">
+                                — {{currencySymbol}}{{ option.unitcost }}
+                              </span>
                         </mat-option>
                       </mat-select>
                     </mat-form-field>
