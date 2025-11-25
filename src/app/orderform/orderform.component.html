@@ -125,9 +125,47 @@
              </div>
             <div class="blinds-measurement">
             </div>
+            <mat-horizontal-stepper class="order-stepper" [linear]="false" labelPosition="bottom" [selectedIndex]="activeStepIndex" (selectionChange)="activeStepIndex = $event.selectedIndex">
+              <mat-step label="Material"></mat-step>
+              <mat-step label="Measurements"></mat-step>
+              <mat-step label="Options"></mat-step>
+              <mat-step label="Review"></mat-step>
+            </mat-horizontal-stepper>
+
+            <div class="stepper-controls">
+              <button type="button"
+                      mat-stroked-button
+                      aria-label="Previous step"
+                      (click)="prevStep()"
+                      [disabled]="activeStepIndex === 0">
+                <mat-icon>chevron_left</mat-icon>
+                Previous
+              </button>
+
+              <ng-container *ngIf="activeStepIndex < 3; else placeOrderBtn">
+                <button type="button"
+                        mat-stroked-button
+                        color="primary"
+                        aria-label="Next step"
+                        (click)="nextStep()">
+                  Next
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+              </ng-container>
+              <ng-template #placeOrderBtn>
+                <button mat-raised-button
+                        color="primary"
+                        type="submit"
+                        aria-label="Place Order"
+                        [disabled]="orderForm.invalid || isSubmitting || !isCalculatingPrice || grossPricenum === 0">
+                  <mat-icon>shopping_cart</mat-icon>
+                  Place Order
+                </button>
+              </ng-template>
+            </div>
             <div *ngFor="let field of parameters_data; trackBy: trackByFieldId;let i = index"
               [ngSwitch]="get_field_type_name(field.fieldtypeid)">
-              <div *ngIf="field.showfieldecomonjob == 1">
+              <div *ngIf="field.showfieldecomonjob == 1 && isVisibleInCurrentStep(field)">
                 <!-- Unit Type -->
     <div *ngSwitchCase="'unit_type'" id="unit_type_section_wrapper" [class]="getClassNameAccessories(field)">
                   <div class="parameter-wrapper inline-toggle radio">
@@ -463,28 +501,22 @@
 
 
 
-            <div class="price_wrapper" *ngIf="grossPricenum != 0 && isCalculatingPrice">
+            <div class="price_wrapper" *ngIf="activeStepIndex === 3 && grossPricenum != 0 && isCalculatingPrice">
               <div class="price_text">Your Price</div>
               <div class="showprice_wrapper">
                 <span class="price">{{ grossPrice }}</span>
               </div>
             </div>
 
-            <div class="variations_button">
+            <div class="variations_button" *ngIf="activeStepIndex === 3">
               <div class="quantity">
                 <button type="button" class="minus" (click)="decrementQty()">-</button>
                 <input type="number" formControlName="qty" title="Qty" size="4" inputmode="numeric" min="1"
                   aria-label="Quantity">
                 <button type="button" class="plus" (click)="incrementQty()">+</button>
               </div>
-              <button mat-raised-button color="primary" type="submit"
-                [disabled]="orderForm.invalid || isSubmitting || !isCalculatingPrice || grossPricenum === 0">
-                <mat-icon>shopping_cart</mat-icon>
-                <span *ngIf="isCalculatingPrice">{{ isSubmitting ? 'Adding...' : 'Add to Cart' }}</span>
-                <span *ngIf="!isCalculatingPrice">Calculating price...</span>
-              </button>
             </div>
-            <mat-accordion>
+            <mat-accordion *ngIf="activeStepIndex === 3">
               <mat-expansion-panel>
                 <mat-expansion-panel-header>
                   <mat-panel-title>
@@ -504,8 +536,8 @@
               </mat-expansion-panel>
             </mat-accordion>
             <app-freesample [freesampledata]="freesample"
-              *ngIf="freesample?.status == 1 && freesample?.color_id !=0 && (category == 3 || category == 4)"></app-freesample>
-            <div class="guides-buttons">
+              *ngIf="activeStepIndex === 3 && freesample?.status == 1 && freesample?.color_id !=0 && (category == 3 || category == 4)"></app-freesample>
+            <div class="guides-buttons" *ngIf="activeStepIndex === 3">
               <a mat-stroked-button color="primary" target="_blank" href="/measuring-guide/">
                 Measuring Guide
               </a>

@@ -20,6 +20,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatStepperModule } from '@angular/material/stepper';
 import { HtmlTooltipDirective } from '../html-tooltip.directive';
 import { FreesampleComponent } from "../freesample/freesample.component";
 import { ConfiguratorComponent } from "../configurator/configurator.component";
@@ -192,6 +193,7 @@ interface FractionOption {
     MatExpansionModule,
     MatIconModule,
     MatTooltipModule,
+    MatStepperModule,
     HtmlTooltipDirective,
     FreesampleComponent,
     ConfiguratorComponent,
@@ -248,6 +250,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 hasDescriptionContent = false;
   relatedframeimage:string = ""
   netpricecomesfrom = "";
+  // Stepper state
+  activeStepIndex = 0;
   is3DOn = false;
   recipeid: number = 0;
   category: number = 0;
@@ -2420,6 +2424,48 @@ public onToggleLoopAnimate(): void {
     return field.fieldid;
   }
 
+  // Stepper helpers to group fields by step without changing existing field rendering
+  public isFieldInMaterialStep(field: ProductField): boolean {
+    const t = this.get_field_type_name(field.fieldtypeid);
+    try {
+      // Treat color/fabric pickers as Material. Some colors come through as 'list'.
+      const isColor = (this as any).isColorSection ? (this as any).isColorSection(field) : false;
+      return t === 'materials' || isColor;
+    } catch {
+      return t === 'materials';
+    }
+  }
+
+  public isFieldInMeasurementsStep(field: ProductField): boolean {
+    const t = this.get_field_type_name(field.fieldtypeid);
+    return t === 'unit_type' || t === 'width_with_fraction' || t === 'drop_with_fraction';
+  }
+
+  public isFieldInOptionsStep(field: ProductField): boolean {
+    const t = this.get_field_type_name(field.fieldtypeid);
+    if (this.isFieldInMaterialStep(field) || this.isFieldInMeasurementsStep(field)) return false;
+    // Exclude qty here (handled in Review)
+    return t !== 'qty';
+  }
+
+  public isVisibleInCurrentStep(field: ProductField): boolean {
+    switch (this.activeStepIndex) {
+      case 0: return this.isFieldInMaterialStep(field);
+      case 1: return this.isFieldInMeasurementsStep(field);
+      case 2: return this.isFieldInOptionsStep(field);
+      case 3: return false; // no field controls in Review step
+      default: return true;
+    }
+  }
+
+  // Stepper navigation actions
+  public prevStep(): void {
+    this.activeStepIndex = Math.max(0, this.activeStepIndex - 1);
+  }
+
+  public nextStep(): void {
+    this.activeStepIndex = Math.min(3, this.activeStepIndex + 1);
+  }
   trackByOptionId(index: number, opt: any): any {
     return opt?.optionid ?? index;
   }
