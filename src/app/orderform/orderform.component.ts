@@ -275,6 +275,8 @@ hasDescriptionContent = false;
   shutter_hinge_color_list_value:string="list";
   hinge_color_field_names:any[] = ['hingecolors','hingecolour','hingecolours'];
   color_field_names:any[] = ['colours','colour','color'];
+  // Submission state to control when to show validation errors
+  formSubmitted: boolean = false;
   enableSelectSearch: boolean = true;
 
   get_freesample() {
@@ -2132,6 +2134,7 @@ public onToggleLoopAnimate(): void {
       }));
   }
   onSubmit(): void {
+    this.formSubmitted = true;
     if (this.orderForm.invalid) {
       this.markFormGroupTouched(this.orderForm);
       return;
@@ -2175,6 +2178,7 @@ public onToggleLoopAnimate(): void {
       takeUntil(this.destroy$),
       finalize(() => {
         this.isSubmitting = false;
+        // Keep formSubmitted true so errors remain visible; optionally reset if needed
         this.cd.markForCheck();
       })
     ).subscribe({
@@ -2437,6 +2441,14 @@ public onToggleLoopAnimate(): void {
       }
     });
     this.cd.markForCheck();
+  }
+
+  // Helper: display errors only after interaction or submit
+  showFieldError(fieldId: number, errorKey?: string): boolean {
+    const control = this.orderForm?.get(`field_${fieldId}`);
+    if (!control) return false;
+    const hasErr = errorKey ? control.hasError(errorKey) : control.invalid;
+    return !!hasErr && (control.touched || control.dirty || this.formSubmitted);
   }
 
 
