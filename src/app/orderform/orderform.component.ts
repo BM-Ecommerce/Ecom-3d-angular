@@ -275,7 +275,6 @@ hasDescriptionContent = false;
   shutter_hinge_color_list_value:string="list";
   hinge_color_field_names:any[] = ['hingecolors','hingecolour','hingecolours'];
   color_field_names:any[] = ['colours','colour','color'];
-  // Global switch to enable/disable select search UI + behavior
   enableSelectSearch: boolean = true;
 
   get_freesample() {
