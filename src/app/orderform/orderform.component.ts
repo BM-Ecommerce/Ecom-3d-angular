@@ -941,9 +941,9 @@ public onToggleLoopAnimate(): void {
 
         // Bind search to filter current option_data once it loads
         this.searchCtrl[id].valueChanges
-          .pipe(debounceTime(200))
+          .pipe(debounceTime(200), takeUntil(this.destroy$))
           .subscribe(searchText => {
-            const term = (searchText || '').toLowerCase();
+            const term = (searchText || '').toString().toLowerCase().trim();
             const all = this.option_data[id] || [];
             this.filteredOptions[id] = term === '' ? [...all] : all.filter(
               opt => (opt?.optionname || '').toLowerCase().includes(term)
@@ -1067,9 +1067,12 @@ public onToggleLoopAnimate(): void {
           }
 
           this.option_data[field.fieldid] = filteredOptions;
-          if (!this.filteredOptions[field.fieldid] || this.filteredOptions[field.fieldid].length === 0) {
-              this.filteredOptions[field.fieldid] = [...filteredOptions];
-            }
+          // Recompute filteredOptions using current search term (if any)
+          const existingSearch = (this.searchCtrl[field.fieldid]?.value || '').toString().toLowerCase().trim();
+          const all = filteredOptions || [];
+          this.filteredOptions[field.fieldid] = existingSearch === ''
+            ? [...all]
+            : all.filter((opt: any) => (opt?.optionname || '').toLowerCase().includes(existingSearch));
           const control = this.orderForm.get(`field_${field.fieldid}`);
 
           if (control) {
@@ -1534,13 +1537,20 @@ public onToggleLoopAnimate(): void {
               }
                 
               this.option_data[subfield.fieldid] = filteredOptions;
-              this.searchCtrl[subfield.fieldid] = new FormControl('');
-              this.filteredOptions[subfield.fieldid] = [...(this.option_data[subfield.fieldid] || [])];
+              // Preserve existing search control when reloading same subfield; otherwise create
+              if (!this.searchCtrl[subfield.fieldid]) {
+                this.searchCtrl[subfield.fieldid] = new FormControl('');
+              }
+              const currentTerm = (this.searchCtrl[subfield.fieldid].value || '').toString().toLowerCase().trim();
+              const allSub = this.option_data[subfield.fieldid] || [];
+              this.filteredOptions[subfield.fieldid] = currentTerm === ''
+                ? [...allSub]
+                : allSub.filter((opt: any) => (opt?.optionname || '').toLowerCase().includes(currentTerm));
 
               this.searchCtrl[subfield.fieldid].valueChanges
-                .pipe(debounceTime(200))
+                .pipe(debounceTime(200), takeUntil(this.destroy$))
                 .subscribe(searchText => {
-                  const term = (searchText || '').toLowerCase();
+                  const term = (searchText || '').toString().toLowerCase().trim();
                   const all = this.option_data[subfield.fieldid] || [];
 
                   this.filteredOptions[subfield.fieldid] =
