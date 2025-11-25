@@ -254,6 +254,7 @@ hasDescriptionContent = false;
   activeStepIndex = 0;
   // Layout toggle: stepper vs normal (similar to enableSelectSearch)
   public enableStepperLayout: boolean = true;
+  public get stepperActive(): boolean { return this.enableStepperLayout && this.category !== 2; }
   is3DOn = false;
   recipeid: number = 0;
   category: number = 0;
@@ -711,6 +712,10 @@ public onToggleLoopAnimate(): void {
           this.hasProspecContent = this.hasContent(this.pei_prospec);
           this.hasDescriptionContent = this.hasContent(this.productdescription);
           this.category = Number(data.pi_category);
+          if (this.enableStepperLayout) {
+            // Default to Options step for Accessories (category 2), else start at Material
+            this.activeStepIndex = (this.category === 2) ? 2 : 0;
+          }
           if (this.category == 5) {
             this.fabricFieldType = 21
           } else if (this.category == 4) {
@@ -927,6 +932,8 @@ public onToggleLoopAnimate(): void {
 
     this.orderForm = this.fb.group(formControls);
     this.previousFormValue = this.orderForm.value;
+    // Ensure initial step reflects present fields (e.g., skip to Options if no Material/Measurements)
+    this.updateInitialStepIfNeeded();
     //console.log('parameters_data after form initialization:', JSON.parse(JSON.stringify(this.parameters_data)));
     this.orderForm.valueChanges.pipe(
       takeUntil(this.destroy$)
@@ -968,6 +975,25 @@ public onToggleLoopAnimate(): void {
           });
       }
     });
+  }
+
+  private updateInitialStepIfNeeded(): void {
+    if (!this.stepperActive) return;
+    // If both Material and Measurements are absent, default to Options step if present
+    const hasMat = this.hasMaterialFields();
+    const hasMeas = this.hasMeasurementFields();
+    if (!hasMat && !hasMeas) {
+      const idx = this.stepsList.findIndex(s => s.key === 'options');
+      if (idx >= 0) {
+        this.activeStepIndex = idx;
+      }
+    } else {
+      // Clamp to a valid step if current is out of bounds
+      const max = Math.max(0, this.stepsList.length - 1);
+      if (this.activeStepIndex > max) {
+        this.activeStepIndex = max;
+      }
+    }
   }
 
   /**
@@ -2428,10 +2454,16 @@ public onToggleLoopAnimate(): void {
 
   // Stepper helpers to group fields by step without changing existing field rendering
   public isFieldInMaterialStep(field: ProductField): boolean {
+    // Accessories: no Material step
+    if (this.category === 2) return false;
     const t = this.get_field_type_name(field.fieldtypeid);
     try {
-      // Treat color/fabric pickers as Material. Some colors come through as 'list'.
       const isColor = (this as any).isColorSection ? (this as any).isColorSection(field) : false;
+      const isShutterColor = (this as any).isShutterColorSection ? (this as any).isShutterColorSection(field) : false;
+      // Shutters (category 5): treat shutter color sections as Material, plus materials
+      if (this.category === 5) {
+        return t === 'materials' || isColor || isShutterColor;
+      }
       return t === 'materials' || isColor;
     } catch {
       return t === 'materials';
@@ -2439,35 +2471,74 @@ public onToggleLoopAnimate(): void {
   }
 
   public isFieldInMeasurementsStep(field: ProductField): boolean {
+    // Accessories: no measurements
+    if (this.category === 2) return false;
     const t = this.get_field_type_name(field.fieldtypeid);
     return t === 'unit_type' || t === 'width_with_fraction' || t === 'drop_with_fraction';
   }
 
   public isFieldInOptionsStep(field: ProductField): boolean {
     const t = this.get_field_type_name(field.fieldtypeid);
+    // Accessories: everything is options except qty
+    if (this.category === 2) return t !== 'qty';
     if (this.isFieldInMaterialStep(field) || this.isFieldInMeasurementsStep(field)) return false;
     // Exclude qty here (handled in Review)
     return t !== 'qty';
   }
 
   public isVisibleInCurrentStep(field: ProductField): boolean {
-    if (!this.enableStepperLayout) return true;
-    switch (this.activeStepIndex) {
-      case 0: return this.isFieldInMaterialStep(field);
-      case 1: return this.isFieldInMeasurementsStep(field);
-      case 2: return this.isFieldInOptionsStep(field);
-      case 3: return false; // no field controls in Review step
-      default: return true;
-    }
+    if (!this.stepperActive) return true;
+    const current = this.stepsList[this.clampedActiveStepIndex]?.key;
+    if (current === 'material') return this.isFieldInMaterialStep(field);
+    if (current === 'measurements') return this.isFieldInMeasurementsStep(field);
+    if (current === 'options') return this.isFieldInOptionsStep(field);
+    return false; // review step has no direct field controls
   }
 
   // Stepper navigation actions
   public prevStep(): void {
-    this.activeStepIndex = Math.max(0, this.activeStepIndex - 1);
+    const max = Math.max(0, this.stepsList.length - 1);
+    this.activeStepIndex = Math.max(0, Math.min(max, this.activeStepIndex - 1));
   }
 
   public nextStep(): void {
-    this.activeStepIndex = Math.min(3, this.activeStepIndex + 1);
+    const max = Math.max(0, this.stepsList.length - 1);
+    this.activeStepIndex = Math.max(0, Math.min(max, this.activeStepIndex + 1));
+  }
+
+  // Dynamic steps
+  public get stepsList(): { key: 'material'|'measurements'|'options'|'review'; label: string }[] {
+    const steps: { key: 'material'|'measurements'|'options'|'review'; label: string }[] = [];
+    if (this.stepperActive) {
+      if (this.hasMaterialFields()) steps.push({ key: 'material', label: 'Material' });
+      if (this.hasMeasurementFields()) steps.push({ key: 'measurements', label: 'Measurements' });
+      if (this.hasOptionsFields()) steps.push({ key: 'options', label: 'Options' });
+      steps.push({ key: 'review', label: 'Review' });
+    }
+    return steps;
+  }
+
+  public get clampedActiveStepIndex(): number {
+    const max = Math.max(0, this.stepsList.length - 1);
+    return Math.max(0, Math.min(max, this.activeStepIndex));
+  }
+
+  public isOnReviewStep(): boolean {
+    if (!this.stepperActive) return true;
+    const current = this.stepsList[this.clampedActiveStepIndex]?.key;
+    return current === 'review';
+  }
+
+  private hasMaterialFields(): boolean {
+    return (this.parameters_data || []).some(f => f.showfieldecomonjob == 1 && this.isFieldInMaterialStep(f));
+  }
+
+  private hasMeasurementFields(): boolean {
+    return (this.parameters_data || []).some(f => f.showfieldecomonjob == 1 && this.isFieldInMeasurementsStep(f));
+  }
+
+  private hasOptionsFields(): boolean {
+    return (this.parameters_data || []).some(f => f.showfieldecomonjob == 1 && this.isFieldInOptionsStep(f));
   }
   trackByOptionId(index: number, opt: any): any {
     return opt?.optionid ?? index;

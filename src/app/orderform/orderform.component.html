@@ -125,14 +125,11 @@
              </div>
             <div class="blinds-measurement">
             </div>
-            <mat-horizontal-stepper *ngIf="enableStepperLayout" class="order-stepper" [linear]="false" labelPosition="bottom" [selectedIndex]="activeStepIndex" (selectionChange)="activeStepIndex = $event.selectedIndex">
-              <mat-step label="Material"></mat-step>
-              <mat-step label="Measurements"></mat-step>
-              <mat-step label="Options"></mat-step>
-              <mat-step label="Review"></mat-step>
+            <mat-horizontal-stepper *ngIf="stepperActive && stepsList.length > 1" class="order-stepper" [linear]="false" labelPosition="bottom" [selectedIndex]="clampedActiveStepIndex" (selectionChange)="activeStepIndex = $event.selectedIndex">
+              <mat-step *ngFor="let s of stepsList" [label]="s.label"></mat-step>
             </mat-horizontal-stepper>
 
-            <div class="stepper-controls" *ngIf="enableStepperLayout">
+            <div class="stepper-controls" *ngIf="stepperActive && stepsList.length > 1">
               <button type="button"
                       mat-stroked-button
                       aria-label="Previous step"
@@ -501,21 +498,21 @@
 
 
 
-            <div class="price_wrapper" *ngIf="(enableStepperLayout ? activeStepIndex === 3 : true) && grossPricenum != 0 && isCalculatingPrice">
+            <div class="price_wrapper" *ngIf="isOnReviewStep() && grossPricenum != 0 && isCalculatingPrice">
               <div class="price_text">Your Price</div>
               <div class="showprice_wrapper">
                 <span class="price">{{ grossPrice }}</span>
               </div>
             </div>
 
-            <div class="variations_button" *ngIf="enableStepperLayout ? activeStepIndex === 3 : true">
+            <div class="variations_button" *ngIf="isOnReviewStep()">
               <div class="quantity">
                 <button type="button" class="minus" (click)="decrementQty()">-</button>
                 <input type="number" formControlName="qty" title="Qty" size="4" inputmode="numeric" min="1"
                   aria-label="Quantity">
                 <button type="button" class="plus" (click)="incrementQty()">+</button>
               </div>
-              <button *ngIf="!enableStepperLayout" mat-raised-button color="primary" type="submit"
+              <button *ngIf="!stepperActive" mat-raised-button color="primary" type="submit"
                 [disabled]="orderForm.invalid || isSubmitting || !isCalculatingPrice || grossPricenum === 0">
                 <mat-icon>shopping_cart</mat-icon>
                 <span *ngIf="isCalculatingPrice">{{ isSubmitting ? 'Adding...' : 'Add to Cart' }}</span>
