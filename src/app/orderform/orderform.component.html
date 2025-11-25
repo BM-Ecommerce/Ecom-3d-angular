@@ -274,7 +274,7 @@
                       [attr.aria-label]="field.fieldname">
 
                       <ngx-mat-select-search
-                          *ngIf="searchCtrl[field.fieldid]"
+                          *ngIf="enableSelectSearch && searchCtrl[field.fieldid]"
                           [formControl]="searchCtrl[field.fieldid]"
                           placeholderLabel="Search..."
                           noEntriesFoundLabel="No results found">

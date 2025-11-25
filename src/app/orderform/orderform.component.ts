@@ -275,6 +275,8 @@ hasDescriptionContent = false;
   shutter_hinge_color_list_value:string="list";
   hinge_color_field_names:any[] = ['hingecolors','hingecolour','hingecolours'];
   color_field_names:any[] = ['colours','colour','color'];
+  // Global switch to enable/disable select search UI + behavior
+  enableSelectSearch: boolean = true;
 
   get_freesample() {
     this.freesample = {
@@ -949,6 +951,11 @@ public onToggleLoopAnimate(): void {
           )
           .subscribe(term => {
             const all = this.option_data[id] || [];
+            if (!this.enableSelectSearch) {
+              this.filteredOptions[id] = [...all];
+              this.cd.markForCheck();
+              return;
+            }
             this.filteredOptions[id] = term === '' ? [...all] : all.filter(
               opt => (opt?.optionname || '').toLowerCase().includes(term)
             );
@@ -1073,7 +1080,9 @@ public onToggleLoopAnimate(): void {
 
           this.option_data[field.fieldid] = filteredOptions;
           // Recompute filteredOptions using current search term (if any)
-          const existingSearch = (this.searchCtrl[field.fieldid]?.value || '').toString().toLowerCase().trim();
+          const existingSearch = this.enableSelectSearch
+            ? (this.searchCtrl[field.fieldid]?.value || '').toString().toLowerCase().trim()
+            : '';
           const all = filteredOptions || [];
           this.filteredOptions[field.fieldid] = existingSearch === ''
             ? [...all]
@@ -1547,7 +1556,9 @@ public onToggleLoopAnimate(): void {
               if (!this.searchCtrl[subfield.fieldid]) {
                 this.searchCtrl[subfield.fieldid] = new FormControl('');
               }
-              const currentTerm = (this.searchCtrl[subfield.fieldid].value || '').toString().toLowerCase().trim();
+              const currentTerm = this.enableSelectSearch
+                ? (this.searchCtrl[subfield.fieldid].value || '').toString().toLowerCase().trim()
+                : '';
               const allSub = this.option_data[subfield.fieldid] || [];
               this.filteredOptions[subfield.fieldid] = currentTerm === ''
                 ? [...allSub]
@@ -1562,6 +1573,11 @@ public onToggleLoopAnimate(): void {
                 )
                 .subscribe(term => {
                   const all = this.option_data[subfield.fieldid] || [];
+                  if (!this.enableSelectSearch) {
+                    this.filteredOptions[subfield.fieldid] = [...all];
+                    this.cd.markForCheck();
+                    return;
+                  }
                   this.filteredOptions[subfield.fieldid] = term === '' ? [...all] : all.filter(opt =>
                     (opt?.optionname || '').toLowerCase().includes(term)
                   );
@@ -2407,6 +2423,21 @@ public onToggleLoopAnimate(): void {
 
   trackByOptionId(index: number, opt: any): any {
     return opt?.optionid ?? index;
+  }
+
+  // Public API: toggle search globally
+  setSearchEnabled(flag: boolean): void {
+    this.enableSelectSearch = !!flag;
+    // Reset current filters to full list and clear search terms without emitting
+    Object.keys(this.filteredOptions || {}).forEach(k => {
+      const id = Number(k);
+      const all = this.option_data?.[id] || [];
+      this.filteredOptions[id] = [...all];
+      if (this.searchCtrl?.[id]) {
+        this.searchCtrl[id].setValue('', { emitEvent: false });
+      }
+    });
+    this.cd.markForCheck();
   }
 
 
