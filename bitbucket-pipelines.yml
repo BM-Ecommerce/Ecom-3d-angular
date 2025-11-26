@@ -1,4 +1,9 @@
-image: node:18
+image: node:16
+
+definitions:
+  services:
+    chrome:
+      image: browserless/chrome
 
 pipelines:
   default:
@@ -6,35 +11,33 @@ pipelines:
         name: Install, Test & SonarCloud
         caches:
           - node
+        services:
+          - chrome
         script:
-          # Install Chrome for Karma tests
-          - apt-get update
-          - apt-get install -y wget gnupg
-          - wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
-          - echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
-          - apt-get update
-          - apt-get install -y google-chrome-stable
-
-          # Install dependencies
+          # 1. Install dependencies
           - npm install
 
-          # Run Angular unit tests
-          - npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
+          # 2. Install Chrome for Karma Headless
+          - apt-get update
+          - apt-get install -y wget gnupg
+          - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          - apt install -y ./google-chrome*.deb || apt --fix-broken install -y
 
-          # Build Angular app
-          - npm run build
+          # 3. Run Angular Unit Tests (Headless Chrome)
+          - npm run test -- --watch=false --browsers=ChromeHeadless
 
-          # Install Sonar Scanner
-          - apt-get install -y openjdk-11-jre unzip
-          - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-          - unzip sonar-scanner.zip
+          # 4. Build Angular
+          - npm run build -- --configuration production
+
+          # 5. Install SonarCloud Scanner
+          - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+          - unzip sonar-scanner-cli-5.0.1.3006-linux.zip
           - mv sonar-scanner-5.0.1.3006-linux sonar-scanner
           - export PATH="$PATH:$(pwd)/sonar-scanner/bin"
 
-          # Run SonarCloud analysis
+          # 6. Run SonarCloud scan
           - sonar-scanner \
               -Dsonar.projectKey=bmecommerce_ecom-angular \
               -Dsonar.organization=bmecommerce \
               -Dsonar.host.url=https://sonarcloud.io \
-              -Dsonar.login=$SONAR_TOKEN \
-              -Dsonar.javascript.lcov.reportPaths=coverage/visualization/lcov.info
+              -Dsonar.login=$SONAR_TOKEN
