@@ -10,6 +10,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { ThreeService } from '../services/three.service';;
+import { LoadingService } from '../services/loading.service';
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { FormControl } from '@angular/forms';
@@ -20,6 +21,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { HtmlTooltipDirective } from '../html-tooltip.directive';
 import { FreesampleComponent } from "../freesample/freesample.component";
 import { ConfiguratorComponent } from "../configurator/configurator.component";
@@ -192,6 +194,7 @@ interface FractionOption {
     MatExpansionModule,
     MatIconModule,
     MatTooltipModule,
+    MatProgressBarModule,
     HtmlTooltipDirective,
     FreesampleComponent,
     ConfiguratorComponent,
@@ -203,6 +206,7 @@ interface FractionOption {
 })
 export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('visualizerCanvas', { static: false }) private canvasRef!: ElementRef<HTMLCanvasElement>;
+  public loaderMode: 'overlay' | 'topbar' = 'overlay';
   @ViewChild('visualizerContainer', { static: false }) private containerRef!: ElementRef<HTMLElement>;
   @ViewChild('zoomLens', { static: false }) private zoomLensRef!: ElementRef<HTMLElement>;
   @ViewChild('stickyEl', { static: false }) stickyEl!: ElementRef<HTMLElement>;
@@ -431,6 +435,7 @@ hasDescriptionContent = false;
     private cd: ChangeDetectorRef,
     private threeService: ThreeService,
     private http: HttpClient,
+    public loading: LoadingService,
     private matIconRegistry: MatIconRegistry,
     private sanitizer: DomSanitizer
   ) {
@@ -445,6 +450,8 @@ hasDescriptionContent = false;
   }
 
   ngOnInit(): void {
+    // Expose loader mode for template conditions
+    this.loaderMode = environment.loaderMode;
     const queryParams = this.route.snapshot.queryParams;
     // Check if running on localhost
     const isLocalhost = window.location.hostname === 'localhost';

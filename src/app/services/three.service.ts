@@ -2,6 +2,7 @@ import { Injectable, ElementRef, OnDestroy, NgZone } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { LoadingService } from './loading.service';
 
 @Injectable({
   providedIn: 'root'
@@ -31,8 +32,9 @@ export class ThreeService implements OnDestroy {
     this.canvasEl?.classList.add('grab');
   };
 
-  private textureLoader = new THREE.TextureLoader();
-  private gltfLoader = new GLTFLoader();
+  private loadingManager!: THREE.LoadingManager;
+  private textureLoader!: THREE.TextureLoader;
+  private gltfLoader!: GLTFLoader;
 
   private cube2Mesh!: THREE.Mesh;
   private frameMesh!: THREE.Mesh;
@@ -76,7 +78,28 @@ export class ThreeService implements OnDestroy {
   private ambientLight?: THREE.AmbientLight;
   private fillLight?: THREE.PointLight;
 
-  constructor(private zone: NgZone) { }
+  constructor(private zone: NgZone, private loading: LoadingService) {
+    // Setup a LoadingManager to track all asset loads and push to LoadingService
+    this.loadingManager = new THREE.LoadingManager();
+    this.loadingManager.onStart = () => {
+      this.loading.start('three:assets');
+      this.loading.setProgress(1);
+    };
+    this.loadingManager.onProgress = (_url, loaded, total) => {
+      const pct = total > 0 ? (loaded / total) * 100 : 0;
+      this.loading.setProgress(pct);
+    };
+    this.loadingManager.onLoad = () => {
+      this.loading.end('three:assets');
+      this.loading.setProgress(100);
+    };
+    this.loadingManager.onError = () => {
+      this.loading.end('three:assets');
+    };
+
+    this.textureLoader = new THREE.TextureLoader(this.loadingManager);
+    this.gltfLoader = new GLTFLoader(this.loadingManager);
+  }
 
   ngOnDestroy(): void {
     this.resetState();
@@ -684,7 +707,7 @@ public loadGltfModel(
     if (this.frameMesh) this.scene.remove(this.frameMesh);
     if (this.backgroundMesh) this.scene.remove(this.backgroundMesh);
 
-    const textureLoader = new THREE.TextureLoader();
+    const textureLoader = new THREE.TextureLoader(this.loadingManager);
 
     textureLoader.load(frameUrl, (frameTexture) => {
       frameTexture.colorSpace = THREE.SRGBColorSpace;
@@ -750,7 +773,7 @@ public loadGltfModel(
   }
 
   public updateTextures2d(frameUrl: string, backgroundUrl: string): void {
-    const textureLoader = new THREE.TextureLoader();
+    const textureLoader = new THREE.TextureLoader(this.loadingManager);
 
     textureLoader.load(frameUrl, (frameTexture) => {
       frameTexture.colorSpace = THREE.SRGBColorSpace;

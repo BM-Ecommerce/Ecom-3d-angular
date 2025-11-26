@@ -7,4 +7,14 @@
 <!-- * * * * * * * * * * End of Placeholder * * * * * * * * * * * -->
 <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 
+<!-- Global topbar progress (toggle via environment.loaderMode) -->
+<div *ngIf="loaderMode === 'topbar'" class="topbar-progress" [class.visible]="(loading?.visible$ | async)" aria-hidden="true">
+  <mat-progress-bar
+    mode="determinate"
+    color="primary"
+    [value]="(loading.progress$ | async) || 0">
+  </mat-progress-bar>
+  <div class="visually-hidden">Loading… {{ (loading.progress$ | async) || 0 }} percent</div>
+</div>
+
 <router-outlet></router-outlet>

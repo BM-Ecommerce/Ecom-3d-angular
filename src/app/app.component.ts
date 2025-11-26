@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { environment } from '../environments/environment';
+import { LoadingService } from './services/loading.service';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +9,7 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'visualization';
+  loaderMode: 'overlay' | 'topbar' = environment.loaderMode;
+
+  constructor(public loading: LoadingService) {}
 }
