@@ -1,24 +1,126 @@
-import { Injectable, ElementRef, OnDestroy, NgZone, Inject } from '@angular/core';
+import {
+  Injectable,
+  ElementRef,
+  OnDestroy,
+  NgZone,
+  Inject
+} from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { LoadingService } from './loading.service';
 
+type BlindType =
+  | 'rollerblinds'
+  | 'venetian'
+  | 'vertical'
+  | 'daynight'
+  | 'roman'
+  | 'wood'
+  | 'generic';
+
+interface BlindMaterialProfile {
+  roughness: number;
+  metalness: number;
+  emissiveIntensity: number;
+  transparent?: boolean;
+  opacity?: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class ThreeService implements OnDestroy {
+  // Core Three.js
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
   private camera2d!: THREE.OrthographicCamera;
+  private zoomCamera!: THREE.OrthographicCamera;
   private renderer!: THREE.WebGLRenderer;
   private controls!: OrbitControls;
+
   private canvasEl: HTMLCanvasElement | null = null;
   private containerEl?: HTMLElement;
-  private resizeObserver?: any;
-  // Track currently loaded model root for proper disposal on reload
+  private resizeObserver?: ResizeObserver;
+
+  // Current GLTF model root
   private currentModelRoot?: THREE.Object3D;
 
+  // Lighting
+  private directionalLight?: THREE.DirectionalLight;
+  private ambientLight?: THREE.AmbientLight;
+  private fillLight?: THREE.PointLight;
+
+  // Loaders
+  private loadingManager!: THREE.LoadingManager;
+  private textureLoader!: THREE.TextureLoader;
+  private gltfLoader!: GLTFLoader;
+
+  // Blind parts: slats / fabric etc
+  public Wood: THREE.Mesh[] = [];
+  private cube2Mesh!: THREE.Mesh;
+  private frameMesh!: THREE.Mesh;
+  private cube4Mesh!: THREE.Mesh;
+  public cube5Meshes: THREE.Mesh[] = [];
+  private cube3Mesh!: THREE.Mesh;
+  private backgroundMesh!: THREE.Mesh;
+  private cubeMesh!: THREE.Mesh;
+
+  // Material used for pattern on slats/fabric
+  private textureMaterial?: THREE.MeshStandardMaterial;
+
+  // Camera initial state
+  private initialCameraPosition!: THREE.Vector3;
+  private initialControlsTarget!: THREE.Vector3;
+
+  // Animation
+  private mixer?: THREE.AnimationMixer;
+  private clock = new THREE.Clock();
+  private rollerAction?: THREE.AnimationAction | null = null;
+  private actions?: { [key: string]: THREE.AnimationAction };
+  public isAnimateOpen = false;
+  public isLooping = false;
+  public hideAnimation = false;
+
+  // Blind type
+  public type!: BlindType;
+
+  // Pattern / texture controls
+  public fitMode: 'contain' | 'cover' | 'stretch' = 'cover';
+  public alignX: 'left' | 'center' | 'right' = 'center';
+  public alignY: 'top' | 'center' | 'bottom' = 'center';
+  public offsetU = 0;
+  public offsetV = 0;
+  public flipV = false;
+
+  // Zoom lens for 2D mode
+  private mouseX = 0;
+  private mouseY = 0;
+  private isZooming = false;
+  private readonly lensRadius = 50;
+  private readonly zoomFactor = 12;
+
+  // Transparent-hole detection cache for frames (2D)
+  private holeCache = new Map<
+    string,
+    {
+      minX: number;
+      minY: number;
+      maxX: number;
+      maxY: number;
+      width: number;
+      height: number;
+      found: boolean;
+    }
+  >();
+
+  // RAF id
+  private animationFrameId?: number;
+
+  // Background texture URL requested before GLTF finished loading
+  private pendingTextureUrl?: string;
+
+  // Canvas mouse handlers (for cursor style)
   private readonly onCanvasMouseDown = () => {
     this.canvasEl?.classList.remove('grab');
     this.canvasEl?.classList.add('grabbing');
@@ -32,56 +134,11 @@ export class ThreeService implements OnDestroy {
     this.canvasEl?.classList.add('grab');
   };
 
-  private loadingManager!: THREE.LoadingManager;
-  private textureLoader!: THREE.TextureLoader;
-  private gltfLoader!: GLTFLoader;
-  public Wood: THREE.Mesh[] = [];
-  private cube2Mesh!: THREE.Mesh;
-  private frameMesh!: THREE.Mesh;
-  private cube4Mesh!: THREE.Mesh;
-  public cube5Meshes: THREE.Mesh[] = [];
-  private cube3Mesh!: THREE.Mesh;
-  private backgroundMesh!: THREE.Mesh;
-  private textureMaterial?: THREE.MeshStandardMaterial;
-  private cubeMesh!: THREE.Mesh;
-  private initialCameraPosition!: THREE.Vector3;
-  private initialControlsTarget!: THREE.Vector3;
-
-  // Animation-related
-  private mixer?: THREE.AnimationMixer;
-  private clock = new THREE.Clock();
-  private rollerAction?: THREE.AnimationAction | null = null;
-  private actions?: { [key: string]: THREE.AnimationAction };
-  public isAnimateOpen: boolean = false;
-  public isLooping: boolean = false;
-
-  public fitMode: 'contain' | 'cover' | 'stretch' = 'cover';
-
-  public alignX: 'left' | 'center' | 'right' = 'center';
-  public alignY: 'top' | 'center' | 'bottom' = 'center';
-  public offsetU = 0;
-  public offsetV = 0;
-  public hideAnimation:boolean = false;
-  public flipV = false;
-  private zoomCamera!: THREE.OrthographicCamera;
-  private mouseX = 0;
-  private mouseY = 0;
-  private isZooming = false;
-  private readonly lensRadius = 50;
-  private readonly zoomFactor = 12;
-  private holeCache = new Map<string, { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number; found: boolean }>();
-
-  private animationFrameId?: number;
-  // Cache a pending background texture URL when switching modes
-  private pendingTextureUrl?: string;
-
-  // Added: lighting references (so they can be adjusted if needed)
-  private directionalLight?: THREE.DirectionalLight;
-  private ambientLight?: THREE.AmbientLight;
-  private fillLight?: THREE.PointLight;
-
-  constructor(private zone: NgZone, @Inject(LoadingService) private loading: LoadingService) {
-    // Setup a LoadingManager to track all asset loads and push to LoadingService
+  constructor(
+    private zone: NgZone,
+    @Inject(LoadingService) private loading: LoadingService
+  ) {
+    // Global loading manager (textures + GLTF)
     this.loadingManager = new THREE.LoadingManager();
     this.loadingManager.onStart = () => {
       this.loading.start('three:assets');
@@ -103,10 +160,75 @@ export class ThreeService implements OnDestroy {
     this.gltfLoader = new GLTFLoader(this.loadingManager);
   }
 
+  // ------------------------------------------------------
+  // Lifecycle
+  // ------------------------------------------------------
   ngOnDestroy(): void {
     this.resetState();
   }
 
+  // ------------------------------------------------------
+  // Blind material profile engine
+  // ------------------------------------------------------
+  public getBlindMaterialProfile(type: BlindType): BlindMaterialProfile {
+    switch (type) {
+      case 'rollerblinds':
+        return {
+          roughness: 0.45,
+          metalness: 0.0,
+          emissiveIntensity: 0.03
+        };
+
+      case 'venetian':
+        return {
+          roughness: 0.15, // more reflective
+          metalness: 0.4,
+          emissiveIntensity: 0.05
+        };
+
+      case 'vertical':
+        return {
+          roughness: 0.55,
+          metalness: 0.0,
+          emissiveIntensity: 0.05
+        };
+
+      case 'daynight':
+        return {
+          roughness: 0.4,
+          metalness: 0.0,
+          transparent: true,
+          opacity: 0.85,
+          emissiveIntensity: 0.08
+        };
+
+      case 'roman':
+        return {
+          roughness: 0.5,
+          metalness: 0.0,
+          emissiveIntensity: 0.05
+        };
+
+      case 'wood':
+        return {
+          roughness: 0.35,
+          metalness: 0.0,
+          emissiveIntensity: 0.03
+        };
+
+      case 'generic':
+      default:
+        return {
+          roughness: 0.5,
+          metalness: 0.1,
+          emissiveIntensity: 0.05
+        };
+    }
+  }
+
+  // ------------------------------------------------------
+  // State reset & disposal
+  // ------------------------------------------------------
   private resetState(): void {
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
@@ -114,19 +236,33 @@ export class ThreeService implements OnDestroy {
     }
 
     if (this.renderer) {
-      try { this.renderer.dispose(); } catch { /* ignore */ }
+      try {
+        this.renderer.dispose();
+      } catch {
+        /* ignore */
+      }
     }
 
     if (this.textureMaterial) {
-      try { this.textureMaterial.dispose(); } catch { /* ignore */ }
+      try {
+        this.textureMaterial.dispose();
+      } catch {
+        /* ignore */
+      }
     }
 
     if (this.controls) {
       try {
         this.controls.removeEventListener('start', this.onCanvasMouseDown);
         this.controls.removeEventListener('end', this.onCanvasMouseUp);
-      } catch { /* ignore */ }
-      try { this.controls.dispose(); } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
+      try {
+        this.controls.dispose();
+      } catch {
+        /* ignore */
+      }
     }
 
     if (this.canvasEl) {
@@ -138,83 +274,121 @@ export class ThreeService implements OnDestroy {
     }
 
     if (this.mixer) {
-      // stop any actions and release mixer
       try {
         this.mixer.stopAllAction();
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       this.mixer = undefined;
     }
 
-    // remove lights if present
     try {
       if (this.directionalLight) this.scene.remove(this.directionalLight);
       if (this.ambientLight) this.scene.remove(this.ambientLight);
       if (this.fillLight) this.scene.remove(this.fillLight);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
-    // remove and dispose any previously loaded model
+    // Remove and dispose model
     try {
       if (this.currentModelRoot && this.scene) {
         this.scene.remove(this.currentModelRoot);
         this.disposeObject(this.currentModelRoot);
         this.currentModelRoot = undefined;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
+    // Reset core references
     this.scene = new THREE.Scene();
-    this.camera = null!;
-    this.camera2d = null!;
-    this.zoomCamera = null!;
-    this.controls = null!;
-    this.cube2Mesh = null!;
-    this.frameMesh = null!;
-    this.cube4Mesh = null!;
+    this.camera = null as any;
+    this.camera2d = null as any;
+    this.zoomCamera = null as any;
+    this.controls = null as any;
+
+    this.cube2Mesh = null as any;
+    this.frameMesh = null as any;
+    this.cube4Mesh = null as any;
     this.cube5Meshes = [];
-    this.cube3Mesh = null!;
-    this.backgroundMesh = null!;
+    this.cube3Mesh = null as any;
+    this.backgroundMesh = null as any;
     this.textureMaterial = undefined;
-    this.cubeMesh = null!;
-    this.initialCameraPosition = null!;
-    this.initialControlsTarget = null!;
+    this.cubeMesh = null as any;
+    this.initialCameraPosition = null as any;
+    this.initialControlsTarget = null as any;
     this.mouseX = 0;
     this.mouseY = 0;
     this.isZooming = false;
     this.rollerAction = null;
     this.clock = new THREE.Clock();
+    this.Wood = [];
+    this.pendingTextureUrl = undefined;
+    this.isAnimateOpen = false;
+    this.isLooping = false;
   }
 
   // Dispose a subtree of the scene graph
-  private disposeObject(object: THREE.Object3D) {
+  private disposeObject(object: THREE.Object3D): void {
     object.traverse((child: any) => {
       if (child.isMesh) {
         const mesh = child as THREE.Mesh;
-        try { mesh.geometry?.dispose?.(); } catch { /* ignore */ }
-        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        try {
+          mesh.geometry?.dispose?.();
+        } catch {
+          /* ignore */
+        }
+        const materials = Array.isArray(mesh.material)
+          ? mesh.material
+          : [mesh.material];
         for (const m of materials) {
           if (!m) continue;
           try {
-            const texKeys = ['map','normalMap','aoMap','roughnessMap','metalnessMap','emissiveMap','bumpMap','displacementMap','alphaMap','envMap'];
+            const texKeys = [
+              'map',
+              'normalMap',
+              'aoMap',
+              'roughnessMap',
+              'metalnessMap',
+              'emissiveMap',
+              'bumpMap',
+              'displacementMap',
+              'alphaMap',
+              'envMap'
+            ];
             for (const k of texKeys) {
               const t = (m as any)[k];
               if (t && typeof t.dispose === 'function') {
-                try { t.dispose(); } catch { /* ignore */ }
+                try {
+                  t.dispose();
+                } catch {
+                  /* ignore */
+                }
               }
             }
             m.dispose?.();
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         }
       }
     });
   }
 
   // ------------------------------------------------------
-  // initialize: sets up scene, camera, renderer, controls
+  // 3D initialization
   // ------------------------------------------------------
-  public initialize(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
+  public initialize(
+    canvas: ElementRef<HTMLCanvasElement>,
+    container: HTMLElement
+  ): void {
     this.resetState();
     this.containerEl = container;
+
     const width = container.clientWidth;
     const height = container.clientHeight;
+
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xeeeeee);
 
@@ -222,7 +396,6 @@ export class ThreeService implements OnDestroy {
     this.camera.position.z = 5;
 
     this.canvasEl = canvas.nativeElement;
-
     this.canvasEl.classList.add('grab');
 
     this.canvasEl.addEventListener('mousedown', this.onCanvasMouseDown);
@@ -234,11 +407,8 @@ export class ThreeService implements OnDestroy {
       alpha: true,
       antialias: true
     });
-
-    // --- SHADOWS: enable and set soft type ---
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height, false);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -255,17 +425,13 @@ export class ThreeService implements OnDestroy {
     this.controls.addEventListener('start', this.onCanvasMouseDown);
     this.controls.addEventListener('end', this.onCanvasMouseUp);
 
-    // --- Dynamic lighting (brightened as requested) ---
-    // Ambient light - soft global illumination (increased)
+    // Lighting
     this.ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     this.scene.add(this.ambientLight);
 
-    // Directional light - main sunlight (casts shadows) (increased)
     this.directionalLight = new THREE.DirectionalLight(0xffffff, 1.3);
     this.directionalLight.position.set(5, 10, 5);
     this.directionalLight.castShadow = true;
-
-    // Shadow quality
     this.directionalLight.shadow.mapSize.width = 2048;
     this.directionalLight.shadow.mapSize.height = 2048;
     this.directionalLight.shadow.camera.near = 0.5;
@@ -275,32 +441,34 @@ export class ThreeService implements OnDestroy {
     (this.directionalLight.shadow as any).camera.right = d;
     (this.directionalLight.shadow as any).camera.top = d;
     (this.directionalLight.shadow as any).camera.bottom = -d;
-
     this.scene.add(this.directionalLight);
 
-    // Fill light to soften shadows (slightly brighter)
     this.fillLight = new THREE.PointLight(0xffffff, 0.35);
     this.fillLight.position.set(-5, 5, -5);
     this.fillLight.castShadow = false;
     this.scene.add(this.fillLight);
 
-    // Run RAF loop outside Angular to avoid triggering change detection
+    // Animation loop outside Angular
     this.zone.runOutsideAngular(() => this.animate());
 
-    // Observe container resize for responsive rendering
+    // Resize observer
     try {
       const RO: any = (window as any).ResizeObserver;
       if (RO) {
-        this.resizeObserver = new RO(() => this.onResize(container));
-        this.resizeObserver.observe(container);
+        const ro = new RO(() => this.onResize(container));
+        this.resizeObserver = ro;
+        ro.observe(container);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
+  // Simple zoom helpers
   public zoomIn(): void {
     if (this.controls) {
-      const factor = 0.9; // <1 to zoom in
-      const camera = this.controls.object;
+      const factor = 0.9;
+      const camera = this.controls.object as THREE.PerspectiveCamera;
       camera.position.multiplyScalar(factor);
       this.controls.update();
     }
@@ -308,275 +476,301 @@ export class ThreeService implements OnDestroy {
 
   public zoomOut(): void {
     if (this.controls) {
-      const factor = 1.1; // >1 to zoom out
-      const camera = this.controls.object;
+      const factor = 1.1;
+      const camera = this.controls.object as THREE.PerspectiveCamera;
       camera.position.multiplyScalar(factor);
       this.controls.update();
     }
   }
 
-  type!: 'rollerblinds' | 'venetian' | 'vertical' | 'daynight' | 'roman'| 'wood' | 'generic';
-public loadGltfModel(
-  gltfUrl: string,
-  type: 'rollerblinds' | 'venetian' | 'vertical' | 'daynight' | 'roman'| 'wood'  | 'generic' 
-): void {
-  this.type = type;
-  this.cube5Meshes = [];
+  // ------------------------------------------------------
+  // 3D: GLTF load + blind setup
+  // ------------------------------------------------------
+  public loadGltfModel(gltfUrl: string, type: BlindType): void {
+    this.type = type;
+    this.cube5Meshes = [];
+    this.Wood = [];
 
-  this.gltfLoader.load(
-    gltfUrl,
-    (gltf) => {
-      if (this.currentModelRoot) {
-        this.scene.remove(this.currentModelRoot);
-        this.disposeObject(this.currentModelRoot);
-        this.currentModelRoot = undefined;
-      }
-
-      this.scene.add(gltf.scene);
-      const ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
-      this.scene.add(ambientLight);
-
-      // Strong directional light (creates highlights)
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-      dirLight.position.set(10, 10, 10);
-      dirLight.castShadow = true;
-
-      this.scene.add(dirLight);
-      this.currentModelRoot = gltf.scene;
-
-      if (gltf.animations && gltf.animations.length > 0) {
-        this.hideAnimation = false;
-        this.mixer = new THREE.AnimationMixer(gltf.scene);
-
-        if (gltf.animations.length === 2) {
-          const clip = gltf.animations[0];
-          this.rollerAction = this.mixer.clipAction(clip);
-          this.rollerAction.loop = THREE.LoopOnce;
-          this.rollerAction.clampWhenFinished = true;
-          this.actions = undefined;
-          // Ensure closed pose at start: stop at time 0
-          this.rollerAction.stop();
-          this.rollerAction.enabled = true;
-          this.rollerAction.reset();
-          this.rollerAction.time = 0;
-          this.mixer.update(0);
-          this.rollerAction.stop();
-        } else {
-          this.actions = {};
-          this.rollerAction = undefined;
-
-          gltf.animations.forEach((clip) => {
-            const action = this.mixer!.clipAction(clip);
-            action.loop = THREE.LoopOnce;
-            action.clampWhenFinished = true;
-            this.actions![clip.name] = action;
-          });
-
-          // Ensure all clips are at closed pose (time 0) and not playing
-          Object.values(this.actions).forEach(action => {
-            action.stop();
-            action.enabled = true;
-            action.reset();
-            action.time = 0;
-            this.mixer!.update(0);
-            action.stop();
-          });
+    this.gltfLoader.load(
+      gltfUrl,
+      (gltf) => {
+        // Remove old model
+        if (this.currentModelRoot) {
+          this.scene.remove(this.currentModelRoot);
+          this.disposeObject(this.currentModelRoot);
+          this.currentModelRoot = undefined;
         }
-      } else {
-        this.hideAnimation = true;
-        this.mixer = undefined;
-        this.rollerAction = null;
-      }
 
-      // Start with animations closed
-      this.isAnimateOpen = false;
-      this.isLooping = false;
+        this.scene.add(gltf.scene);
+        this.currentModelRoot = gltf.scene;
 
-      gltf.scene.traverse((child) => {
-        if ((child as any).isMesh) {
-          const mesh = child as THREE.Mesh;
+        // Extra lights just for the model (optional)
+        const ambient = new THREE.AmbientLight(0xffffff, 1.3);
+        this.scene.add(ambient);
 
-          let mat = mesh.material as any;
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        dirLight.position.set(10, 10, 10);
+        dirLight.castShadow = true;
+        this.scene.add(dirLight);
 
-          if (!mat || !mat.isMeshStandardMaterial) {
-            mesh.material = new THREE.MeshStandardMaterial({
-              map: mat?.map ?? null,
-              color: mat?.color ? mat.color.getHex() : 0xffffff
+        // Animation setup
+        if (gltf.animations && gltf.animations.length > 0) {
+          this.hideAnimation = false;
+          this.mixer = new THREE.AnimationMixer(gltf.scene);
+
+          if (gltf.animations.length === 2) {
+            const clip = gltf.animations[0];
+            this.rollerAction = this.mixer.clipAction(clip);
+            this.rollerAction.loop = THREE.LoopOnce;
+            this.rollerAction.clampWhenFinished = true;
+            this.actions = undefined;
+
+            // Start in closed pose
+            this.rollerAction.stop();
+            this.rollerAction.enabled = true;
+            this.rollerAction.reset();
+            this.rollerAction.time = 0;
+            this.mixer.update(0);
+            this.rollerAction.stop();
+          } else {
+            this.actions = {};
+            this.rollerAction = undefined;
+            gltf.animations.forEach((clip) => {
+              const action = this.mixer!.clipAction(clip);
+              action.loop = THREE.LoopOnce;
+              action.clampWhenFinished = true;
+              this.actions![clip.name] = action;
             });
+
+            Object.values(this.actions).forEach((action) => {
+              action.stop();
+              action.enabled = true;
+              action.reset();
+              action.time = 0;
+            });
+            this.mixer.update(0);
           }
-
-          const m = mesh.material as THREE.MeshStandardMaterial;
-
-          m.metalness = 0.6;
-          m.roughness = 0.3;
-          m.needsUpdate = true;
-
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-
-
-          if (type === 'rollerblinds') {
-            if (
-              mesh.name.startsWith('Cylinder032') ||
-              mesh.name.startsWith('Cylinder027') ||
-              mesh.name.startsWith('Cylinder028')
-            ) {
-              this.cube5Meshes.push(mesh);
-            }
-          } else if (type === 'venetian') {
-            if (mesh.name.startsWith('Cylinder') && !mesh.name.startsWith('Cylinder032') && !mesh.name.startsWith('Cylinder031') && !mesh.name.startsWith('Cylinder033') && !mesh.name.startsWith('Cylinder034')) {
-              this.cube5Meshes.push(mesh);
-            }
-          } else if (type === 'vertical') {
-            if (
-              mesh.name.startsWith('Cylinder') &&
-              !mesh.name.startsWith('Cylinder024') &&
-              !mesh.name.startsWith('Cylinder025') &&
-              !mesh.name.startsWith('Cylinder026')
-            ) {
-              this.cube5Meshes.push(mesh);
-            }
-          }else if (type === 'daynight') { 
-             if (
-              mesh.name.startsWith('Cube')
-            ) {
-              this.cube5Meshes.push(mesh);
-            }
-          }else if (type === 'roman') { 
-             if (
-              mesh.name.startsWith('Plane')
-            ) {
-              this.cube5Meshes.push(mesh);
-            }
-          }else if (type === 'wood') {
-
-          const excludedCubes = [
-            'Cube067', 'Cube070', 'Cube071',
-            'Cube059', 'Cube060', 'Cube061',
-            'Cube024', 'Cube045', 'Cube046', 'Cube044'
-          ];
-
-          const isExcluded = excludedCubes.some(prefix => mesh.name.startsWith(prefix));
-
-          if (mesh.name.startsWith('Cube') && !isExcluded) {
-            this.cube5Meshes.push(mesh);
-          }
-
-          if(isExcluded){
-              this.Wood.push(mesh);
-          }
+        } else {
+          this.hideAnimation = true;
+          this.mixer = undefined;
+          this.rollerAction = null;
         }
-          else {
-            const parent = mesh.parent;
-            const grandParent = parent?.parent;
-            if (parent && grandParent && grandParent.name === 'Cube_5') {
-              const index = parent.children.indexOf(child);
-              if (index === 1) {
+
+        this.isAnimateOpen = false;
+        this.isLooping = false;
+
+        const profile = this.getBlindMaterialProfile(type);
+
+        // Traverse scene, normalize materials and pick slats/fabric parts
+        gltf.scene.traverse((child) => {
+          if ((child as any).isMesh) {
+            const mesh = child as THREE.Mesh;
+            let mat = mesh.material as any;
+
+            // Normalize to MeshStandardMaterial
+            if (!mat || !mat.isMeshStandardMaterial) {
+              mesh.material = new THREE.MeshStandardMaterial({
+                map: mat?.map ?? null,
+                color: mat?.color ? mat.color.getHex() : 0xffffff
+              });
+            }
+
+            const m = mesh.material as THREE.MeshStandardMaterial;
+            // Base profile application
+            m.metalness = profile.metalness;
+            m.roughness = profile.roughness;
+            m.emissive = new THREE.Color(0xffffff);
+            m.emissiveIntensity = profile.emissiveIntensity;
+            m.transparent = profile.transparent ?? false;
+            if (profile.opacity !== undefined) {
+              m.opacity = profile.opacity;
+            }
+            if (type === 'daynight') {
+              m.depthWrite = false;
+            }
+            m.needsUpdate = true;
+
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            // Blind-type specific selection of slats / panels
+            if (type === 'rollerblinds') {
+              if (
+                mesh.name.startsWith('Cylinder032') ||
+                mesh.name.startsWith('Cylinder027') ||
+                mesh.name.startsWith('Cylinder028')
+              ) {
                 this.cube5Meshes.push(mesh);
               }
+            } else if (type === 'venetian') {
+              const lname = mesh.name.toLowerCase();
+              const isNamedSlat = lname.includes('slat');
+              const isCylinderSlat = /^cylinder\d+$/i.test(mesh.name);
+              const excluded = ['Cylinder032', 'Cylinder031', 'Cylinder033', 'Cylinder034'];
+              const isExcluded = excluded.some((p) => mesh.name.startsWith(p));
+
+              if ((isNamedSlat || isCylinderSlat) && !isExcluded) {
+                this.cube5Meshes.push(mesh);
+              }
+            } else if (type === 'vertical') {
+              if (
+                mesh.name.startsWith('Cylinder') &&
+                !mesh.name.startsWith('Cylinder024') &&
+                !mesh.name.startsWith('Cylinder025') &&
+                !mesh.name.startsWith('Cylinder026')
+              ) {
+                this.cube5Meshes.push(mesh);
+              }
+            } else if (type === 'daynight') {
+              if (mesh.name.startsWith('Cube')) {
+                this.cube5Meshes.push(mesh);
+              }
+            } else if (type === 'roman') {
+              if (mesh.name.startsWith('Plane')) {
+                this.cube5Meshes.push(mesh);
+              }
+            } else if (type === 'wood') {
+              const excludedCubes = [
+                'Cube067',
+                'Cube070',
+                'Cube071',
+                'Cube059',
+                'Cube060',
+                'Cube061',
+                'Cube024',
+                'Cube045',
+                'Cube046',
+                'Cube044'
+              ];
+              const isExcluded = excludedCubes.some((prefix) =>
+                mesh.name.startsWith(prefix)
+              );
+
+              if (mesh.name.startsWith('Cube') && !isExcluded) {
+                this.cube5Meshes.push(mesh);
+              }
+
+              if (isExcluded) {
+                this.Wood.push(mesh);
+              }
+            } else {
+              // Generic fallback: based on hierarchy and names
+              const parent = mesh.parent;
+              const grandParent = parent?.parent;
+              if (parent && grandParent && grandParent.name === 'Cube_5') {
+                const index = parent.children.indexOf(child);
+                if (index === 1) {
+                  this.cube5Meshes.push(mesh);
+                }
+              }
+
+              if (mesh.name === 'Cube_4') this.cube4Mesh = mesh;
+              if (mesh.name === 'Cube_3') this.cube3Mesh = mesh;
+              if (mesh.name === 'Cube_2') this.cube2Mesh = mesh;
+              if (mesh.name === 'Cube') this.cubeMesh = mesh;
+            }
+          }
+        });
+
+        // If a shared texture material already exists, apply to slats
+        if (this.textureMaterial && this.cube5Meshes.length > 0) {
+          this.cube5Meshes.forEach((mesh) => {
+            mesh.material = this.textureMaterial!;
+            (mesh.material as THREE.Material).needsUpdate = true;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+          });
+        }
+
+        // If a texture request was queued before model load, apply now
+        if (this.pendingTextureUrl) {
+          const url = this.pendingTextureUrl;
+          this.pendingTextureUrl = undefined;
+          this.updateTextures(url);
+        }
+
+        // Auto-frame camera
+        try {
+          const bbox = new THREE.Box3().setFromObject(gltf.scene);
+          const size = bbox.getSize(new THREE.Vector3());
+          const center = bbox.getCenter(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const safeMax = maxDim > 0 ? maxDim : 1;
+
+          gltf.scene.position.sub(center);
+
+          if (this.camera && (this.camera as any).isPerspectiveCamera) {
+            const fov = (this.camera.fov * Math.PI) / 180;
+            const distance = safeMax / (2 * Math.tan(fov / 2));
+            const finalDist = distance * 1.45;
+
+            this.camera.position.set(0, 0, finalDist);
+            this.camera.near = Math.max(0.01, safeMax / 1000);
+            this.camera.far = Math.max(1000, safeMax * 100);
+            this.camera.updateProjectionMatrix();
+
+            if (this.controls) {
+              this.controls.target.set(0, 0, 0);
+              this.controls.update();
+              this.controls.minDistance = finalDist * 0.5;
+              this.controls.maxDistance = finalDist * 5;
             }
 
-            if (mesh.name === 'Cube_4') this.cube4Mesh = mesh;
-            if (mesh.name === 'Cube_3') this.cube3Mesh = mesh;
-            if (mesh.name === 'Cube_2') this.cube2Mesh = mesh;
-            if (mesh.name === 'Cube') this.cubeMesh = mesh;
+            this.initialCameraPosition = this.camera.position.clone();
+            this.initialControlsTarget = this.controls
+              ? this.controls.target.clone()
+              : new THREE.Vector3(0, 0, 0);
           }
+        } catch (err) {
+          console.warn('Auto-framing failed:', err);
         }
-      });
 
-      if (this.textureMaterial && this.cube5Meshes.length > 0) {
-        this.cube5Meshes.forEach((mesh) => {
-          mesh.material = this.textureMaterial!;
-          (mesh.material as THREE.Material).needsUpdate = true;
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-        });
-      }
-      
-      // If a texture update was requested before the model finished loading,
-      // apply it now that targets are available.
-      if (this.pendingTextureUrl) {
-        const url = this.pendingTextureUrl;
-        this.pendingTextureUrl = undefined;
-        this.updateTextures(url);
-      }
-     
-      try {
-        const bbox = new THREE.Box3().setFromObject(gltf.scene);
-        const size = bbox.getSize(new THREE.Vector3());
-        const center = bbox.getCenter(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const safeMax = maxDim > 0 ? maxDim : 1;
+        // Force animations to closed pose
+        this.forceAllAnimationsClosed();
 
-        gltf.scene.position.sub(center);
-
-        if (this.camera && this.camera.isPerspectiveCamera) {
-          const fov = this.camera.fov * (Math.PI / 180);
-          const distance = safeMax / (2 * Math.tan(fov / 2));
-          const finalDist = distance * 1.45;
-
-          this.camera.position.set(0, 0, finalDist);
-          this.camera.near = Math.max(0.01, safeMax / 1000);
-          this.camera.far = Math.max(1000, safeMax * 100);
-          this.camera.updateProjectionMatrix();
-
-          if (this.controls) {
-            this.controls.target.set(0, 0, 0);
-            this.controls.update();
-            this.controls.minDistance = finalDist * 0.5;
-            this.controls.maxDistance = finalDist * 5;
-          }
-
-          this.initialCameraPosition = this.camera.position.clone();
-          this.initialControlsTarget = this.controls
-            ? this.controls.target.clone()
-            : new THREE.Vector3(0, 0, 0);
+        // Re-apply shared texture if present
+        if (this.textureMaterial && this.cube5Meshes.length > 0) {
+          this.cube5Meshes.forEach((mesh) => {
+            mesh.material = this.textureMaterial!;
+            (mesh.material as THREE.Material).needsUpdate = true;
+          });
         }
-      } catch (err) {
-        console.warn('Auto-framing failed:', err);
+      },
+      undefined,
+      (error) => {
+        console.error(error);
       }
-    
-      this.forceAllAnimationsClosed();
-      if (this.textureMaterial && this.cube5Meshes.length > 0) {
-        this.cube5Meshes.forEach((mesh) => {
-          mesh.material = this.textureMaterial!;
-          (mesh.material as THREE.Material).needsUpdate = true;
-        });
-      }
-    },
+    );
+  }
 
-    undefined,
-
-    (error) => {
-      console.error(error);
-    }
-  );
-}
+  // ------------------------------------------------------
+  // Animation control
+  // ------------------------------------------------------
   private forceAllAnimationsClosed(): void {
-  if (!this.mixer) return;
+    if (!this.mixer) return;
 
-  if (this.rollerAction) {
-    this.rollerAction.stop();
-    this.rollerAction.enabled = true;
-    this.rollerAction.reset();
-    this.rollerAction.time = 0;
-    this.mixer.update(0);
-    this.rollerAction.stop();
-    this.setRollerState(true);
-    return;
+    if (this.rollerAction) {
+      this.rollerAction.stop();
+      this.rollerAction.enabled = true;
+      this.rollerAction.reset();
+      this.rollerAction.time = 0;
+      this.mixer.update(0);
+      this.rollerAction.stop();
+      this.setRollerState(true);
+      return;
+    }
+
+    if (this.actions) {
+      Object.values(this.actions).forEach((action) => {
+        action.stop();
+        action.enabled = true;
+        action.reset();
+        action.time = 0;
+      });
+      this.mixer.update(0);
+    }
   }
 
-  if (this.actions) {
-    Object.values(this.actions).forEach(action => {
-      action.stop();
-      action.enabled = true;
-      action.reset();
-      action.time = 0;
-    });
-
-    this.mixer.update(0);
-  }
-}
   public openAnimate(loopCount: number = 1): void {
     if (!this.mixer || this.isAnimateOpen) return;
 
@@ -585,7 +779,10 @@ public loadGltfModel(
       action.enabled = true;
       action.timeScale = 1;
       action.reset();
-      action.setLoop(loopCount > 1 ? THREE.LoopRepeat : THREE.LoopOnce, loopCount - 1);
+      action.setLoop(
+        loopCount > 1 ? THREE.LoopRepeat : THREE.LoopOnce,
+        loopCount - 1
+      );
       action.clampWhenFinished = true;
       action.play();
     };
@@ -610,13 +807,11 @@ public loadGltfModel(
       action.enabled = true;
 
       if (instant) {
-        // Instantly jump to closed position (start frame @ t=0)
         action.time = 0;
         this.mixer?.update(0);
         action.play();
-        action.stop(); // stop immediately after jump
+        action.stop();
       } else {
-        // Play reverse animation smoothly
         action.time = duration;
         this.mixer?.update(0);
         action.timeScale = -1;
@@ -637,13 +832,11 @@ public loadGltfModel(
 
   public toggleAnimate(loopCount: number = 1): void {
     if (!this.mixer) return;
-    if (this.isLooping) return; // disable toggle while looping
-    console.log(this.isAnimateOpen);
+    if (this.isLooping) return;
     this.isAnimateOpen ? this.closeAnimate() : this.openAnimate(loopCount);
   }
 
-  public loopAnimate(loopCount: number = Infinity): void {
-
+  public loopAnimate(): void {
     if (!this.mixer) return;
 
     const loopAction = (action: THREE.AnimationAction) => {
@@ -651,8 +844,6 @@ public loadGltfModel(
       action.enabled = true;
       action.timeScale = 1;
       action.reset();
-
-      // 🔁 Ping-pong loop: plays forward, then backward automatically
       action.setLoop(THREE.LoopPingPong, Infinity);
       action.clampWhenFinished = false;
       action.play();
@@ -669,29 +860,34 @@ public loadGltfModel(
   }
 
   public stopAll(): void {
-    if (this.rollerAction){
+    if (this.rollerAction) {
       this.rollerAction.stop();
       this.isAnimateOpen = true;
-    }else{
+    } else {
       Object.values(this.actions ?? {}).forEach((a) => a.stop());
       this.isAnimateOpen = false;
     }
     this.isLooping = false;
   }
 
-  public getCanvasDataURL(): string | undefined {
-    if (!this.renderer) {
-      return undefined;
-    }
-    this.render();
-    return this.renderer.domElement.toDataURL('image/png');
-  }
-
   public setRollerState(isOpen: boolean): void {
     this.isAnimateOpen = isOpen;
   }
 
-  public initialize2d(canvas: ElementRef<HTMLCanvasElement>, container: HTMLElement): void {
+  // Export image from canvas
+  public getCanvasDataURL(): string | undefined {
+    if (!this.renderer) return undefined;
+    this.render();
+    return this.renderer.domElement.toDataURL('image/png');
+  }
+
+  // ------------------------------------------------------
+  // 2D initialization
+  // ------------------------------------------------------
+  public initialize2d(
+    canvas: ElementRef<HTMLCanvasElement>,
+    container: HTMLElement
+  ): void {
     this.resetState();
     this.containerEl = container;
 
@@ -705,7 +901,14 @@ public loadGltfModel(
     const top = height / 2;
     const bottom = height / -2;
 
-    this.camera2d = new THREE.OrthographicCamera(left, right, top, bottom, 0.1, 1000);
+    this.camera2d = new THREE.OrthographicCamera(
+      left,
+      right,
+      top,
+      bottom,
+      0.1,
+      1000
+    );
     this.camera2d.position.z = 10;
 
     this.zoomCamera = this.camera2d.clone();
@@ -720,23 +923,28 @@ public loadGltfModel(
 
     this.zone.runOutsideAngular(() => this.animate());
 
-    // Observe container resize for responsive rendering (2D)
     try {
       const RO: any = (window as any).ResizeObserver;
       if (RO) {
-        this.resizeObserver = new RO(() => this.onResize(container));
-        this.resizeObserver.observe(container);
+        const ro = new RO(() => this.onResize(container));
+        this.resizeObserver = ro;
+        ro.observe(container);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
+  // ------------------------------------------------------
+  // 2D: frame + background creation and updates
+  // ------------------------------------------------------
   public createObjects(frameUrl: string, backgroundUrl: string): void {
     if (this.frameMesh) this.scene.remove(this.frameMesh);
     if (this.backgroundMesh) this.scene.remove(this.backgroundMesh);
 
-    const textureLoader = new THREE.TextureLoader(this.loadingManager);
+    const texLoader = new THREE.TextureLoader(this.loadingManager);
 
-    textureLoader.load(frameUrl, (frameTexture) => {
+    texLoader.load(frameUrl, (frameTexture) => {
       frameTexture.colorSpace = THREE.SRGBColorSpace;
 
       const imgWidth = frameTexture.image.width;
@@ -746,14 +954,13 @@ public loadGltfModel(
       const canvas = this.renderer.domElement;
       const canvasAspect = canvas.clientWidth / canvas.clientHeight;
 
-      let viewWidth: number, viewHeight: number;
+      let viewWidth: number;
+      let viewHeight: number;
 
       if (aspect > canvasAspect) {
-        // Texture is wider than the canvas, so fit to width
         viewWidth = canvas.clientWidth;
         viewHeight = viewWidth / aspect;
       } else {
-        // Texture is taller than or equal to the canvas aspect ratio, so fit to height
         viewHeight = canvas.clientHeight;
         viewWidth = viewHeight * aspect;
       }
@@ -767,14 +974,13 @@ public loadGltfModel(
       });
       this.frameMesh = new THREE.Mesh(frameGeometry, frameMaterial);
       this.frameMesh.position.z = 0;
-      // Frame in 2D doesn't need to cast shadows; keep as not casting for 2D flow
       this.frameMesh.receiveShadow = false;
       this.frameMesh.castShadow = false;
 
       this.scene.add(this.frameMesh);
 
       if (backgroundUrl) {
-        textureLoader.load(backgroundUrl, (bgTexture) => {
+        texLoader.load(backgroundUrl, (bgTexture) => {
           bgTexture.colorSpace = THREE.SRGBColorSpace;
 
           const bgGeometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
@@ -788,9 +994,11 @@ public loadGltfModel(
           this.backgroundMesh.castShadow = false;
           this.scene.add(this.backgroundMesh);
 
-          // Fit background into transparent area of frame texture
-          this.fitBackgroundToFrame(frameTexture, this.frameMesh, this.backgroundMesh);
-
+          this.fitBackgroundToFrame(
+            frameTexture,
+            this.frameMesh,
+            this.backgroundMesh
+          );
           this.render();
         });
       } else {
@@ -800,9 +1008,9 @@ public loadGltfModel(
   }
 
   public updateTextures2d(frameUrl: string, backgroundUrl: string): void {
-    const textureLoader = new THREE.TextureLoader(this.loadingManager);
+    const texLoader = new THREE.TextureLoader(this.loadingManager);
 
-    textureLoader.load(frameUrl, (frameTexture) => {
+    texLoader.load(frameUrl, (frameTexture) => {
       frameTexture.colorSpace = THREE.SRGBColorSpace;
 
       const imgWidth = frameTexture.image.width;
@@ -812,7 +1020,8 @@ public loadGltfModel(
       const canvas = this.renderer.domElement;
       const canvasAspect = canvas.clientWidth / canvas.clientHeight;
 
-      let viewWidth: number, viewHeight: number;
+      let viewWidth: number;
+      let viewHeight: number;
 
       if (aspect > canvasAspect) {
         viewWidth = canvas.clientWidth;
@@ -840,7 +1049,7 @@ public loadGltfModel(
       this.scene.add(this.frameMesh);
 
       if (backgroundUrl) {
-        textureLoader.load(backgroundUrl, (bgTexture) => {
+        texLoader.load(backgroundUrl, (bgTexture) => {
           bgTexture.colorSpace = THREE.SRGBColorSpace;
 
           if (this.backgroundMesh) {
@@ -855,13 +1064,14 @@ public loadGltfModel(
             transparent: false
           });
           this.backgroundMesh = new THREE.Mesh(bgGeometry, bgMaterial);
-          // ensure background stays behind the frame to avoid z-fighting
           this.backgroundMesh.position.z = -1;
           this.scene.add(this.backgroundMesh);
 
-          // Fit background into transparent area of frame texture (use new frameTexture)
-          this.fitBackgroundToFrame(frameTexture, this.frameMesh, this.backgroundMesh);
-
+          this.fitBackgroundToFrame(
+            frameTexture,
+            this.frameMesh,
+            this.backgroundMesh
+          );
           this.render();
         });
       } else {
@@ -870,6 +1080,9 @@ public loadGltfModel(
     });
   }
 
+  // ------------------------------------------------------
+  // Resize handling
+  // ------------------------------------------------------
   public onResize(container: HTMLElement): void {
     const width = container.clientWidth;
     const height = container.clientHeight;
@@ -879,12 +1092,12 @@ public loadGltfModel(
       this.renderer.setSize(width, height, false);
     }
 
-    if (this.camera?.isPerspectiveCamera) {
+    if (this.camera && (this.camera as any).isPerspectiveCamera) {
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
     }
 
-    if (this.camera2d?.isOrthographicCamera) {
+    if (this.camera2d && (this.camera2d as any).isOrthographicCamera) {
       this.camera2d.left = width / -2;
       this.camera2d.right = width / 2;
       this.camera2d.top = height / 2;
@@ -894,6 +1107,10 @@ public loadGltfModel(
 
     this.render();
   }
+
+  // ------------------------------------------------------
+  // Texture application: 3D blinds
+  // ------------------------------------------------------
   private extractAverageColor(texture: THREE.Texture): THREE.Color {
     const img = texture.image as HTMLImageElement;
     if (!img || !img.width || !img.height) return new THREE.Color(0xffffff);
@@ -906,8 +1123,10 @@ public loadGltfModel(
 
     const data = ctx.getImageData(0, 0, img.width, img.height).data;
 
-    let r = 0, g = 0, b = 0;
-    const step = 4 * 50; 
+    let r = 0,
+      g = 0,
+      b = 0;
+    const step = 4 * 50;
 
     for (let i = 0; i < data.length; i += step) {
       r += data[i];
@@ -918,263 +1137,276 @@ public loadGltfModel(
     const count = data.length / step;
     return new THREE.Color(r / count / 255, g / count / 255, b / count / 255);
   }
+
   public updateTextures(backgroundUrl: string): void {
-  if (!backgroundUrl) return;
+    if (!backgroundUrl) return;
 
-  // If model/targets not ready yet (e.g., first switch 2D -> 3D), cache and retry after GLTF load
-  const targetsReady = (
-    // generic path relies on cube5Meshes
-    (this.cube5Meshes && this.cube5Meshes.length > 0) ||
-    // wood path may use Wood list
-    (this.type === 'wood' && this.Wood && this.Wood.length > 0)
-  ) && !!this.currentModelRoot;
+    const targetsReady =
+      ((this.cube5Meshes && this.cube5Meshes.length > 0) ||
+        (this.type === 'wood' && this.Wood && this.Wood.length > 0)) &&
+      !!this.currentModelRoot;
 
-  if (!targetsReady) {
-    this.pendingTextureUrl = backgroundUrl;
-    return;
-  }
+    if (!targetsReady) {
+      this.pendingTextureUrl = backgroundUrl;
+      return;
+    }
 
-  // Force reload (bypass cache)
-  const urlWithCacheBust = `${backgroundUrl}?t=${Date.now()}`;
+    const urlWithCacheBust = `${backgroundUrl}?t=${Date.now()}`;
 
-  this.textureLoader.load(
-    urlWithCacheBust,
-    (texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-      texture.needsUpdate = true;
+    this.textureLoader.load(
+      urlWithCacheBust,
+      (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+        texture.needsUpdate = true;
 
-      if (this.type === 'venetian' || this.type === 'vertical' || this.type === 'daynight' || this.type === 'roman'|| this.type === 'rollerblinds' || this.type === 'wood') {
-        // If targets for patterned application are not ready, cache and exit
-        if (!this.cube5Meshes || this.cube5Meshes.length === 0) {
-          this.pendingTextureUrl = backgroundUrl;
+        // Pattern-based blind types
+        if (
+          this.type === 'venetian' ||
+          this.type === 'vertical' ||
+          this.type === 'daynight' ||
+          this.type === 'roman' ||
+          this.type === 'rollerblinds' ||
+          this.type === 'wood'
+        ) {
+          if (!this.cube5Meshes || this.cube5Meshes.length === 0) {
+            this.pendingTextureUrl = backgroundUrl;
+            return;
+          }
+
+          const isRoller = this.type === 'rollerblinds';
+          const shouldAnimate = isRoller ? !this.isAnimateOpen : this.isAnimateOpen;
+
+          if (shouldAnimate) {
+            this.stopAll();
+            this.closeAnimate(true);
+            this.setRollerState(isRoller);
+
+            setTimeout(
+              () => this.applyPatternToVenetian(texture, 1, isRoller),
+              200
+            );
+          } else {
+            this.applyPatternToVenetian(texture, 1, isRoller);
+          }
           return;
         }
-         const isRoller = this.type === 'rollerblinds';
-        const shouldAnimate = isRoller ? !this.isAnimateOpen : this.isAnimateOpen;
 
-        if (shouldAnimate) {
-          this.stopAll();
-          this.closeAnimate(true);
-          this.setRollerState(isRoller);
+        // Generic fallback path
+        if (this.cube5Meshes.length > 0) {
+          const first = this.cube5Meshes[0];
 
-          setTimeout(() => this.applyPatternToVenetian(texture,1,isRoller), 200);
+          if (!first.geometry.attributes['uv']) {
+            this.generatePlanarUVs(first.geometry);
+          }
+
+          const base =
+            (first.material as THREE.MeshStandardMaterial) ||
+            new THREE.MeshStandardMaterial();
+
+          const shared = new THREE.MeshStandardMaterial({
+            map: texture,
+            roughness: base.roughness ?? 0.4,
+            side: THREE.DoubleSide,
+            color: base.color ?? new THREE.Color(0xffffff),
+            envMap: base.envMap,
+            envMapIntensity: base.envMapIntensity,
+            normalMap: base.normalMap,
+            normalScale: base.normalScale,
+            aoMap: base.aoMap,
+            displacementMap: base.displacementMap
+          });
+
+          for (const mesh of this.cube5Meshes) {
+            if (!mesh.geometry.attributes['uv']) {
+              this.generatePlanarUVs(mesh.geometry);
+            }
+
+            if (Array.isArray(mesh.material)) {
+              mesh.material.forEach((m) => m.dispose());
+            } else if (mesh.material) {
+              mesh.material.dispose();
+            }
+
+            mesh.material = shared;
+            (mesh.material as THREE.Material).needsUpdate = true;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+          }
+
+          this.textureMaterial = shared;
+          this.render();
         } else {
-          this.applyPatternToVenetian(texture,1,isRoller);
+          this.pendingTextureUrl = backgroundUrl;
         }
-        return; 
+      },
+      undefined,
+      (err) => {
+        console.error('Texture load error:', err);
       }
+    );
+  }
 
-      // 🔹 GENERIC / ROLLER path
-      if (this.cube5Meshes.length > 0) {
-        const first = this.cube5Meshes[0];
+  private applyPatternToVenetian(
+    texture: THREE.Texture,
+    patternScale: number = 1,
+    isRoller: boolean = false
+  ): void {
+    if (!this.cube5Meshes.length) return;
 
-        if (!first.geometry.attributes['uv']) {
-          this.generatePlanarUVs(first.geometry);
-        }
-
-        const base = (first.material as THREE.MeshStandardMaterial) || new THREE.MeshStandardMaterial();
-
-        const shared = new THREE.MeshStandardMaterial({
-          map: texture,
-          roughness: base.roughness ?? 0.4,
-          side: THREE.DoubleSide,
-          color: base.color ?? new THREE.Color(0xffffff),
-
-          envMap: base.envMap,
-          envMapIntensity: base.envMapIntensity,
-          normalMap: base.normalMap,
-          normalScale: base.normalScale,
-          aoMap: base.aoMap,
-          displacementMap: base.displacementMap
-        });
-
-        for (const mesh of this.cube5Meshes) {
-          if (!mesh.geometry.attributes['uv']) {
-            this.generatePlanarUVs(mesh.geometry);
-          }
-
-          // safe dispose: Material | Material[]
-          if (Array.isArray(mesh.material)) {
-            mesh.material.forEach(m => m.dispose());
-          } else if (mesh.material) {
-            mesh.material.dispose();
-          }
-
-          mesh.material = shared;
-          (mesh.material as THREE.Material).needsUpdate = true;
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-        }
-
-        this.textureMaterial = shared;
-        this.render();
-      } else {
-        // Cache and retry after model finishes loading
-        this.pendingTextureUrl = backgroundUrl;
-      }
-    },
-    undefined,
-    (err) => {
-      console.error('Texture load error:', err);
-    }
-  );
-}
- private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1,rollor: boolean = false): void {
-  if (!this.cube5Meshes.length) return;
-
-  if (this.type === 'wood' && this.Wood.length > 0) {
-
+    // Wood: apply averaged color to wood parts (frame, valance, etc.)
+    if (this.type === 'wood' && this.Wood.length > 0) {
       const baseColor = this.extractAverageColor(texture);
+      const woodProfile = this.getBlindMaterialProfile('wood');
 
-      this.Wood.forEach(mesh => {
-        const original = mesh.material as THREE.MeshStandardMaterial;
-
+      this.Wood.forEach((mesh) => {
         if (Array.isArray(mesh.material)) {
-          mesh.material.forEach(m => m.dispose());
+          mesh.material.forEach((m) => m.dispose());
         } else if (mesh.material) {
-          mesh.material.dispose();
+          (mesh.material as THREE.Material).dispose();
         }
 
-        // Apply simple solid color
-        mesh.material = new THREE.MeshStandardMaterial({
+        const mat = new THREE.MeshStandardMaterial({
           color: baseColor,
-          roughness: original?.roughness ?? 0.6,
-          metalness: original?.metalness ?? 0.1,
+          roughness: woodProfile.roughness,
+          metalness: woodProfile.metalness,
           side: THREE.DoubleSide
         });
-
+        mesh.material = mat;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
       });
-
-    }
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-  texture.needsUpdate = true;
-
-  this.scene.updateMatrixWorld(true);
-  console.log(this.cube5Meshes);
-  const slats = this.cube5Meshes.map(mesh => {
-    const bbox = new THREE.Box3().setFromObject(mesh);
-    const originalMaterial = mesh.material as THREE.MeshStandardMaterial;
-    return { mesh, bbox, originalMaterial };
-  });
-
-  const globalMinX = Math.min(...slats.map(s => s.bbox.min.x));
-  const globalMaxX = Math.max(...slats.map(s => s.bbox.max.x));
-  const globalMinY = Math.min(...slats.map(s => s.bbox.min.y));
-  const globalMaxY = Math.max(...slats.map(s => s.bbox.max.y));
-
-  const totalWidth = globalMaxX - globalMinX;
-  const totalHeight = globalMaxY - globalMinY;
-
-  const imgW = (texture.image as HTMLImageElement)?.width || 1;
-  const imgH = (texture.image as HTMLImageElement)?.height || 1;
-  const imageAspect = imgW / imgH;
-  const blindsAspect = totalWidth / totalHeight;
-  const aspectRatio = imageAspect / blindsAspect;
-
-  const zoom = 1 / Math.max(1e-6, patternScale);
-  let uScale = zoom;
-  let vScale = zoom;
-
-  switch (this.fitMode) {
-    case 'contain':
-      if (aspectRatio >= 1) vScale *= blindsAspect / imageAspect;
-      else uScale *= imageAspect / blindsAspect;
-      break;
-    case 'cover':
-      if (aspectRatio >= 1) uScale *= imageAspect / blindsAspect;
-      else vScale *= blindsAspect / imageAspect;
-      break;
-    case 'stretch':
-      break;
-  }
-
-  let uCenter = 0.5;
-  let vCenter = 0.5;
-
-  if (this.alignX === 'left') uCenter = 0.25;
-  else if (this.alignX === 'right') uCenter = 0.75;
-
-  if (this.alignY === 'top') vCenter = 0.75;
-  else if (this.alignY === 'bottom') vCenter = 0.25;
-
-  uCenter += this.offsetU;
-  vCenter += this.offsetV;
-
-  for (const { mesh, originalMaterial } of slats) {
-    const geom = mesh.geometry as THREE.BufferGeometry;
-    const pos = geom.attributes['position'] as THREE.BufferAttribute;
-    const uvs = new Float32Array(pos.count * 2);
-
-    for (let i = 0; i < pos.count; i++) {
-      const vtx = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
-      mesh.localToWorld(vtx);
-
-      let u = (vtx.x - globalMinX) / totalWidth;
-      let v = (vtx.y - globalMinY) / totalHeight;
-
-      if (this.flipV) v = 1 - v;
-
-      u = (u - 0.5) * uScale + uCenter;
-      v = (v - 0.5) * vScale + vCenter;
-
-      uvs[i * 2] = u;
-      uvs[i * 2 + 1] = v;
     }
 
-    geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-    geom.attributes['uv'].needsUpdate = true;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+    texture.needsUpdate = true;
 
-    if (Array.isArray(mesh.material)) {
-      mesh.material.forEach(mat => mat.dispose());
-    } else {
-      mesh.material.dispose();
+    this.scene.updateMatrixWorld(true);
+
+    const slats = this.cube5Meshes.map((mesh) => {
+      const bbox = new THREE.Box3().setFromObject(mesh);
+      const originalMaterial = mesh.material as THREE.MeshStandardMaterial;
+      return { mesh, bbox, originalMaterial };
+    });
+
+    const globalMinX = Math.min(...slats.map((s) => s.bbox.min.x));
+    const globalMaxX = Math.max(...slats.map((s) => s.bbox.max.x));
+    const globalMinY = Math.min(...slats.map((s) => s.bbox.min.y));
+    const globalMaxY = Math.max(...slats.map((s) => s.bbox.max.y));
+
+    const totalWidth = globalMaxX - globalMinX;
+    const totalHeight = globalMaxY - globalMinY;
+
+    const imgW = (texture.image as HTMLImageElement)?.width || 1;
+    const imgH = (texture.image as HTMLImageElement)?.height || 1;
+    const imageAspect = imgW / imgH;
+    const blindsAspect = totalWidth / totalHeight;
+    const aspectRatio = imageAspect / blindsAspect;
+
+    const zoom = 1 / Math.max(1e-6, patternScale);
+    let uScale = zoom;
+    let vScale = zoom;
+
+    switch (this.fitMode) {
+      case 'contain':
+        if (aspectRatio >= 1) vScale *= blindsAspect / imageAspect;
+        else uScale *= imageAspect / blindsAspect;
+        break;
+      case 'cover':
+        if (aspectRatio >= 1) uScale *= imageAspect / blindsAspect;
+        else vScale *= blindsAspect / imageAspect;
+        break;
+      case 'stretch':
+        break;
     }
-    if(rollor){
-      mesh.material =  new THREE.MeshStandardMaterial({
-          map: texture,
-          roughness: originalMaterial.roughness ?? 0.4,
-          side: THREE.DoubleSide,
-          color: originalMaterial.color ?? new THREE.Color(0xffffff),
 
-          envMap: originalMaterial.envMap,
-          envMapIntensity: originalMaterial.envMapIntensity,
-          normalMap: originalMaterial.normalMap,
-          normalScale: originalMaterial.normalScale,
-          aoMap: originalMaterial.aoMap,
-          displacementMap: originalMaterial.displacementMap
-        });
-      }else{
-        mesh.material = new THREE.MeshStandardMaterial({
-          map: texture,
+    let uCenter = 0.5;
+    let vCenter = 0.5;
 
-          roughness: originalMaterial?.roughness ?? 0.5,
-          metalness: originalMaterial?.metalness ?? 0.1,
-          color: originalMaterial?.color ?? new THREE.Color(0xffffff),
+    if (this.alignX === 'left') uCenter = 0.25;
+    else if (this.alignX === 'right') uCenter = 0.75;
 
-          side: THREE.DoubleSide,
+    if (this.alignY === 'top') vCenter = 0.75;
+    else if (this.alignY === 'bottom') vCenter = 0.25;
 
-          // ⭐ BRIGHTNESS FIX
-          emissive: new THREE.Color(0xffffff),
-          emissiveIntensity: 0.1, // tweak between 0.35 - 0.7
-        });
+    uCenter += this.offsetU;
+    vCenter += this.offsetV;
+
+    const profile = this.getBlindMaterialProfile(this.type);
+
+    for (const { mesh, originalMaterial } of slats) {
+      const geom = mesh.geometry as THREE.BufferGeometry;
+      const pos = geom.attributes['position'] as THREE.BufferAttribute;
+      const uvs = new Float32Array(pos.count * 2);
+
+      for (let i = 0; i < pos.count; i++) {
+        const vtx = new THREE.Vector3(
+          pos.getX(i),
+          pos.getY(i),
+          pos.getZ(i)
+        );
+        mesh.localToWorld(vtx);
+
+        let u = (vtx.x - globalMinX) / totalWidth;
+        let v = (vtx.y - globalMinY) / totalHeight;
+
+        if (this.flipV) v = 1 - v;
+
+        // Vertical blinds: rotate mapping 90° so stripes go along strip height
+        if (this.type === 'vertical') {
+          const temp = u;
+          u = v;
+          v = temp;
+        }
+
+        u = (u - 0.5) * uScale + uCenter;
+        v = (v - 0.5) * vScale + vCenter;
+
+        uvs[i * 2] = u;
+        uvs[i * 2 + 1] = v;
       }
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
 
-    (mesh.material as THREE.Material).needsUpdate = true;
+      geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+      geom.attributes['uv'].needsUpdate = true;
+
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach((mat) => mat.dispose());
+      } else {
+        (mesh.material as THREE.Material).dispose();
+      }
+
+      const mat = new THREE.MeshStandardMaterial({
+        map: texture,
+        roughness: profile.roughness,
+        metalness: profile.metalness,
+        color: originalMaterial?.color ?? new THREE.Color(0xffffff),
+        emissive: new THREE.Color(0xffffff),
+        emissiveIntensity: profile.emissiveIntensity,
+        side: THREE.DoubleSide,
+        transparent: profile.transparent ?? false,
+        opacity: profile.opacity ?? 1
+      });
+
+      if (this.type === 'daynight') {
+        mat.depthWrite = false;
+      }
+
+      mesh.material = mat;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      (mesh.material as THREE.Material).needsUpdate = true;
+    }
+
+    this.textureMaterial = this.cube5Meshes[0]
+      .material as THREE.MeshStandardMaterial;
+
+    console.log('Pattern applied with blind profile ✔', this.type);
   }
-
-  console.log('Venetian pattern applied with brightness correction ✔');
-}
-
 
   private generatePlanarUVs(geometry: THREE.BufferGeometry): void {
     geometry.computeBoundingBox();
@@ -1188,7 +1420,6 @@ public loadGltfModel(
     for (let i = 0; i < positions.count; i++) {
       const x = positions.getX(i);
       const y = positions.getY(i);
-      // Avoid divide by zero if size.x or size.y is 0
       const u = size.x !== 0 ? (x - bbox.min.x) / size.x : 0;
       const v = size.y !== 0 ? (y - bbox.min.y) / size.y : 0;
       uvs[i * 2] = u;
@@ -1214,8 +1445,6 @@ public loadGltfModel(
         if (mesh) {
           mesh.material = newMaterial;
           (mesh.material as THREE.Material).needsUpdate = true;
-
-          // keep shadows for frame pieces as needed
           mesh.castShadow = true;
           mesh.receiveShadow = true;
         }
@@ -1223,6 +1452,9 @@ public loadGltfModel(
     });
   }
 
+  // ------------------------------------------------------
+  // Camera helpers
+  // ------------------------------------------------------
   public resetCamera(): void {
     if (this.camera && this.controls) {
       this.camera.position.copy(this.initialCameraPosition);
@@ -1231,13 +1463,15 @@ public loadGltfModel(
     }
   }
 
+  // ------------------------------------------------------
+  // Animation loop + rendering
+  // ------------------------------------------------------
   public animate(): void {
     const loop = () => {
       if (this.controls) {
         this.controls.update();
       }
 
-      // update mixer with clock delta
       if (this.mixer) {
         const delta = this.clock.getDelta();
         this.mixer.update(delta);
@@ -1266,9 +1500,7 @@ public loadGltfModel(
   }
 
   private render(): void {
-    if (!this.renderer || !this.scene) {
-      return;
-    }
+    if (!this.renderer || !this.scene) return;
 
     const activeCamera = this.camera2d || this.camera;
     if (!activeCamera) return;
@@ -1288,50 +1520,68 @@ public loadGltfModel(
         const lensY = this.mouseY;
         const lensRadius = this.lensRadius;
 
-        const worldX = this.camera2d.left + (lensX / width) * (this.camera2d.right - this.camera2d.left);
-        const worldY = this.camera2d.top - (lensY / height) * (this.camera2d.top - this.camera2d.bottom);
+        const worldX =
+          this.camera2d.left +
+          (lensX / width) * (this.camera2d.right - this.camera2d.left);
+        const worldY =
+          this.camera2d.top -
+          (lensY / height) * (this.camera2d.top - this.camera2d.bottom);
 
-        const zoomSize = (this.camera2d.right - this.camera2d.left) / this.zoomFactor;
+        const zoomSize =
+          (this.camera2d.right - this.camera2d.left) / this.zoomFactor;
 
-        this.zoomCamera.left = worldX - (zoomSize / 2);
-        this.zoomCamera.right = worldX + (zoomSize / 2);
-        this.zoomCamera.top = worldY + (zoomSize / 2);
-        this.zoomCamera.bottom = worldY - (zoomSize / 2);
+        this.zoomCamera.left = worldX - zoomSize / 2;
+        this.zoomCamera.right = worldX + zoomSize / 2;
+        this.zoomCamera.top = worldY + zoomSize / 2;
+        this.zoomCamera.bottom = worldY - zoomSize / 2;
         this.zoomCamera.updateProjectionMatrix();
 
         const viewportX = lensX - lensRadius;
         const viewportY = height - lensY - lensRadius;
 
-        this.renderer.setViewport(viewportX, viewportY, lensRadius * 2, lensRadius * 2);
-        this.renderer.setScissor(viewportX, viewportY, lensRadius * 2, lensRadius * 2);
+        this.renderer.setViewport(
+          viewportX,
+          viewportY,
+          lensRadius * 2,
+          lensRadius * 2
+        );
+        this.renderer.setScissor(
+          viewportX,
+          viewportY,
+          lensRadius * 2,
+          lensRadius * 2
+        );
         this.renderer.setScissorTest(true);
 
         this.renderer.render(this.scene, this.zoomCamera);
       }
+
       this.renderer.setScissorTest(false);
     } else {
       this.renderer.render(this.scene, this.camera);
     }
   }
 
-  /**
-   * Detect transparent pixel bounding box in frame image
-   * Returns bounds in image pixel space: { minX, minY, maxX, maxY, width, height }
-   */
-  private detectTransparentRegion(image: HTMLImageElement, alphaThreshold = 10) {
+  // ------------------------------------------------------
+  // 2D frame-hole detection and fitting
+  // ------------------------------------------------------
+  private detectTransparentRegion(
+    image: HTMLImageElement,
+    alphaThreshold = 10
+  ) {
     const cacheKey = (image as any).currentSrc || (image as any).src;
     if (cacheKey && this.holeCache.has(cacheKey)) {
       return this.holeCache.get(cacheKey)!;
     }
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d")!;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
     canvas.width = image.width;
     canvas.height = image.height;
     ctx.drawImage(image, 0, 0);
 
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
-    // We want the bounding box of transparent pixels (hole)
     let minX = canvas.width;
     let minY = canvas.height;
     let maxX = 0;
@@ -1353,79 +1603,100 @@ public loadGltfModel(
       }
     }
 
-    let result: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number; found: boolean };
+    let result: {
+      minX: number;
+      minY: number;
+      maxX: number;
+      maxY: number;
+      width: number;
+      height: number;
+      found: boolean;
+    };
     if (!foundAny) {
-      // No transparent pixels found — return full image as fallback (empty hole)
-      result = { minX: 0, minY: 0, maxX: image.width, maxY: image.height, width: image.width, height: image.height, found: false };
+      result = {
+        minX: 0,
+        minY: 0,
+        maxX: image.width,
+        maxY: image.height,
+        width: image.width,
+        height: image.height,
+        found: false
+      };
     } else {
-      result = { minX, minY, maxX, maxY, width: image.width, height: image.height, found: true };
+      result = {
+        minX,
+        minY,
+        maxX,
+        maxY,
+        width: image.width,
+        height: image.height,
+        found: true
+      };
     }
     if (cacheKey) this.holeCache.set(cacheKey, result);
     return result;
   }
 
-  /**
-   * Fit background mesh to the transparent hole inside the frame texture
-   */
-  private fitBackgroundToFrame(frameTexture: THREE.Texture, frameMesh: THREE.Mesh, backgroundMesh: THREE.Mesh) {
+  private fitBackgroundToFrame(
+    frameTexture: THREE.Texture,
+    frameMesh: THREE.Mesh,
+    backgroundMesh: THREE.Mesh
+  ): void {
     const img = frameTexture.image as HTMLImageElement;
-    if (!img || !img.width || !img.height) {
-      return;
-    }
+    if (!img || !img.width || !img.height) return;
 
-    // Detect transparent region in the image
     const hole = this.detectTransparentRegion(img, 40);
     if (!hole.found) {
-      // nothing transparent -> place background behind entire frame
-      // compute frame plane size:
-      if (frameMesh.geometry) frameMesh.geometry.computeBoundingBox();
-      const bbox = (frameMesh.geometry as any).boundingBox as THREE.Box3 | undefined;
+      frameMesh.geometry.computeBoundingBox();
+      const bbox = (frameMesh.geometry as any)
+        .boundingBox as THREE.Box3 | undefined;
       if (bbox) {
         const planeWidth = bbox.max.x - bbox.min.x;
         const planeHeight = bbox.max.y - bbox.min.y;
-        // Replace background geometry to fit full plane
+
         if (backgroundMesh.geometry) backgroundMesh.geometry.dispose();
-        backgroundMesh.geometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-        backgroundMesh.position.set(frameMesh.position.x, frameMesh.position.y, frameMesh.position.z - 0.01);
+        backgroundMesh.geometry = new THREE.PlaneGeometry(
+          planeWidth,
+          planeHeight
+        );
+        backgroundMesh.position.set(
+          frameMesh.position.x,
+          frameMesh.position.y,
+          frameMesh.position.z - 0.01
+        );
       }
       return;
     }
 
-    // Get frame plane size in local coordinates
-    if (frameMesh.geometry) frameMesh.geometry.computeBoundingBox();
-    const bbox = (frameMesh.geometry as any).boundingBox as THREE.Box3 | undefined;
+    frameMesh.geometry.computeBoundingBox();
+    const bbox = (frameMesh.geometry as any)
+      .boundingBox as THREE.Box3 | undefined;
     if (!bbox) return;
 
     const planeWidth = bbox.max.x - bbox.min.x;
     const planeHeight = bbox.max.y - bbox.min.y;
 
-    // Pixel dimensions of detected hole
     const holePixelWidth = hole.maxX - hole.minX;
     const holePixelHeight = hole.maxY - hole.minY;
     const holeCenterX = (hole.minX + hole.maxX) / 2;
     const holeCenterY = (hole.minY + hole.maxY) / 2;
 
-    // Map pixel sizes -> plane sizes
     const innerWidth = planeWidth * (holePixelWidth / hole.width);
     const innerHeight = planeHeight * (holePixelHeight / hole.height);
 
-    // Compute center offset in plane coords:
-    // image origin: top-left. plane origin: center (0,0) with Y up.
-    const offsetXFromCenterPx = holeCenterX - (hole.width / 2);
-    const offsetYFromCenterPx = (hole.height / 2) - holeCenterY; // invert Y
+    const offsetXFromCenterPx = holeCenterX - hole.width / 2;
+    const offsetYFromCenterPx = hole.height / 2 - holeCenterY;
 
     const offsetX = (offsetXFromCenterPx / hole.width) * planeWidth;
     const offsetY = (offsetYFromCenterPx / hole.height) * planeHeight;
 
-    // Apply geometry/scale and position to background mesh
     if (backgroundMesh.geometry) backgroundMesh.geometry.dispose();
     backgroundMesh.geometry = new THREE.PlaneGeometry(innerWidth, innerHeight);
 
-    // Position background at computed center (relative to frameMesh)
     backgroundMesh.position.set(
       frameMesh.position.x + offsetX,
       frameMesh.position.y + offsetY,
-      frameMesh.position.z - 0.01 // slightly behind to avoid z-fighting
+      frameMesh.position.z - 0.01
     );
 
     backgroundMesh.updateMatrixWorld(true);
