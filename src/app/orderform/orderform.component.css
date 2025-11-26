@@ -163,7 +163,7 @@ textarea {
     right: 0;
 }
 .mat-primary{
-    color:var(--primary-color);
+    color:black;
 }
 .product-wrapper {
     flex: 1 1 45%;
@@ -233,7 +233,7 @@ textarea {
 .price_wrapper .price {
     font-size: 1.5rem;
     font-weight: bold;
-    color: var(--color-primary);
+    color: var(--primary-color);
 }
 
 .variations_button {
@@ -579,7 +579,7 @@ canvas {
 .price {
   font-size: 1.3rem;
   font-weight: bold;
-  color: #222;
+  color: var(--primary-color);
 }
 
 mat-button-toggle.mat-button-toggle-checked {
@@ -849,6 +849,7 @@ button.mat-raised-button:hover {
 
 .guides-buttons a {
   text-decoration: none;
+  color: var(--primary-color);
 }
 h1.product-title {
     display: flex;
