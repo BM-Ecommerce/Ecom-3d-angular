@@ -28,6 +28,5 @@ pipelines:
           # 4. Build Angular for production
           - npm run build -- --configuration production
 
-          # 5. Run SonarCloud scan via npx (no manual download needed)
-          - # 5. Run SonarCloud scan
-             - node sonar.js
+          # 5. Run SonarCloud scan
+          - node sonar.js
