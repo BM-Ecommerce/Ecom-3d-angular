@@ -521,7 +521,6 @@ export class ThreeService implements OnDestroy {
 
         const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
         dirLight.position.set(10, 10, 10);
-        dirLight.castShadow = true;
         this.scene.add(dirLight);
 
         // Animation setup
@@ -707,11 +706,11 @@ export class ThreeService implements OnDestroy {
           this.slatEdgeHelpers = [];
 
           for (const mesh of this.cube5Meshes) {
-            const edges = new THREE.EdgesGeometry(mesh.geometry, 15);
+            const edges = new THREE.EdgesGeometry(mesh.geometry);
             const mat = new THREE.LineBasicMaterial({
               color: 0x000000,
               transparent: true,
-              opacity: 0.35,
+              opacity: 0.1,
               depthTest: true,
               depthWrite: false
             });
