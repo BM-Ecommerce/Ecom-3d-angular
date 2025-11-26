@@ -116,6 +116,7 @@ export class ThreeService implements OnDestroy {
 
   // RAF id
   private animationFrameId?: number;
+  private slatEdgeHelpers: THREE.LineSegments[] = [];
 
   // Background texture URL requested before GLTF finished loading
   private pendingTextureUrl?: string;
@@ -281,6 +282,16 @@ export class ThreeService implements OnDestroy {
       }
       this.mixer = undefined;
     }
+
+    // Remove and dispose any slat edge helpers
+    try {
+      for (const seg of this.slatEdgeHelpers) {
+        if (seg.parent) seg.parent.remove(seg);
+        (seg.geometry as any)?.dispose?.();
+        (seg.material as any)?.dispose?.();
+      }
+    } catch { /* ignore */ }
+    this.slatEdgeHelpers = [];
 
     try {
       if (this.directionalLight) this.scene.remove(this.directionalLight);
@@ -675,14 +686,44 @@ export class ThreeService implements OnDestroy {
         });
 
         // If a shared texture material already exists, apply to slats
-        if (this.textureMaterial && this.cube5Meshes.length > 0) {
-          this.cube5Meshes.forEach((mesh) => {
-            mesh.material = this.textureMaterial!;
-            (mesh.material as THREE.Material).needsUpdate = true;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-          });
-        }
+      if (this.textureMaterial && this.cube5Meshes.length > 0) {
+        this.cube5Meshes.forEach((mesh) => {
+          mesh.material = this.textureMaterial!;
+          (mesh.material as THREE.Material).needsUpdate = true;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+        });
+      }
+
+      // Enhance edge definition for vertical slats by overlaying EdgesGeometry lines
+      if (this.type === 'vertical' && this.cube5Meshes.length > 0) {
+        try {
+          // Remove any old helpers first
+          for (const seg of this.slatEdgeHelpers) {
+            if (seg.parent) seg.parent.remove(seg);
+            (seg.geometry as any)?.dispose?.();
+            (seg.material as any)?.dispose?.();
+          }
+          this.slatEdgeHelpers = [];
+
+          for (const mesh of this.cube5Meshes) {
+            const edges = new THREE.EdgesGeometry(mesh.geometry, 15);
+            const mat = new THREE.LineBasicMaterial({
+              color: 0x000000,
+              transparent: true,
+              opacity: 0.35,
+              depthTest: true,
+              depthWrite: false
+            });
+            const lines = new THREE.LineSegments(edges, mat);
+            // Attach as child so it follows transforms
+            mesh.add(lines);
+            // Slightly higher order to reduce z-fighting artifacts
+            lines.renderOrder = (mesh.renderOrder || 0) + 1;
+            this.slatEdgeHelpers.push(lines);
+          }
+        } catch { /* ignore */ }
+      }
 
         // If a texture request was queued before model load, apply now
         if (this.pendingTextureUrl) {
@@ -1159,10 +1200,13 @@ export class ThreeService implements OnDestroy {
       urlWithCacheBust,
       (texture) => {
         texture.colorSpace = THREE.SRGBColorSpace;
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-        texture.needsUpdate = true;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      // Favor clarity: reduce blurring on magnification
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+      texture.needsUpdate = true;
 
         // Pattern-based blind types
         if (
