@@ -44,6 +44,9 @@ customLaunchers: {
     ]
   }
 },
+browsers: ['ChromeHeadlessNoSandbox'],
+singleRun: true,
+
     
     reporters: ['progress', 'kjhtml'],
     port: 9876,
