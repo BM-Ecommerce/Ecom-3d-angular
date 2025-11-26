@@ -29,8 +29,5 @@ pipelines:
           - npm run build -- --configuration production
 
           # 5. Run SonarCloud scan via npx (no manual download needed)
-          - npx sonar-scanner \
-              -Dsonar.projectKey=bmecommerce_ecom-angular \
-              -Dsonar.organization=bmecommerce \
-              -Dsonar.host.url=https://sonarcloud.io \
-              -Dsonar.login=$SONAR_TOKEN
+          - # 5. Run SonarCloud scan
+             - node sonar.js
