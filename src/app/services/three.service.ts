@@ -35,7 +35,7 @@ export class ThreeService implements OnDestroy {
   private loadingManager!: THREE.LoadingManager;
   private textureLoader!: THREE.TextureLoader;
   private gltfLoader!: GLTFLoader;
-
+  public Wood: THREE.Mesh[] = [];
   private cube2Mesh!: THREE.Mesh;
   private frameMesh!: THREE.Mesh;
   private cube4Mesh!: THREE.Mesh;
@@ -313,10 +313,10 @@ export class ThreeService implements OnDestroy {
     }
   }
 
-  type!: 'rollerblinds' | 'venetian' | 'vertical' | 'daynight' | 'roman' | 'generic';
+  type!: 'rollerblinds' | 'venetian' | 'vertical' | 'daynight' | 'roman'| 'wood' | 'generic';
 public loadGltfModel(
   gltfUrl: string,
-  type: 'rollerblinds' | 'venetian' | 'vertical' | 'daynight' | 'roman' | 'generic' 
+  type: 'rollerblinds' | 'venetian' | 'vertical' | 'daynight' | 'roman'| 'wood'  | 'generic' 
 ): void {
   this.type = type;
   this.cube5Meshes = [];
@@ -446,7 +446,24 @@ public loadGltfModel(
             ) {
               this.cube5Meshes.push(mesh);
             }
+          }else if (type === 'wood') {
+
+          const excludedCubes = [
+            'Cube067', 'Cube070', 'Cube071',
+            'Cube059', 'Cube060', 'Cube061',
+            'Cube024', 'Cube045', 'Cube046', 'Cube044'
+          ];
+
+          const isExcluded = excludedCubes.some(prefix => mesh.name.startsWith(prefix));
+
+          if (mesh.name.startsWith('Cube') && !isExcluded) {
+            this.cube5Meshes.push(mesh);
           }
+
+          if(isExcluded){
+              this.Wood.push(mesh);
+          }
+        }
           else {
             const parent = mesh.parent;
             const grandParent = parent?.parent;
@@ -867,7 +884,30 @@ public loadGltfModel(
 
     this.render();
   }
+  private extractAverageColor(texture: THREE.Texture): THREE.Color {
+    const img = texture.image as HTMLImageElement;
+    if (!img || !img.width || !img.height) return new THREE.Color(0xffffff);
 
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+
+    const data = ctx.getImageData(0, 0, img.width, img.height).data;
+
+    let r = 0, g = 0, b = 0;
+    const step = 4 * 50; 
+
+    for (let i = 0; i < data.length; i += step) {
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+    }
+
+    const count = data.length / step;
+    return new THREE.Color(r / count / 255, g / count / 255, b / count / 255);
+  }
 public updateTextures(backgroundUrl: string): void {
   if (!backgroundUrl) return;
 
@@ -883,7 +923,7 @@ public updateTextures(backgroundUrl: string): void {
       texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
       texture.needsUpdate = true;
 
-      if (this.type === 'venetian' || this.type === 'vertical' || this.type === 'daynight' || this.type === 'roman'|| this.type === 'rollerblinds') {
+      if (this.type === 'venetian' || this.type === 'vertical' || this.type === 'daynight' || this.type === 'roman'|| this.type === 'rollerblinds' || this.type === 'wood') {
          const isRoller = this.type === 'rollerblinds';
         const shouldAnimate = isRoller ? !this.isAnimateOpen : this.isAnimateOpen;
 
@@ -956,6 +996,32 @@ public updateTextures(backgroundUrl: string): void {
  private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1,rollor: boolean = false): void {
   if (!this.cube5Meshes.length) return;
 
+  if (this.type === 'wood' && this.Wood.length > 0) {
+
+      const baseColor = this.extractAverageColor(texture);
+
+      this.Wood.forEach(mesh => {
+        const original = mesh.material as THREE.MeshStandardMaterial;
+
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach(m => m.dispose());
+        } else if (mesh.material) {
+          mesh.material.dispose();
+        }
+
+        // Apply simple solid color
+        mesh.material = new THREE.MeshStandardMaterial({
+          color: baseColor,
+          roughness: original?.roughness ?? 0.6,
+          metalness: original?.metalness ?? 0.1,
+          side: THREE.DoubleSide
+        });
+
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      });
+
+    }
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -963,7 +1029,7 @@ public updateTextures(backgroundUrl: string): void {
   texture.needsUpdate = true;
 
   this.scene.updateMatrixWorld(true);
-
+  console.log(this.cube5Meshes);
   const slats = this.cube5Meshes.map(mesh => {
     const bbox = new THREE.Box3().setFromObject(mesh);
     const originalMaterial = mesh.material as THREE.MeshStandardMaterial;

@@ -568,14 +568,13 @@ public onToggleLoopAnimate(): void {
         }else if (productname.toLowerCase().includes('roller blinds')) {
         this.threeService.loadGltfModel('assets/rollerblinds.glb', 'rollerblinds');
       } else if (
-        productname.toLowerCase().includes('venetian') ||
-        productname.toLowerCase().includes('fauxwood')
+        productname.toLowerCase().includes('venetian') 
       ) {
         this.threeService.loadGltfModel('assets/venetianblinds.glb', 'venetian');
       } else if(productname.toLowerCase().includes('vertical')) {
           this.threeService.loadGltfModel('assets/verticalblinds.glb', 'vertical');
       } else if(productname.toLowerCase().includes('wood')) {
-          this.threeService.loadGltfModel('assets/woodenblinds.glb', 'venetian');
+          this.threeService.loadGltfModel('assets/woodenblinds.glb', 'wood');
       } else if(productname.toLowerCase().includes('day and night')) {
           this.threeService.loadGltfModel('assets/daynight.glb', 'daynight');
       }else if(productname.toLowerCase().includes('roman')) {
