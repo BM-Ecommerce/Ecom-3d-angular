@@ -419,7 +419,7 @@ public loadGltfModel(
             }
           }else if (type === 'roman') { 
              if (
-              mesh.name.startsWith('Roman_Curtais')
+              mesh.name.startsWith('Plane')
             ) {
               this.cube5Meshes.push(mesh);
             }
@@ -860,20 +860,20 @@ public updateTextures(backgroundUrl: string): void {
       texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
       texture.needsUpdate = true;
 
-      // 🔹 SPECIAL CASE: venetian / vertical -> use your existing per-slat UV logic
-      if (this.type === 'venetian' || this.type === 'vertical' || this.type === 'daynight' ) {
-        if (this.isAnimateOpen) {
+      if (this.type === 'venetian' || this.type === 'vertical' || this.type === 'daynight' || this.type === 'roman'|| this.type === 'rollerblinds') {
+         const isRoller = this.type === 'rollerblinds';
+        const shouldAnimate = isRoller ? !this.isAnimateOpen : this.isAnimateOpen;
+
+        if (shouldAnimate) {
           this.stopAll();
           this.closeAnimate(true);
-          this.setRollerState(false);
+          this.setRollerState(isRoller);
 
-          setTimeout(() => {
-            this.applyPatternToVenetian(texture);
-          }, 200);
+          setTimeout(() => this.applyPatternToVenetian(texture), 200);
         } else {
           this.applyPatternToVenetian(texture);
         }
-        return; // important: don’t continue into generic path
+        return; 
       }
 
       // 🔹 GENERIC / ROLLER path
