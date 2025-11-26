@@ -603,13 +603,15 @@ export class ThreeService implements OnDestroy {
                 this.cube5Meshes.push(mesh);
               }
             } else if (type === 'venetian') {
-              const lname = mesh.name.toLowerCase();
-              const isNamedSlat = lname.includes('slat');
-              const isCylinderSlat = /^cylinder\d+$/i.test(mesh.name);
-              const excluded = ['Cylinder032', 'Cylinder031', 'Cylinder033', 'Cylinder034'];
-              const isExcluded = excluded.some((p) => mesh.name.startsWith(p));
-
-              if ((isNamedSlat || isCylinderSlat) && !isExcluded) {
+              if (
+                mesh.name.startsWith('Cylinder') &&
+                !mesh.name.startsWith('Cylinder032') &&
+                !mesh.name.startsWith('Cylinder031') &&
+                !mesh.name.startsWith('Cylinder033') &&
+                !mesh.name.startsWith('Cylinder034') &&
+                !mesh.name.startsWith('Cylinder023') &&
+                !mesh.name.startsWith('Cylinder022')
+              ){
                 this.cube5Meshes.push(mesh);
               }
             } else if (type === 'vertical') {
