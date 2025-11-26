@@ -12,8 +12,8 @@ pipelines:
           - npm run build
           - npm install -g sonar-scanner
           - sonar-scanner \
-              -Dsonar.projectKey=YOUR_PROJECT_KEY \
-              -Dsonar.organization=YOUR_ORG_KEY \
+              -Dsonar.projectKey=bmecommerce_ecom-angular \
+              -Dsonar.organization=bmecommerce \
               -Dsonar.host.url=https://sonarcloud.io \
               -Dsonar.login=$SONAR_TOKEN
         services:
