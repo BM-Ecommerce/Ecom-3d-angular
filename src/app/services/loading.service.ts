@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class LoadingService {
+  public readonly enabled = environment.loaderEnabled;
   private counters = new Map<string, number>();
   private isLoadingSubject = new BehaviorSubject<boolean>(false);
   private visibleSubject = new BehaviorSubject<boolean>(false);
@@ -21,12 +23,14 @@ export class LoadingService {
   readonly progress$: Observable<number> = this.progressSubject.asObservable();
 
   start(key: string): void {
+    if (!this.enabled) return;
     const current = this.counters.get(key) ?? 0;
     this.counters.set(key, current + 1);
     this.update(true);
   }
 
   end(key: string): void {
+    if (!this.enabled) return;
     const current = this.counters.get(key) ?? 0;
     const next = Math.max(0, current - 1);
     if (next === 0) {
@@ -38,6 +42,7 @@ export class LoadingService {
   }
 
   setProgress(percent: number): void {
+    if (!this.enabled) return;
     // Progress primarily used for assets (e.g., Three.js)
     const clamped = Math.max(0, Math.min(100, Math.round(percent)));
     this.targetProgress = clamped;

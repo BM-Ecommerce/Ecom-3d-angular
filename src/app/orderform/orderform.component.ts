@@ -207,6 +207,7 @@ interface FractionOption {
 export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('visualizerCanvas', { static: false }) private canvasRef!: ElementRef<HTMLCanvasElement>;
   public loaderMode: 'overlay' | 'topbar' = 'overlay';
+  public loaderEnabled = true;
   @ViewChild('visualizerContainer', { static: false }) private containerRef!: ElementRef<HTMLElement>;
   @ViewChild('zoomLens', { static: false }) private zoomLensRef!: ElementRef<HTMLElement>;
   @ViewChild('stickyEl', { static: false }) stickyEl!: ElementRef<HTMLElement>;
@@ -452,6 +453,7 @@ hasDescriptionContent = false;
   ngOnInit(): void {
     // Expose loader mode for template conditions
     this.loaderMode = environment.loaderMode;
+    this.loaderEnabled = environment.loaderEnabled;
     const queryParams = this.route.snapshot.queryParams;
     // Check if running on localhost
     const isLocalhost = window.location.hostname === 'localhost';

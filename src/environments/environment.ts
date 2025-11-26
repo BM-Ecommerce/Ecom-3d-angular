@@ -12,7 +12,9 @@ export const environment = {
   apiName: 'ECOMMERCE',
   site: 'https://blindshop.blindssoftware.com',
   // loaderMode: 'overlay' uses full-screen overlay; 'topbar' uses thin top progress
-  loaderMode: 'topbar' as 'overlay' | 'topbar'
+  loaderMode: 'topbar' as 'overlay' | 'topbar',
+  // Toggle to completely disable loader UI and tracking
+  loaderEnabled: true
 };
 
 /*

@@ -10,6 +10,7 @@ import { LoadingService } from './services/loading.service';
 export class AppComponent {
   title = 'visualization';
   loaderMode: 'overlay' | 'topbar' = environment.loaderMode;
+  loaderEnabled = environment.loaderEnabled;
 
   constructor(@Inject(LoadingService) public loading: LoadingService) {}
 }
