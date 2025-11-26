@@ -1,34 +1,34 @@
 image: node:18
 
-definitions:
-  services:
-    chrome:
-      image: browserless/chrome
-
 pipelines:
   default:
     - step:
         name: Install, Test & SonarCloud
         caches:
           - node
-        services:
-          - chrome
         script:
-          # 1. Install dependencies
-          - npm install
-
-          # 2. Install Chrome for Karma Headless
-          - apt-get update && apt-get install -y wget gnupg unzip
+          # 1. Install system dependencies
+          - apt-get update && apt-get install -y wget gnupg unzip \
+            fonts-liberation libappindicator3-1 libasound2 libatk-bridge2.0-0 \
+            libatk1.0-0 libcups2 libdbus-1-3 libdrm2 libgbm1 libgtk-3-0 libnspr4 libnss3 \
+            libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 xdg-utils
+          
+          # 2. Install Google Chrome
           - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          - apt-get install -y ./google-chrome-stable_current_amd64.deb || apt-get install -f -y
-
-          # 3. Run Angular Unit Tests
-          - npm run test -- --watch=false --browsers=ChromeHeadless
-
-          # 4. Build Angular for production
+          - apt-get install -y ./google-chrome-stable_current_amd64.deb
+          - apt-get install -f -y
+          - rm -rf /var/lib/apt/lists/*
+          
+          # 3. Install Node dependencies
+          - npm install
+          
+          # 4. Run Angular unit tests with ChromeHeadlessNoSandbox
+          - npm run test -- --watch=false --browsers=ChromeHeadlessNoSandbox
+          
+          # 5. Build Angular production bundle
           - npm run build -- --configuration production
-
-          # 5. Run SonarCloud scan via npx (no manual download needed)
+          
+          # 6. Run SonarCloud scan
           - npx sonar-scanner \
               -Dsonar.projectKey=bmecommerce_ecom-angular \
               -Dsonar.organization=bmecommerce \
