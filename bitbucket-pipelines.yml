@@ -1,0 +1,20 @@
+image: node:16
+
+pipelines:
+  default:
+    - step:
+        name: Install & Test & Sonar
+        caches:
+          - node
+        script:
+          - npm install
+          - npm run test -- --watch=false --browsers=ChromeHeadless
+          - npm run build
+          - npm install -g sonar-scanner
+          - sonar-scanner \
+              -Dsonar.projectKey=YOUR_PROJECT_KEY \
+              -Dsonar.organization=YOUR_ORG_KEY \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.login=$SONAR_TOKEN
+        services:
+          - docker
