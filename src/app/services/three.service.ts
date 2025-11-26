@@ -1,4 +1,4 @@
-import { Injectable, ElementRef, OnDestroy, NgZone } from '@angular/core';
+import { Injectable, ElementRef, OnDestroy, NgZone, Inject } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -78,7 +78,7 @@ export class ThreeService implements OnDestroy {
   private ambientLight?: THREE.AmbientLight;
   private fillLight?: THREE.PointLight;
 
-  constructor(private zone: NgZone, private loading: LoadingService) {
+  constructor(private zone: NgZone, @Inject(LoadingService) private loading: LoadingService) {
     // Setup a LoadingManager to track all asset loads and push to LoadingService
     this.loadingManager = new THREE.LoadingManager();
     this.loadingManager.onStart = () => {

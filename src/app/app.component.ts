@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import { environment } from '../environments/environment';
 import { LoadingService } from './services/loading.service';
 
@@ -11,5 +11,5 @@ export class AppComponent {
   title = 'visualization';
   loaderMode: 'overlay' | 'topbar' = environment.loaderMode;
 
-  constructor(public loading: LoadingService) {}
+  constructor(@Inject(LoadingService) public loading: LoadingService) {}
 }

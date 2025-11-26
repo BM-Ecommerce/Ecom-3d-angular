@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, SimpleChanges, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, SimpleChanges, HostListener, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { environment } from '../../environments/environment';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -435,7 +435,7 @@ hasDescriptionContent = false;
     private cd: ChangeDetectorRef,
     private threeService: ThreeService,
     private http: HttpClient,
-    public loading: LoadingService,
+    @Inject(LoadingService) public loading: LoadingService,
     private matIconRegistry: MatIconRegistry,
     private sanitizer: DomSanitizer
   ) {
