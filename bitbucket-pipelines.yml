@@ -1,33 +1,20 @@
-image: node:18
+image: node:16
 
 pipelines:
-  branches:
-    main:
-      - step:
-          name: Install Dependencies
-          caches:
-            - node
-          script:
-            - npm install
-
-      - step:
-          name: Run Tests & Generate Coverage
-          caches:
-            - node
-          script:
-            - npm test -- --watch=false --browsers=ChromeHeadless --coverage
-          artifacts:
-            - coverage/**
-
-      - step:
-          name: SonarCloud Scan
-          script:
-            - pipe: sonarsource/sonarcloud-scan:1.4.0
-              variables:
-                SONAR_TOKEN: $SONAR_TOKEN
-                EXTRA_ARGS: >
-                  -Dsonar.projectKey=bmecommerce_ecom-angular
-                  -Dsonar.organization=bmecommerce
-                  -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-                  -Dsonar.sources=src
-                  -Dsonar.exclusions=**/*.spec.ts,**/*.spec.js,node_modules/**
+  default:
+    - step:
+        name: Install & Test & Sonar
+        caches:
+          - node
+        script:
+          - npm install
+          - npm run test -- --watch=false --browsers=ChromeHeadless
+          - npm run build
+          - npm install -g sonar-scanner
+          - sonar-scanner \
+              -Dsonar.projectKey=YOUR_PROJECT_KEY \
+              -Dsonar.organization=YOUR_ORG_KEY \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.login=$SONAR_TOKEN
+        services:
+          - docker
