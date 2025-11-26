@@ -7,7 +7,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { ThreeService } from '../services/three.service';;
 import { HttpClient } from '@angular/common/http';
@@ -427,6 +427,7 @@ hasDescriptionContent = false;
     private apiService: ApiService,
     private fb: FormBuilder,
     private route: ActivatedRoute,
+    private router: Router,
     private cd: ChangeDetectorRef,
     private threeService: ThreeService,
     private http: HttpClient,
@@ -873,7 +874,13 @@ public onToggleLoopAnimate(): void {
       }),
       catchError(err => {
         console.error('Error fetching product data:', err);
-        this.errorMessage = 'Failed to load product data. Please try again.';
+        // Navigate to 404 page on product data load failure
+        try {
+          this.router.navigate(['/', '404']);
+        } catch (e) {
+          // fallback to local error message if navigation fails
+          this.errorMessage = 'Failed to load product data. Please try again.';
+        }
         return of(null);
       }),
       finalize(() => {

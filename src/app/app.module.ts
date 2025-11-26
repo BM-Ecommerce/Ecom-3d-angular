@@ -9,6 +9,7 @@ import { OrderformComponent } from './orderform/orderform.component';
 import { ApiService } from './services/api.service';
 import { AppRoutingModule } from './app-routing.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NotFoundComponent } from './not-found/not-found.component';
 
 @NgModule({
   declarations: [
@@ -21,6 +22,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     RouterModule,
     AppRoutingModule,
     OrderformComponent,
+    NotFoundComponent,
     BrowserAnimationsModule
   ],
   providers: [ApiService],  // Added ApiService to providers

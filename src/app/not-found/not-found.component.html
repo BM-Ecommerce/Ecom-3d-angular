@@ -1,0 +1,22 @@
+<div class="not-found" role="main" aria-labelledby="nf-title">
+  <div class="card">
+    <div class="illustration" aria-hidden="true">
+      <svg width="96" height="96" viewBox="0 0 96 96" focusable="false">
+        <defs>
+          <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stop-color="#1976d2"/>
+            <stop offset="100%" stop-color="#42a5f5"/>
+          </linearGradient>
+        </defs>
+        <circle cx="40" cy="40" r="22" stroke="url(#g)" stroke-width="6" fill="none"/>
+        <line x1="56" y1="56" x2="86" y2="86" stroke="#90caf9" stroke-width="8" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1 id="nf-title">Page not found</h1>
+    <p class="subtitle">The page you’re looking for doesn’t exist, has moved, or is temporarily unavailable.</p>
+    <div class="actions">
+      <a class="btn primary" [href]="siteUrl" rel="noopener">Go to Home</a>
+    </div>
+    <div class="code" aria-label="Error code">Error code: 404</div>
+  </div>
+</div>
