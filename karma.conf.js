@@ -31,14 +31,31 @@ module.exports = function (config) {
         { type: 'html' },
         { type: 'text-summary' }
       ]
-    },
+      },
+      
+customLaunchers: {
+  ChromeHeadlessNoSandbox: {
+    base: 'ChromeHeadless',
+    flags: [
+      '--no-sandbox',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--remote-debugging-port=9222'
+    ]
+  }
+},
+    
     reporters: ['progress', 'kjhtml'],
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: true,
-    browsers: ['ChromeHeadless'],
+    browsers: ['ChromeHeadlessNoSandbox'],
     singleRun: true,
     restartOnFileChange: true
   });
 };
+
+
+
+
