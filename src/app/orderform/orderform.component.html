@@ -273,12 +273,13 @@
                       [multiple]="field.selection == 1"
                       [attr.aria-label]="field.fieldname">
 
-                      <ngx-mat-select-search
-                          *ngIf="enableSelectSearch && searchCtrl[field.fieldid]"
-                          [formControl]="searchCtrl[field.fieldid]"
-                          placeholderLabel="Search..."
-                          noEntriesFoundLabel="No results found">
-                      </ngx-mat-select-search>
+                      <mat-option *ngIf="enableSelectSearch && searchCtrl[field.fieldid]">
+                        <ngx-mat-select-search
+                            [formControl]="searchCtrl[field.fieldid]"
+                            placeholderLabel="Search..."
+                            noEntriesFoundLabel="No results found">
+                        </ngx-mat-select-search>
+                      </mat-option>
 
                       <mat-option *ngIf="field.selection != 1" value="">
                         Select Option
