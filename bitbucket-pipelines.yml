@@ -15,7 +15,7 @@ pipelines:
           caches:
             - node
           script:
-            - npm test -- --codeCoverage=true
+            - npm test -- --watch=false --browsers=ChromeHeadless --coverage
           artifacts:
             - coverage/**
 
