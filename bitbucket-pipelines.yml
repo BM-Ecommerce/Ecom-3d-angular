@@ -14,7 +14,7 @@ pipelines:
         services:
           - chrome
         script:
-          # 1. Install dependencies
+          # 1. Install Node dependencies
           - npm install
 
           # 2. Install Chrome for Karma Headless
@@ -22,11 +22,11 @@ pipelines:
           - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           - apt-get install -y ./google-chrome-stable_current_amd64.deb || apt-get install -f -y
 
-          # 3. Run Angular Unit Tests
-          - npm run test -- --watch=false --browsers=ChromeHeadless
+          # 3. Run Angular Unit Tests with custom ChromeHeadlessNoSandbox
+          - npm run test -- --watch=false
 
           # 4. Build Angular for production
           - npm run build -- --configuration production
 
-          # 5. Run SonarCloud scan
+          # 5. Run SonarCloud scan via Node script
           - node sonar.js
