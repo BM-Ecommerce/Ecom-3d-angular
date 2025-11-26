@@ -72,6 +72,8 @@ export class ThreeService implements OnDestroy {
   private holeCache = new Map<string, { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number; found: boolean }>();
 
   private animationFrameId?: number;
+  // Cache a pending background texture URL when switching modes
+  private pendingTextureUrl?: string;
 
   // Added: lighting references (so they can be adjusted if needed)
   private directionalLight?: THREE.DirectionalLight;
@@ -489,6 +491,14 @@ public loadGltfModel(
           mesh.castShadow = true;
           mesh.receiveShadow = true;
         });
+      }
+      
+      // If a texture update was requested before the model finished loading,
+      // apply it now that targets are available.
+      if (this.pendingTextureUrl) {
+        const url = this.pendingTextureUrl;
+        this.pendingTextureUrl = undefined;
+        this.updateTextures(url);
       }
      
       try {
@@ -908,8 +918,21 @@ public loadGltfModel(
     const count = data.length / step;
     return new THREE.Color(r / count / 255, g / count / 255, b / count / 255);
   }
-public updateTextures(backgroundUrl: string): void {
+  public updateTextures(backgroundUrl: string): void {
   if (!backgroundUrl) return;
+
+  // If model/targets not ready yet (e.g., first switch 2D -> 3D), cache and retry after GLTF load
+  const targetsReady = (
+    // generic path relies on cube5Meshes
+    (this.cube5Meshes && this.cube5Meshes.length > 0) ||
+    // wood path may use Wood list
+    (this.type === 'wood' && this.Wood && this.Wood.length > 0)
+  ) && !!this.currentModelRoot;
+
+  if (!targetsReady) {
+    this.pendingTextureUrl = backgroundUrl;
+    return;
+  }
 
   // Force reload (bypass cache)
   const urlWithCacheBust = `${backgroundUrl}?t=${Date.now()}`;
@@ -924,6 +947,11 @@ public updateTextures(backgroundUrl: string): void {
       texture.needsUpdate = true;
 
       if (this.type === 'venetian' || this.type === 'vertical' || this.type === 'daynight' || this.type === 'roman'|| this.type === 'rollerblinds' || this.type === 'wood') {
+        // If targets for patterned application are not ready, cache and exit
+        if (!this.cube5Meshes || this.cube5Meshes.length === 0) {
+          this.pendingTextureUrl = backgroundUrl;
+          return;
+        }
          const isRoller = this.type === 'rollerblinds';
         const shouldAnimate = isRoller ? !this.isAnimateOpen : this.isAnimateOpen;
 
@@ -984,7 +1012,8 @@ public updateTextures(backgroundUrl: string): void {
         this.textureMaterial = shared;
         this.render();
       } else {
-        console.warn('No target meshes found for texture application.');
+        // Cache and retry after model finishes loading
+        this.pendingTextureUrl = backgroundUrl;
       }
     },
     undefined,
