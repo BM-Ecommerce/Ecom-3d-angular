@@ -55,12 +55,12 @@ h1 {
 }
 
 .btn.primary {
-  background: #1976d2;
+  background:var(--primary-color);
   color: #fff;
   box-shadow: 0 4px 12px rgba(25,118,210,0.25);
 }
-.btn.primary:hover { background: #1565c0; }
-.btn.primary:active { background: #0d47a1; }
+.btn.primary:hover { background:var(--primary-color); }
+.btn.primary:active { background: var(--primary-color); }
 
 .btn.ghost {
   background: transparent;
