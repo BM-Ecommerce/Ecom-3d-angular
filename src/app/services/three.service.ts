@@ -892,9 +892,9 @@ public updateTextures(backgroundUrl: string): void {
           this.closeAnimate(true);
           this.setRollerState(isRoller);
 
-          setTimeout(() => this.applyPatternToVenetian(texture), 200);
+          setTimeout(() => this.applyPatternToVenetian(texture,1,isRoller), 200);
         } else {
-          this.applyPatternToVenetian(texture);
+          this.applyPatternToVenetian(texture,1,isRoller);
         }
         return; 
       }
@@ -953,7 +953,7 @@ public updateTextures(backgroundUrl: string): void {
     }
   );
 }
- private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1): void {
+ private applyPatternToVenetian(texture: THREE.Texture, patternScale: number = 1,rollor: boolean = false): void {
   if (!this.cube5Meshes.length) return;
 
   texture.wrapS = THREE.RepeatWrapping;
@@ -1042,21 +1042,35 @@ public updateTextures(backgroundUrl: string): void {
     } else {
       mesh.material.dispose();
     }
+    if(rollor){
+      mesh.material =  new THREE.MeshStandardMaterial({
+          map: texture,
+          roughness: originalMaterial.roughness ?? 0.4,
+          side: THREE.DoubleSide,
+          color: originalMaterial.color ?? new THREE.Color(0xffffff),
 
-    mesh.material = new THREE.MeshStandardMaterial({
-      map: texture,
+          envMap: originalMaterial.envMap,
+          envMapIntensity: originalMaterial.envMapIntensity,
+          normalMap: originalMaterial.normalMap,
+          normalScale: originalMaterial.normalScale,
+          aoMap: originalMaterial.aoMap,
+          displacementMap: originalMaterial.displacementMap
+        });
+      }else{
+        mesh.material = new THREE.MeshStandardMaterial({
+          map: texture,
 
-      roughness: originalMaterial?.roughness ?? 0.5,
-      metalness: originalMaterial?.metalness ?? 0.1,
-      color: originalMaterial?.color ?? new THREE.Color(0xffffff),
+          roughness: originalMaterial?.roughness ?? 0.5,
+          metalness: originalMaterial?.metalness ?? 0.1,
+          color: originalMaterial?.color ?? new THREE.Color(0xffffff),
 
-      side: THREE.DoubleSide,
+          side: THREE.DoubleSide,
 
-      // ⭐ BRIGHTNESS FIX
-      emissive: new THREE.Color(0xffffff),
-      emissiveIntensity: 0.1, // tweak between 0.35 - 0.7
-    });
-
+          // ⭐ BRIGHTNESS FIX
+          emissive: new THREE.Color(0xffffff),
+          emissiveIntensity: 0.1, // tweak between 0.35 - 0.7
+        });
+      }
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
