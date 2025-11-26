@@ -8,7 +8,7 @@
 <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 
 <!-- Global topbar progress (toggle via environment.loaderMode) -->
-<div *ngIf="loaderEnabled && loaderMode === 'topbar'" class="topbar-progress" [class.visible]="(loading?.visible$ | async)" aria-hidden="true">
+<div *ngIf="loaderEnabled && loaderMode === 'topbar'" class="topbar-progress" [class.visible]="(loading.visible$ | async)" aria-hidden="true">
   <mat-progress-bar
     mode="determinate"
     color="primary"

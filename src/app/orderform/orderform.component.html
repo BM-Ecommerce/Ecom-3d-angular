@@ -1,6 +1,6 @@
 <form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="tooltip-container blindmatrix-v4-parameters-form cart angularbody">
   <div class="blinds container">
-    <div *ngIf="loaderEnabled && loaderMode === 'overlay' && (isLoading || (loading?.isLoading$ | async))" class="loading-overlay" role="dialog" aria-live="polite" aria-busy="true">
+    <div *ngIf="loaderEnabled && loaderMode === 'overlay' && (isLoading || (loading.isLoading$ | async))" class="loading-overlay" role="dialog" aria-live="polite" aria-busy="true">
       <div class="loading-card">
         <div class="loading-spinner" aria-hidden="true"></div>
         <div class="loading-text">Preparing your product…</div>
