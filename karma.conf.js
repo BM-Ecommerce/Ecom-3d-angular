@@ -38,20 +38,17 @@ customLaunchers: {
     base: 'ChromeHeadless',
     flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
   }
-<<<<<<< HEAD
-},
-browsers: ['ChromeHeadlessNoSandbox'],
-singleRun: true,
-=======
+
 },    
->>>>>>> 9ef5b15139a7b29a9ddb302e4c1ab2a04a8bcd33
     reporters: ['progress', 'kjhtml'],
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: true,
     singleRun: true,
-    restartOnFileChange: true
+    restartOnFileChange: true,
+    browsers: ['ChromeHeadlessNoSandbox'],
+
   });
 };
 
