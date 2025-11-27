@@ -450,6 +450,10 @@ hasDescriptionContent = false;
     this.previousFormValue = this.orderForm.value;
   }
 
+  // Composed frame thumbnails cache for frame cards
+  private composedFrameThumbsMap: Record<string, string> = {};
+  private composingFrameKeys = new Set<string>();
+
   ngOnInit(): void {
     // Expose loader mode for template conditions
     this.loaderMode = environment.loaderMode;
@@ -646,6 +650,110 @@ public onToggleLoopAnimate(): void {
       img.src = frameSrc;
     } catch { /* ignore */ }
   }
+
+  private loadImage(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  private detectTransparentRegion(
+    image: HTMLImageElement,
+    alphaThreshold = 10
+  ) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    canvas.width = image.width;
+    canvas.height = image.height;
+    ctx.drawImage(image, 0, 0);
+
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+    let minX = canvas.width;
+    let minY = canvas.height;
+    let maxX = 0;
+    let maxY = 0;
+    let foundAny = false;
+
+    for (let y = 0; y < canvas.height; y++) {
+      for (let x = 0; x < canvas.width; x++) {
+        const i = (y * canvas.width + x) * 4;
+        const alpha = imgData[i + 3];
+        if (alpha < alphaThreshold) {
+          foundAny = true;
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (!foundAny) {
+      return {
+        minX: 0,
+        minY: 0,
+        maxX: image.width,
+        maxY: image.height,
+        width: image.width,
+        height: image.height,
+        found: false,
+      };
+    }
+
+    return {
+      minX,
+      minY,
+      maxX,
+      maxY,
+      width: image.width,
+      height: image.height,
+      found: true,
+    };
+  }
+
+  private async composeFrameAndBackground(
+    frameUrl: string,
+    backgroundUrl: string
+  ): Promise<string | null> {
+    try {
+      const [frameImg, bgImg] = await Promise.all([
+        this.loadImage(frameUrl),
+        this.loadImage(backgroundUrl)
+      ]);
+
+      const hole = this.detectTransparentRegion(frameImg, 40);
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      canvas.width = frameImg.width;
+      canvas.height = frameImg.height;
+
+      const holeW = (hole.maxX - hole.minX) || frameImg.width;
+      const holeH = (hole.maxY - hole.minY) || frameImg.height;
+      const scale = Math.max(holeW / bgImg.width, holeH / bgImg.height);
+      const drawW = bgImg.width * scale;
+      const drawH = bgImg.height * scale;
+      const dx = hole.minX + (holeW - drawW) / 2;
+      const dy = hole.minY + (holeH - drawH) / 2;
+
+      ctx.drawImage(bgImg, 0, 0, bgImg.width, bgImg.height, dx, dy, drawW, drawH);
+      ctx.drawImage(frameImg, 0, 0);
+
+      try {
+        return canvas.toDataURL('image/png');
+      } catch {
+        return null;
+      }
+    } catch {
+      return null;
+    }
+  }
   zoomIn(): void {
     if (this.is3DOn) {
       this.threeService.zoomIn();
@@ -795,6 +903,8 @@ public onToggleLoopAnimate(): void {
             firstImage.is_default = true;
           }
 
+          // Precompute composed thumbnails
+          this.prepareFrameThumbnails();
           this.setupVisualizer(ecomProductName);
         }
         return this.apiService.getProductParameters(params, this.recipeid);
@@ -1162,12 +1272,14 @@ public onToggleLoopAnimate(): void {
         this.colorid = 0;
         this.updateMinMaxValidators(false);
         this.background_color_image_url = "";
+        this.invalidateFrameThumbnails();
         this.setupVisualizer(this.productname);
       }
       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
         this.colorid = 0;
         this.updateMinMaxValidators(false);
         this.background_color_image_url = "";
+        this.invalidateFrameThumbnails();
         this.setupVisualizer(this.productname);
       }
       if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
@@ -1240,6 +1352,8 @@ public onToggleLoopAnimate(): void {
         } else {
           this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
         }
+        this.invalidateFrameThumbnails();
+        this.prepareFrameThumbnails();
       }
 
       if (canUpdate && (field.fieldtypeid === 3 && field.fieldname == "Curtain Colour") && selectedOption.optionimage) {
@@ -1402,13 +1516,70 @@ public onToggleLoopAnimate(): void {
     if (this.threeService) {
       this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
       this.update2DContainerHeightFromFrame();
+      // After container resizes based on new frame, refit background into frame hole
+      setTimeout(() => this.threeService.refit2d(), 0);
     }
   }
   public getFrameImageUrl(product_img: any): string {
+    const frameUrl = product_img?.image_url || '';
+    if (!frameUrl) return '';
+
+    const bgUrl = this.background_color_image_url;
+    if (!bgUrl) return frameUrl;
+
+    const key = `${frameUrl}::${bgUrl}`;
+    const composed = this.composedFrameThumbsMap[key];
+    if (composed) return composed;
+
+    if (!this.composingFrameKeys.has(key)) {
+      this.composingFrameKeys.add(key);
+      this.composeFrameAndBackground(frameUrl, bgUrl)
+        .then((dataUrl) => {
+          if (dataUrl) this.composedFrameThumbsMap[key] = dataUrl;
+        })
+        .catch(() => { /* ignore */ })
+        .finally(() => {
+          this.composingFrameKeys.delete(key);
+          this.cd.markForCheck();
+        });
+    }
+    return frameUrl;
+  }
+  public getRawFrameUrl(product_img: any): string {
     return product_img?.image_url || '';
   }
   public isSelectedFrame(product_img: any): boolean {
     return product_img?.is_default || false;
+  }
+
+  private composeKey(frameUrl: string, bgUrl: string): string {
+    return `${frameUrl}::${bgUrl}`;
+  }
+
+  private invalidateFrameThumbnails(): void {
+    this.composedFrameThumbsMap = {};
+    this.composingFrameKeys.clear();
+  }
+
+  private prepareFrameThumbnails(): void {
+    if (!this.background_color_image_url || !this.product_img_array?.length) return;
+    const bg = this.background_color_image_url;
+    for (const img of this.product_img_array) {
+      const frame = img?.image_url;
+      if (!frame) continue;
+      const key = this.composeKey(frame, bg);
+      if (this.composedFrameThumbsMap[key] || this.composingFrameKeys.has(key)) continue;
+      this.composingFrameKeys.add(key);
+      this.composeFrameAndBackground(frame, bg)
+        .then((dataUrl) => {
+          if (dataUrl) this.composedFrameThumbsMap[key] = dataUrl;
+        })
+        .catch(() => { /* ignore */ })
+        .finally(() => {
+          this.composingFrameKeys.delete(key);
+          this.cd.markForCheck();
+        });
+    }
   }
 
   /**
