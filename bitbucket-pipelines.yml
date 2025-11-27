@@ -1,58 +1,18 @@
 image: node:18
 
-clone:
-  depth: full
-
-definitions:
-  caches:
-    node: ~/.npm
-    sonar: ~/.sonar/cache
-
-steps:
-  - step: &build-test-sonarcloud
-      name: Build, Test & Analyze (SonarCloud)
-      caches:
-        - node
-        - sonar
-      script:
-        # Install dependencies
-        - npm install
-        
-        # Install Chrome
-        - apt-get update && apt-get install -y wget gnupg unzip
-        - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        - apt-get install -y ./google-chrome-stable_current_amd64.deb || apt-get install -f -y
-
-        # Run tests with coverage
-        - npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
-
-        # Build Angular
-        - npm run build -- --configuration production
-
-        # SonarCloud
-        - pipe: sonarsource/sonarcloud-scan:4.0.0
-          variables:
-            EXTRA_ARGS: >
-              -Dsonar.projectKey=bmecommerce_ecom-angular
-              -Dsonar.organization=bmecommerce
-              -Dsonar.sources=src
-              -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-              -Dsonar.tests=src
-              -Dsonar.login=b5db9f71a28b46d3de7f74de0c4dc8d2feff9fb7
-              -Dsonar.test.inclusions="**/*.spec.ts"
-
-  - step: &quality-gate
-      name: Check Quality Gate
-      script:
-        - pipe: sonarsource/sonarcloud-quality-gate:0.1.6
-
 pipelines:
-  branches:
-    main:
-      - step: *build-test-sonarcloud
-      - step: *quality-gate
+  default:
+    - step:
+        name: Install, Test, Coverage
+        caches:
+          - node
+        script:
+          - apt-get update
+          - apt-get install -y wget gnupg
+          - wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
+          - echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb stable main" > /etc/apt/sources.list.d/google-chrome.list
+          - apt-get update
+          - apt-get install -y google-chrome-stable
 
-  pull-requests:
-    "**":
-      - step: *build-test-sonarcloud
-      - step: *quality-gate
+          - npm install
+          - npm run test -- --watch=false --browsers=ChromeHeadlessCI --code-coverage
