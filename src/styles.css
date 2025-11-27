@@ -26,3 +26,6 @@ body { margin: 0; font-family: 'Poppins', sans-serif!important; }
 .mat-button-toggle-label-content {
     font-size: 14px;
 }
+.mat-form-field-appearance-legacy .mat-form-field-underline {
+    background-color: rgba(0,0,0,.12);
+}

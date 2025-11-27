@@ -980,6 +980,17 @@ export class ThreeService implements OnDestroy {
   // ------------------------------------------------------
   // 2D: frame + background creation and updates
   // ------------------------------------------------------
+  public refit2d(): void {
+    try {
+      if (!this.frameMesh || !this.backgroundMesh) return;
+      const mat = this.frameMesh.material as any;
+      const frameTex: THREE.Texture | undefined = mat?.map;
+      if (!frameTex) return;
+      this.fitBackgroundToFrame(frameTex, this.frameMesh, this.backgroundMesh);
+      this.render();
+    } catch { /* noop */ }
+  }
+
   public createObjects(frameUrl: string, backgroundUrl: string): void {
     if (this.frameMesh) this.scene.remove(this.frameMesh);
     if (this.backgroundMesh) this.scene.remove(this.backgroundMesh);
@@ -988,6 +999,7 @@ export class ThreeService implements OnDestroy {
 
     texLoader.load(frameUrl, (frameTexture) => {
       frameTexture.colorSpace = THREE.SRGBColorSpace;
+      frameTexture.needsUpdate = true;
 
       const imgWidth = frameTexture.image.width;
       const imgHeight = frameTexture.image.height;
@@ -1024,6 +1036,7 @@ export class ThreeService implements OnDestroy {
       if (backgroundUrl) {
         texLoader.load(backgroundUrl, (bgTexture) => {
           bgTexture.colorSpace = THREE.SRGBColorSpace;
+          bgTexture.needsUpdate = true;
 
           const bgGeometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
           const bgMaterial = new THREE.MeshBasicMaterial({
