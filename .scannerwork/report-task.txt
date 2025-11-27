@@ -1,7 +1,7 @@
 organization=bmecommerce
 projectKey=bmecommerce_ecom-angular
 serverUrl=https://sonarcloud.io
-serverVersion=8.0.0.76841
+serverVersion=8.0.0.76849
 dashboardUrl=https://sonarcloud.io/dashboard?id=bmecommerce_ecom-angular
-ceTaskId=AZrEXg7Ygd7WNNFm7N1R
-ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZrEXg7Ygd7WNNFm7N1R
+ceTaskId=AZrEYrvgiPj821efE8gi
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZrEYrvgiPj821efE8gi
