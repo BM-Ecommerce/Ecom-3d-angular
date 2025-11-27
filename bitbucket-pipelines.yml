@@ -1,31 +1,58 @@
-image: ************************** # Choose an image matching your project needs
+image: node:18  # Node image for Angular
 
 clone:
-  depth: full              # SonarQube Cloud scanner needs the full history to assign issues properly
+  depth: full   # Required by SonarCloud
 
 definitions:
   caches:
-    sonar: ~/.sonar/cache  # Caching SonarQube Cloud artifacts will speed up your build
+    node: ~/.npm
+    sonar: ~/.sonar/cache
+
   steps:
     - step: &build-test-sonarcloud
-        name: Build, test and analyze on SonarQube Cloud
+        name: Build, Test & Analyze (SonarCloud)
         caches:
-          - **************************           # See https://confluence.atlassian.com/bitbucket/caching-dependencies-895552876.html
+          - node
           - sonar
         script:
-          - **************************           # Build your project and run
+          # 1. Install dependencies
+          - npm install
+
+          # 2. Install Chrome for Karma Headless
+          - apt-get update && apt-get install -y wget gnupg unzip
+          - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          - apt-get install -y ./google-chrome-stable_current_amd64.deb || apt-get install -f -y
+
+          # 3. Run tests & generate coverage
+          - npm run test -- --watch=false --browsers=ChromeHeadless --code-coverage
+
+          # 4. Build Angular
+          - npm run build -- --configuration production
+
+          # 5. Run SonarCloud pipe
           - pipe: sonarsource/sonarcloud-scan:4.0.0
+            variables:
+              EXTRA_ARGS: >
+                -Dsonar.projectKey=bmecommerce_ecom-angular
+                -Dsonar.organization=bmecommerce
+                -Dsonar.sources=src
+                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                -Dsonar.tests=src
+                -Dsonar.test.inclusions="**/*.spec.ts"
+
     - step: &check-quality-gate-sonarcloud
-        name: Check the Quality Gate on SonarQube Cloud
+        name: Check Quality Gate (SonarCloud)
         script:
           - pipe: sonarsource/sonarcloud-quality-gate:0.1.6
 
-pipelines:                 # More info here: https://confluence.atlassian.com/bitbucket/configure-bitbucket-pipelines-yml-792298910.html
+pipelines:
   branches:
     master:
       - step: *build-test-sonarcloud
       - step: *check-quality-gate-sonarcloud
+
   pull-requests:
     '**':
       - step: *build-test-sonarcloud
       - step: *check-quality-gate-sonarcloud
+
