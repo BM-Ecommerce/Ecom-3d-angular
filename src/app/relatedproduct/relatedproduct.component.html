@@ -47,7 +47,7 @@
             <img
                 [attr.data-img]="imgpath + product.colorimage"
                 [style.background-image]="showframe ? 'url(' + imgpath + product.colorimage + ')' : null"
-                [src]="showframe ? relatedframeimage : (imgpath + product.colorimage)"
+                [src]="getRelatedImage(product)"
                 alt="{{ product.productname }}"
                 (error)="onImageError($event)"
               />
@@ -74,7 +74,7 @@
             <img
               [attr.data-img]="imgpath + product.colorimage"
               [style.background-image]="showframe ? 'url(' + imgpath + product.colorimage + ')' : null"
-              [src]="showframe ? relatedframeimage : (imgpath + product.colorimage)"
+              [src]="getRelatedImage(product)"
               alt="{{ product.productname }}"
               (error)="onImageError($event)"
             />

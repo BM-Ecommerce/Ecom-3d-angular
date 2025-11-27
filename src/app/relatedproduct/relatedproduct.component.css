@@ -128,6 +128,7 @@ mat-button-toggle.mat-button-toggle-checked {
   gap: 0;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   grid-column-gap: 10px;
+  grid-row-gap: 10px;
 }
 
 ::ng-deep mat-button-toggle-group.viewmode {
