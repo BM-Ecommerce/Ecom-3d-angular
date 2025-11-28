@@ -10,11 +10,11 @@
             appearance="standard"
             class ="viewmode"
           >
-            <mat-button-toggle value="grid" aria-label="Grid View">
+            <mat-button-toggle value="grid" aria-label="Grid View" matTooltip="Grid View" matTooltipPosition="above">
               <mat-icon>grid_on</mat-icon>
             </mat-button-toggle>
 
-            <mat-button-toggle value="slider" aria-label="Slider View">
+            <mat-button-toggle value="slider" aria-label="Slider View" matTooltip="Slider View" matTooltipPosition="above">
               <mat-icon>view_carousel</mat-icon>
             </mat-button-toggle>
           </mat-button-toggle-group>
@@ -25,11 +25,12 @@
             (change)="showframeView()"
             appearance="standard"
           >
-            <mat-button-toggle value="withframe" aria-label="Show Frame">
+            <mat-button-toggle value="withframe" aria-label="Show Frame"  matTooltip="Show Frame" matTooltipPosition="above">
               <mat-icon>crop_square</mat-icon>
+             
             </mat-button-toggle>
 
-            <mat-button-toggle value="withoutframe" aria-label="Hide Frame">
+            <mat-button-toggle value="withoutframe" aria-label="Hide Frame"   matTooltip="Hide Frame" matTooltipPosition="above">
               <mat-icon>crop_free</mat-icon>
             </mat-button-toggle>
           </mat-button-toggle-group>
@@ -83,7 +84,7 @@
             <div class="rp-info">
               <p class="rp-name">
                 {{ product.productname }}
-                <span class="rp-fabric">{{ product.fabricname }}</span>&nbsp;
+                <span class="rp-fabric">{{ product.fabricname }}</span>
                 <span class="rp-color">{{ product.colorname }}</span>
               </p>
 
