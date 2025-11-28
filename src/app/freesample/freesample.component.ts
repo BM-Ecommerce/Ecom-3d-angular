@@ -80,6 +80,7 @@ export class FreesampleComponent implements OnInit, OnChanges {
             }
           }).then(() => {
             this.button_disable = false;
+             window.location.href = environment.site + '/cart';
             this.cdr.detectChanges();
           });
         }

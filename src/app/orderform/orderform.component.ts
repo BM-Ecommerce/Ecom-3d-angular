@@ -2338,12 +2338,36 @@ public onToggleLoopAnimate(): void {
   }
   handleUnitTypeChange(value: any, params: any): void {
     const unitValue = typeof value === 'string' ? parseInt(value, 10) : value;
+    // Capture current fraction contributions before changing flags/controls
+    const prevWidthFraction = Number(this.orderForm.get('widthfraction')?.value) || 0;
+    const prevDropFraction = Number(this.orderForm.get('dropfraction')?.value) || 0;
+
     this.unittype = unitValue;
     this.showFractions = (unitValue === 4);
     this.updateMinMaxValidators(true);
     if (this.is3DOn) {
       this.threeService.setUnitLabel(this.getUnitLabel());
       this.threeService.setDimensions(this.width, this.drop);
+    }
+    if (unitValue !== 4) {
+      if (prevWidthFraction) {
+        this.width = Math.max(0, (Number(this.width) || 0) - prevWidthFraction);
+      }
+      if (prevDropFraction) {
+        this.drop = Math.max(0, (Number(this.drop) || 0) - prevDropFraction);
+      }
+
+      this.orderForm.get('widthfraction')?.setValue(0, { emitEvent: false });
+      this.orderForm.get('dropfraction')?.setValue(0, { emitEvent: false });
+
+      if (this.widthField) {
+        this.widthField.widthfraction = '';
+        this.widthField.widthfractiontext = '';
+      }
+      if (this.dropField) {
+        this.dropField.dropfraction = '';
+        this.dropField.dropfractiontext = '';
+      }
     }
     this.apiService.getFractionData(params, unitValue).pipe(
       takeUntil(this.destroy$),
@@ -2440,7 +2464,7 @@ public onToggleLoopAnimate(): void {
               popup: 'small-toast'
             }
           }).then(() => {
-            window.location.href = this.routeParams.site + '/cart';
+            window.location.href = environment.site + '/cart';
           });
 
         } else {
