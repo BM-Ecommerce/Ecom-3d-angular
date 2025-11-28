@@ -65,6 +65,7 @@ export class ThreeService implements OnDestroy {
   private cube3Mesh!: THREE.Mesh;
   private backgroundMesh!: THREE.Mesh;
   private cubeMesh!: THREE.Mesh;
+  public showDimensions = true;
 
   // Material used for pattern on slats/fabric
   private textureMaterial?: THREE.MeshStandardMaterial;
@@ -135,6 +136,18 @@ export class ThreeService implements OnDestroy {
     this.canvasEl?.classList.add('grab');
   };
 
+  // Measurement helpers (3D): arrows + labels
+  private measurementGroup?: THREE.Group;
+  private horizArrowPos?: THREE.ArrowHelper;
+  private horizArrowNeg?: THREE.ArrowHelper;
+  private vertArrowPos?: THREE.ArrowHelper;
+  private vertArrowNeg?: THREE.ArrowHelper;
+  private widthLabel?: THREE.Sprite;
+  private heightLabel?: THREE.Sprite;
+  private lastWidth: number = 0;
+  private lastDrop: number = 0;
+  private unitLabel: string = '';
+
   constructor(
     private zone: NgZone,
     @Inject(LoadingService) private loading: LoadingService
@@ -161,6 +174,204 @@ export class ThreeService implements OnDestroy {
     this.gltfLoader = new GLTFLoader(this.loadingManager);
   }
 
+  
+  public setDimensions(width: number, drop: number): void {
+    this.lastWidth = Number(width) || 0;
+    this.lastDrop = Number(drop) || 0;
+    this.updateDimensionHelpers(this.lastWidth, this.lastDrop);
+  }
+
+  public setUnitLabel(unit: string): void {
+    this.unitLabel = unit || '';
+    this.updateDimensionHelpers(this.lastWidth, this.lastDrop);
+  }
+
+  private createTextSprite(text: string, baseScale: number): THREE.Sprite {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d')!;
+
+  const padding = 18;
+  const fontSize = 60;
+  const fontFamily = 'Arial, sans-serif';
+  ctx.font = `600 ${fontSize}px ${fontFamily}`;
+
+  const textWidth = ctx.measureText(text).width;
+  const textHeight = fontSize * 1.4;
+
+  canvas.width = textWidth + padding * 2;
+  canvas.height = textHeight + padding * 2;
+
+  const ctx2 = canvas.getContext('2d')!;
+  ctx2.font = `600 ${fontSize}px ${fontFamily}`;
+  ctx2.textBaseline = 'middle';
+
+  const radius = 35;
+  const w = canvas.width;
+  const h = canvas.height;
+
+  ctx2.fillStyle = 'rgba(0,39,70,0.85)'; 
+  ctx2.beginPath();
+  ctx2.moveTo(radius, 0);
+  ctx2.lineTo(w - radius, 0);
+  ctx2.quadraticCurveTo(w, 0, w, radius);
+  ctx2.lineTo(w, h - radius);
+  ctx2.quadraticCurveTo(w, h, w - radius, h);
+  ctx2.lineTo(radius, h);
+  ctx2.quadraticCurveTo(0, h, 0, h - radius);
+  ctx2.lineTo(0, radius);
+  ctx2.quadraticCurveTo(0, 0, radius, 0);
+  ctx2.closePath();
+  ctx2.fill();
+
+  // White text
+  ctx2.fillStyle = '#ffffff';
+  ctx2.fillText(text, padding, h / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false
+  });
+
+  const sprite = new THREE.Sprite(material);
+
+  const scale = baseScale;
+  sprite.scale.set(scale, scale * (canvas.height / canvas.width), 1);
+
+  return sprite;
+}
+
+  private ensureMeasurementGroup(): THREE.Group {
+    if (!this.measurementGroup) {
+      this.measurementGroup = new THREE.Group();
+      this.scene.add(this.measurementGroup);
+    }
+    return this.measurementGroup;
+  }
+private updateDimensionHelpers(width: number, drop: number): void {
+  if (!this.scene || !this.camera || !this.currentModelRoot) return;
+
+  const bbox = new THREE.Box3().setFromObject(this.currentModelRoot);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  bbox.getSize(size);
+  bbox.getCenter(center);
+
+  const mainSpan = Math.max(size.x, size.y, size.z, 1);
+  const margin = mainSpan * 0.06;
+
+  const group = this.ensureMeasurementGroup();
+  while (group.children.length > 0) {
+    const child = group.children.pop()!;
+    this.disposeObject(child);
+  }
+
+  // Show only when toggled on AND both width and drop are > 0
+  group.visible = !!(this.showDimensions && (width > 0) && (drop > 0));
+
+  // Styles
+  const COLOR = new THREE.Color(0x002746);
+  const ARROW_SIZE = mainSpan * 0.045;
+  const LABEL_GAP = mainSpan * 0.06;
+
+  const lineMat = new THREE.LineDashedMaterial({
+    color: COLOR,
+    dashSize: mainSpan * 0.04,
+    gapSize: mainSpan * 0.02,
+    depthTest: false
+  });
+
+  // Arrowhead maker
+  const makeArrowHead = (size: number) => {
+    const geo = new THREE.BufferGeometry();
+    const verts = new Float32Array([
+      0, 0, 0,
+      -size,  size * 0.5, 0,
+      -size, -size * 0.5, 0
+    ]);
+    geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+    const mat = new THREE.MeshBasicMaterial({ color: COLOR, depthTest: false });
+    return new THREE.Mesh(geo, mat);
+  };
+
+  // ---------------------
+  // WIDTH DIMENSION
+  // ---------------------
+  const yDim = bbox.min.y - margin;
+
+  const widthLineGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(bbox.min.x, yDim, center.z),
+    new THREE.Vector3(bbox.max.x, yDim, center.z)
+  ]);
+  const widthLine = new THREE.Line(widthLineGeo, lineMat);
+  widthLine.computeLineDistances();
+  group.add(widthLine);
+
+  const leftArrow = makeArrowHead(ARROW_SIZE);
+  leftArrow.position.set(bbox.min.x, yDim, center.z);
+  leftArrow.rotation.z = Math.PI;
+  group.add(leftArrow);
+
+  const rightArrow = makeArrowHead(ARROW_SIZE);
+  rightArrow.position.set(bbox.max.x, yDim, center.z);
+  rightArrow.rotation.z = 0;
+  group.add(rightArrow);
+
+  const widthText = `${width || 0} ${this.unitLabel}`;
+  this.widthLabel = this.createTextSprite(widthText, mainSpan * 0.14);
+  this.widthLabel.position.set(
+    (bbox.min.x + bbox.max.x) / 2,
+    yDim - LABEL_GAP,
+    center.z
+  );
+  group.add(this.widthLabel);
+
+  // ---------------------
+  // HEIGHT DIMENSION
+  // ---------------------
+  const xDim = bbox.max.x + margin;
+
+  const heightLineGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(xDim, bbox.min.y, center.z),
+    new THREE.Vector3(xDim, bbox.max.y, center.z)
+  ]);
+  const heightLine = new THREE.Line(heightLineGeo, lineMat);
+  heightLine.computeLineDistances();
+  group.add(heightLine);
+
+  const bottomArrow = makeArrowHead(ARROW_SIZE);
+  bottomArrow.position.set(xDim, bbox.min.y, center.z);
+  bottomArrow.rotation.z = -Math.PI / 2;
+  group.add(bottomArrow);
+
+  const topArrow = makeArrowHead(ARROW_SIZE);
+  topArrow.position.set(xDim, bbox.max.y, center.z);
+  topArrow.rotation.z = Math.PI / 2;
+  group.add(topArrow);
+
+  const heightText = `${drop || 0} ${this.unitLabel}`;
+  this.heightLabel = this.createTextSprite(heightText, mainSpan * 0.14);
+  this.heightLabel.position.set(
+    xDim + LABEL_GAP,
+    (bbox.min.y + bbox.max.y) / 2,
+    center.z
+  );
+  group.add(this.heightLabel);
+
+  this.render();
+}
+
+public enableDimensions(on: boolean): void {
+  this.showDimensions = on;
+  if (this.measurementGroup) {
+    const visible = !!(on && (this.lastWidth > 0) && (this.lastDrop > 0));
+    this.measurementGroup.visible = visible;
+  }
+  this.render();
+}
   // ------------------------------------------------------
   // Lifecycle
   // ------------------------------------------------------
@@ -250,6 +461,22 @@ export class ThreeService implements OnDestroy {
       } catch {
         /* ignore */
       }
+    }
+
+    if (this.measurementGroup) {
+      try {
+        this.scene?.remove(this.measurementGroup);
+      } catch {
+        /* ignore */
+      }
+      this.disposeObject(this.measurementGroup);
+      this.measurementGroup = undefined;
+      this.horizArrowPos = undefined;
+      this.horizArrowNeg = undefined;
+      this.vertArrowPos = undefined;
+      this.vertArrowNeg = undefined;
+      this.widthLabel = undefined;
+      this.heightLabel = undefined;
     }
 
     if (this.controls) {
@@ -777,6 +1004,9 @@ export class ThreeService implements OnDestroy {
             (mesh.material as THREE.Material).needsUpdate = true;
           });
         }
+
+        // Update measurement arrows/labels using latest width/drop
+        this.updateDimensionHelpers(this.lastWidth, this.lastDrop);
       },
       undefined,
       (error) => {

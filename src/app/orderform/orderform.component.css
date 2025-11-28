@@ -1273,3 +1273,10 @@ mat-button-toggle-group:disabled {
   font-size: 0.8rem;
   color: #5f6368;
 }
+.visualizer-view-controls-dimentions.ng-star-inserted {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+}

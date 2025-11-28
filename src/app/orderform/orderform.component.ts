@@ -281,6 +281,8 @@ hasDescriptionContent = false;
   hinge_color_field_names:any[] = ['hingecolors','hingecolour','hingecolours'];
   color_field_names:any[] = ['colours','colour','color'];
   enableSelectSearch: boolean = true;
+  showDimensionsToggle: boolean = false;
+  dimensionMode: 'on' | 'off' = 'off'; 
 
   get_freesample() {
     this.freesample = {
@@ -585,6 +587,18 @@ public onToggleLoopAnimate(): void {
           this.threeService.loadGltfModel('assets/romanblinds.glb', 'roman');
       }else {
         this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'generic');
+      }
+
+      // Seed dimension overlays and apply visibility rule
+      this.threeService.setDimensions(this.width, this.drop);
+      this.threeService.setUnitLabel(this.getUnitLabel());
+      const validDims = this.width > 0 && this.drop > 0;
+      if (validDims) {
+        this.dimensionMode = 'on';
+        this.threeService.enableDimensions(true);
+      } else {
+        this.dimensionMode = 'off';
+        this.threeService.enableDimensions(false);
       }
 
     } else {
@@ -2161,6 +2175,10 @@ public onToggleLoopAnimate(): void {
       const totalWidth = mainWidth + fractionValue;
       this.width = totalWidth;
       this.updateFieldValues(this.widthField, mainWidth, 'Totalwidth');
+      // Update 3D dimension overlays
+      if (this.is3DOn) {
+        this.threeService.setDimensions(this.width, this.drop);
+      }
     }
     if (values['dropfraction'] !== this.previousFormValue['dropfraction'] && this.dropField) {
       let mainDrop = Number(this.orderForm.get('field_' + this.dropField.fieldid)?.value) || 0;
@@ -2168,6 +2186,10 @@ public onToggleLoopAnimate(): void {
       const totalDrop = mainDrop + fractionValue;
       this.drop = totalDrop;
       this.updateFieldValues(this.dropField, mainDrop, 'TotalDrop');
+      // Update 3D dimension overlays
+      if (this.is3DOn) {
+        this.threeService.setDimensions(this.width, this.drop);
+      }
     }
     for (const key in values) {
       if (!key.startsWith('field_')) continue;
@@ -2248,6 +2270,25 @@ public onToggleLoopAnimate(): void {
     const totalWidth = Number(value) + fractionValue;
     this.width = totalWidth;
     this.updateFieldValues(field, value, 'Totalwidth');
+    const validDims = this.width > 0 && this.drop > 0;
+    if (this.dimensionMode === 'on' && !validDims) {
+      this.dimensionMode = 'off';
+      this.threeService.enableDimensions(false);
+    } else if (validDims && this.dimensionMode === 'off') {
+      // Values became valid: auto-show toggle and dimensions
+      this.dimensionMode = 'on';
+      this.threeService.enableDimensions(true);
+    }
+    if (this.is3DOn) {
+      this.threeService.setDimensions(this.width, this.drop);
+    }
+  }
+  getUnitLabel(): string {
+    const selected = this.unitOption.find(
+      (o: { optionid: number; optionname: string }) => o.optionid === this.unittype
+    );
+
+    return selected ? selected.optionname : "";
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
@@ -2259,8 +2300,25 @@ public onToggleLoopAnimate(): void {
     const totalDrop = Number(value) + fractionValue;
     this.drop = totalDrop;
     this.updateFieldValues(field, value, 'TotalDrop');
+    const validDims = this.width > 0 && this.drop > 0;
+    if (this.dimensionMode === 'on' && !validDims) {
+      this.dimensionMode = 'off';
+      this.threeService.enableDimensions(false);
+    } else if (validDims && this.dimensionMode === 'off') {
+      // Values became valid: auto-show toggle and dimensions
+      this.dimensionMode = 'on';
+      this.threeService.enableDimensions(true);
+    }
+    if (this.is3DOn) {
+      this.threeService.setDimensions(this.width, this.drop);
+    }
   }
 
+  toggleDimensions(event?: MatButtonToggleChange) {
+    const mode = (event?.value ?? this.dimensionMode) as 'on' | 'off';
+    this.dimensionMode = mode;
+    this.threeService.enableDimensions(mode === 'on');
+  }
   private handleRestOptionChange(params: any, field: ProductField, value: any): void {
     if (value === null || value === undefined || value === '') {
       return;
@@ -2283,6 +2341,10 @@ public onToggleLoopAnimate(): void {
     this.unittype = unitValue;
     this.showFractions = (unitValue === 4);
     this.updateMinMaxValidators(true);
+    if (this.is3DOn) {
+      this.threeService.setUnitLabel(this.getUnitLabel());
+      this.threeService.setDimensions(this.width, this.drop);
+    }
     this.apiService.getFractionData(params, unitValue).pipe(
       takeUntil(this.destroy$),
       catchError(err => {
