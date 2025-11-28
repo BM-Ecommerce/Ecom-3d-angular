@@ -281,7 +281,7 @@ hasDescriptionContent = false;
   hinge_color_field_names:any[] = ['hingecolors','hingecolour','hingecolours'];
   color_field_names:any[] = ['colours','colour','color'];
   enableSelectSearch: boolean = true;
-  showDimensionsToggle: boolean = false;
+  showDimensionsToggle: boolean = true;
   dimensionMode: 'on' | 'off' = 'off'; 
 
   get_freesample() {
@@ -2301,7 +2301,7 @@ public onToggleLoopAnimate(): void {
 
     if (!selected) return "";
 
-    return selected.optionname === "Inches" ? "in" : selected.optionname;
+    return selected.optionname === "Inches" ? "inch" : selected.optionname;
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
