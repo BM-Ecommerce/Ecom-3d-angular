@@ -893,20 +893,12 @@ public enableDimensions(on: boolean): void {
                 this.Wood.push(mesh);
               }
             } else {
-              // Generic fallback: based on hierarchy and names
-              const parent = mesh.parent;
-              const grandParent = parent?.parent;
-              if (parent && grandParent && grandParent.name === 'Cube_5') {
-                const index = parent.children.indexOf(child);
-                if (index === 1) {
-                  this.cube5Meshes.push(mesh);
-                }
+             if (mesh.name.startsWith('Plane') || mesh.name.startsWith('Cube001')) {
+                this.cube5Meshes.push(mesh);
               }
-
-              if (mesh.name === 'Cube_4') this.cube4Mesh = mesh;
-              if (mesh.name === 'Cube_3') this.cube3Mesh = mesh;
-              if (mesh.name === 'Cube_2') this.cube2Mesh = mesh;
-              if (mesh.name === 'Cube') this.cubeMesh = mesh;
+              if(mesh.name.startsWith('Cube') && !mesh.name.startsWith('Cube001')){
+                this.cubeMesh= mesh;
+              }
             }
           }
         });
@@ -1457,7 +1449,9 @@ public enableDimensions(on: boolean): void {
           this.type === 'daynight' ||
           this.type === 'roman' ||
           this.type === 'rollerblinds' ||
-          this.type === 'wood'
+          this.type === 'wood' ||
+          this.type === 'generic'
+          
         ) {
           if (!this.cube5Meshes || this.cube5Meshes.length === 0) {
             this.pendingTextureUrl = backgroundUrl;
@@ -1546,7 +1540,7 @@ public enableDimensions(on: boolean): void {
 
     // Wood: apply averaged color to wood parts (frame, valance, etc.)
     if (this.type === 'wood' && this.Wood.length > 0) {
-      const baseColor = this.extractAverageColor(texture);
+      const baseColor = this.extractAverageColor(texture).convertSRGBToLinear();
       const woodProfile = this.getBlindMaterialProfile('wood');
 
       this.Wood.forEach((mesh) => {
@@ -1672,7 +1666,7 @@ public enableDimensions(on: boolean): void {
         map: texture,
         roughness: profile.roughness,
         metalness: profile.metalness,
-        color: originalMaterial?.color ?? new THREE.Color(0xffffff),
+        color: originalMaterial?.color.convertSRGBToLinear() ?? new THREE.Color(0xffffff),
         emissive: new THREE.Color(0xffffff),
         emissiveIntensity: profile.emissiveIntensity,
         side: THREE.DoubleSide,
@@ -1719,26 +1713,56 @@ public enableDimensions(on: boolean): void {
   }
 
   public updateFrame(backgroundUrl: string): void {
+
     if (!backgroundUrl) return;
 
-    const meshes = [this.cubeMesh, this.cube2Mesh, this.cube3Mesh];
+    const targetsReady = this.cubeMesh && this.currentModelRoot;
 
-    this.textureLoader.load(backgroundUrl, (texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      const newMaterial = new THREE.MeshStandardMaterial({
-        map: texture
-      });
+    if (!targetsReady) {
+      this.pendingTextureUrl = backgroundUrl;
+      return;
+    }
 
-      meshes.forEach((mesh) => {
-        if (mesh) {
-          mesh.material = newMaterial;
-          (mesh.material as THREE.Material).needsUpdate = true;
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
+    const urlWithCacheBust = `${backgroundUrl}?t=${Date.now()}`;
+
+    this.textureLoader.load(
+      urlWithCacheBust,
+      (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+        texture.needsUpdate = true;
+
+        const woodProfile = this.getBlindMaterialProfile('generic');
+
+        if (Array.isArray(this.cubeMesh.material)) {
+          this.cubeMesh.material.forEach((m) => m.dispose());
+        } else if (this.cubeMesh.material) {
+          (this.cubeMesh.material as THREE.Material).dispose();
         }
+
+      const baseColor = this.extractAverageColor(texture).convertSRGBToLinear();
+
+      this.cubeMesh.material = new THREE.MeshStandardMaterial({
+        color: baseColor,
+        roughness: woodProfile.roughness,
+        metalness: woodProfile.metalness,
+        side: THREE.DoubleSide
       });
-    });
+
+        this.cubeMesh.castShadow = true;
+        this.cubeMesh.receiveShadow = true;
+      },
+      undefined,
+      (err) => {
+        console.error('Texture load error:', err);
+      }
+    );
   }
+
 
   // ------------------------------------------------------
   // Camera helpers

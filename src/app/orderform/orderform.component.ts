@@ -395,6 +395,7 @@ hasDescriptionContent = false;
   pricegroup_id = 0;
   supplier_id: number | null = null;
   currencySymbol: string = '£';
+  public isMobile = false;
   // Form controls
   orderForm: FormGroup;
   previousFormValue: any;
@@ -457,6 +458,7 @@ hasDescriptionContent = false;
   private composingFrameKeys = new Set<string>();
 
   ngOnInit(): void {
+    this.updateIsMobile();
     // Expose loader mode for template conditions
     this.loaderMode = environment.loaderMode;
     this.loaderEnabled = environment.loaderEnabled;
@@ -586,7 +588,7 @@ public onToggleLoopAnimate(): void {
       }else if(productname.toLowerCase().includes('roman')) {
           this.threeService.loadGltfModel('assets/romanblinds.glb', 'roman');
       }else {
-        this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'generic');
+        this.threeService.loadGltfModel('assets/rollerdoor.glb', 'generic');
       }
 
       // Seed dimension overlays and apply visibility rule
@@ -628,11 +630,20 @@ public onToggleLoopAnimate(): void {
   }
   @HostListener('window:resize')
   onWindowResize(): void {
+    this.updateIsMobile();
     if (this.containerRef) {
       this.threeService.onResize(this.containerRef.nativeElement);
     }
     if (!this.is3DOn) {
       this.update2DContainerHeightFromFrame();
+    }
+  }
+
+  private updateIsMobile(): void {
+    try {
+      this.isMobile = window.innerWidth < 768;
+    } catch {
+      this.isMobile = false;
     }
   }
 

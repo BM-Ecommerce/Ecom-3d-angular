@@ -4,6 +4,7 @@ import { ApiService } from '../services/api.service';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatIconModule } from '@angular/material/icon';
 import { CarouselModule } from 'ngx-owl-carousel-o';
 import { environment } from '../../environments/environment';
@@ -15,7 +16,8 @@ import { environment } from '../../environments/environment';
     CommonModule,
     MatButtonToggleModule,
     MatIconModule,
-    CarouselModule
+    CarouselModule,
+    MatTooltipModule
   ],
   templateUrl: './relatedproduct.component.html',
   styleUrls: ['./relatedproduct.component.css'],
