@@ -2403,7 +2403,7 @@ public onToggleLoopAnimate(): void {
               popup: 'small-toast'
             }
           }).then(() => {
-            window.location.href = this.routeParams.site + '/cart';
+            window.location.href = environment.site + '/cart';
           });
 
         } else {
