@@ -2288,7 +2288,9 @@ public onToggleLoopAnimate(): void {
       (o: { optionid: number; optionname: string }) => o.optionid === this.unittype
     );
 
-    return selected ? selected.optionname : "";
+    if (!selected) return "";
+
+    return selected.optionname === "Inches" ? "in" : selected.optionname;
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
