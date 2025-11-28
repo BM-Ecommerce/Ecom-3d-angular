@@ -584,7 +584,7 @@ public onToggleLoopAnimate(): void {
       }else if(productname.toLowerCase().includes('roman')) {
           this.threeService.loadGltfModel('assets/romanblinds.glb', 'roman');
       }else {
-        this.threeService.loadGltfModel('assets/rollerdoor.gltf', 'generic');
+        this.threeService.loadGltfModel('assets/rollerdoor.glb', 'generic');
       }
 
     } else {
