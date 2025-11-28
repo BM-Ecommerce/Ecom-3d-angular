@@ -43,18 +43,18 @@
                 <canvas #visualizerCanvas></canvas>
                 <div #zoomLens class="zoom-lens" [hidden]="!isZooming"></div>
                 <div class="visualizer-controls">
-                  <button *ngIf="is3DOn" type="button"  matTooltip="Refresh" matTooltipPosition="right" mat-icon-button (click)="resetCamera()" aria-label="Reset view">
+                  <button *ngIf="is3DOn" type="button"  matTooltip="Refresh" [matTooltipDisabled]="isMobile" matTooltipPosition="right" mat-icon-button (click)="resetCamera()" aria-label="Reset view">
                     <mat-icon>refresh</mat-icon>
                   </button>
-                  <button *ngIf="is3DOn"  matTooltip="Zoom In" matTooltipPosition="right"  type="button" mat-icon-button (click)="zoomIn()" aria-label="Zoom in">
+                  <button *ngIf="is3DOn"  matTooltip="Zoom In" [matTooltipDisabled]="isMobile" matTooltipPosition="right"  type="button" mat-icon-button (click)="zoomIn()" aria-label="Zoom in">
                     <mat-icon>zoom_in</mat-icon>
                   </button>
-                  <button matTooltip="Zoom Out" matTooltipPosition="right" *ngIf="is3DOn" type="button" mat-icon-button (click)="zoomOut()" aria-label="Zoom out">
+                  <button matTooltip="Zoom Out" [matTooltipDisabled]="isMobile" matTooltipPosition="right" *ngIf="is3DOn" type="button" mat-icon-button (click)="zoomOut()" aria-label="Zoom out">
                     <mat-icon>zoom_out</mat-icon>
                   </button>
                       <button *ngIf="is3DOn && !hideAnimation"
                               type="button"
-                              matTooltip="{{ isAnimateOpen ? 'Open' : 'Close' }}"
+                              matTooltip="{{ isAnimateOpen ? 'Open' : 'Close' }}" [matTooltipDisabled]="isMobile"
                               matTooltipPosition="right"
                               mat-icon-button
                               (click)="onAnimate()"
@@ -71,7 +71,7 @@
                           <button *ngIf="is3DOn && !hideAnimation"
                                 type="button"
                                 mat-icon-button
-                                matTooltip="{{ isLooping ? 'Stop Animation' : 'Play Animation' }}"
+                                matTooltip="{{ isLooping ? 'Stop Animation' : 'Play Animation' }}" [matTooltipDisabled]="isMobile"
                                 matTooltipPosition="right"
                                 (click)="onToggleLoopAnimate()"
                                 aria-label="Toggle Loop Animation">
