@@ -1,18 +1,81 @@
-<mat-card class="example-card center-card" appearance="outlined">
-
-    <div>
-        <img mat-card-image [src]="freesampledata.pei_ecomImage" alt="Photo of a Shiba Inu">
+<mat-card class="sample-card" appearance="outlined">
+  <div class="sample-left">
+    <div class="sample-media">
+      <div class="fabric-bg"></div>
+      <img
+        class="sample-image"
+        [src]="freesampledata?.pei_ecomImage"
+        [alt]="freesampledata?.productname || 'Product image'"
+        loading="lazy"
+      />
+      <div class="sample-frame"></div>
     </div>
-    <div class="add-to-cart">
+    <div class="swatch-pill">Fabric swatch</div>
+  </div>
 
-
-        <button [disabled]="button_disable" [ngClass]="{ 'buttom-inactive-class': button_disable }" mat-stroked-button
-            mat-button color="primary" (click)="buyFreeSample()">Buy
-            Freesample
-            <span *ngIf="freesampledata?.free_sample_price > 0">
-                - {{ freesampledata.currencySymbol }} {{ freesampledata.free_sample_price }}
-            </span></button>
-
+  <div class="sample-main" aria-label="Sample details">
+    <div class="sample-header">
+      <div class="sample-title">
+        <div class="sample-name">{{ freesampledata?.productname || 'Sample' }}</div>
+        <div class="sample-sub" *ngIf="freesampledata?.colorname">Colour: {{ freesampledata?.colorname }}</div>
+      </div>
+      <div class="tag" *ngIf="freesampledata?.type === 'free_sample'">Free Sample</div>
     </div>
 
+    <div class="meta-chips" *ngIf="freesampledata?.vatname || freesampledata?.vatpercentage">
+      <div class="chip">
+        VAT: {{ freesampledata?.vatname || 'Included' }}
+        <span *ngIf="freesampledata?.vatpercentage"> ({{ freesampledata?.vatpercentage }}%)</span>
+      </div>
+    </div>
+
+    <div class="sample-points">
+      <div class="point">
+        <span class="point-dot"></span>
+        <span class="point-text">Feel the fabric and check the true colour before you order.</span>
+      </div>
+      <div class="point">
+        <span class="point-dot"></span>
+        <span class="point-text">Letterbox friendly swatch with a simple price summary.</span>
+      </div>
+    </div>
+
+    <div class="sample-cta">
+      <button
+        [disabled]="button_disable"
+        [ngClass]="{ 'button-inactive-class': button_disable, 'buttom-inactive-class': button_disable }"
+        [attr.aria-busy]="button_disable"
+        mat-stroked-button
+        mat-button
+        color="primary"
+        (click)="buyFreeSample()"
+      >
+        <span class="btn-content" aria-live="polite">
+          <ng-container *ngIf="button_disable; else idleLabel">
+            <mat-progress-spinner
+              class="btn-spinner"
+              [diameter]="18"
+              mode="indeterminate"
+            ></mat-progress-spinner>
+            <span>Adding...</span>
+          </ng-container>
+
+          <ng-template #idleLabel>
+            <span>Buy Free Sample</span>
+            <ng-container *ngIf="freesampledata?.free_sample_price > 0; else freeBadge">
+              <span class="price">
+                {{ freesampledata?.currencySymbol }} {{ freesampledata?.free_sample_price }}
+              </span>
+            </ng-container>
+            <ng-template #freeBadge>
+              <span class="badge-free" aria-label="Free sample">Free</span>
+            </ng-template>
+          </ng-template>
+        </span>
+      </button>
+      <div class="shipping-note">
+        Delivered as a swatch so you can confirm colour and texture first.
+      </div>
+    </div>
+  </div>
 </mat-card>

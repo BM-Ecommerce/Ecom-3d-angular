@@ -2,6 +2,7 @@ import { Component, Input, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef }
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../services/api.service';
 import Swal from 'sweetalert2';
 import { environment } from '../../environments/environment';
@@ -9,7 +10,7 @@ import { environment } from '../../environments/environment';
 @Component({
   selector: 'app-freesample',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatCardModule],
+  imports: [CommonModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule],
   templateUrl: './freesample.component.html',
   styleUrls: ['./freesample.component.css'],
 
@@ -83,11 +84,16 @@ export class FreesampleComponent implements OnInit, OnChanges {
              window.location.href = environment.site + '/cart';
             this.cdr.detectChanges();
           });
+        } else {
+          this.button_disable = false;
+          this.cdr.detectChanges();
         }
 
       },
       error: (err) => {
         console.log(err, "error");
+        this.button_disable = false;
+        this.cdr.detectChanges();
       }
     });
   }
