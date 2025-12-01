@@ -285,7 +285,8 @@ hasDescriptionContent = false;
   get_freesample() {
     this.freesample = {
       "status": this?.freesameple_status,
-      "product_id": this?.routeParams?.cart_productid,
+      "cart_productid": this?.routeParams?.cart_productid,
+      "product_id": this.product_id,
       "type": "free_sample",
       "free_sample_price": this?.freesample_price,
       "form_data": this?.orderitemdata(false, true),
@@ -2384,7 +2385,7 @@ public onToggleLoopAnimate(): void {
       visualizerImage = this.threeService.getCanvasDataURL(); // string already
     }
 
-    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site,
+    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid,Number(this.product_id), this.routeParams.site,
       this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname),
       this.pricedata,
       this.vatpercentage,
