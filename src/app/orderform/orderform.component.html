@@ -95,7 +95,7 @@
           <div *ngIf="is3DOn" class="visualizer-view-controls-dimentions">
                   <mat-button-toggle-group
                       name="dimensionToggle"
-                      *ngIf="show_image_icons && showDimensionsToggle && (width > 0 && drop > 0)"
+                      *ngIf="show_image_icons && showDimensionsToggle && (width > 0 || drop > 0)"
                       [(value)]="dimensionMode"
                       (change)="toggleDimensions($event)"
                       appearance="standard">

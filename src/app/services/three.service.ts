@@ -251,7 +251,7 @@ export class ThreeService implements OnDestroy {
     }
     return this.measurementGroup;
   }
-private updateDimensionHelpers(width: number, drop: number): void {
+  private updateDimensionHelpers(width: number, drop: number): void {
   if (!this.scene || !this.camera || !this.currentModelRoot) return;
 
   const bbox = new THREE.Box3().setFromObject(this.currentModelRoot);
@@ -269,8 +269,8 @@ private updateDimensionHelpers(width: number, drop: number): void {
     this.disposeObject(child);
   }
 
-  // Show only when toggled on AND both width and drop are > 0
-  group.visible = !!(this.showDimensions && (width > 0) && (drop > 0));
+  // Show when toggled on and at least one dimension is > 0
+  group.visible = !!(this.showDimensions && ((width > 0) || (drop > 0)));
 
   // Styles
   const COLOR = new THREE.Color(0x002746);
@@ -300,6 +300,8 @@ private updateDimensionHelpers(width: number, drop: number): void {
   // ---------------------
   // WIDTH DIMENSION
   // ---------------------
+  const widthGroup = new THREE.Group();
+  group.add(widthGroup);
   const yDim = bbox.min.y - margin;
 
   const widthLineGeo = new THREE.BufferGeometry().setFromPoints([
@@ -308,17 +310,17 @@ private updateDimensionHelpers(width: number, drop: number): void {
   ]);
   const widthLine = new THREE.Line(widthLineGeo, lineMat);
   widthLine.computeLineDistances();
-  group.add(widthLine);
+  widthGroup.add(widthLine);
 
   const leftArrow = makeArrowHead(ARROW_SIZE);
   leftArrow.position.set(bbox.min.x, yDim, center.z);
   leftArrow.rotation.z = Math.PI;
-  group.add(leftArrow);
+  widthGroup.add(leftArrow);
 
   const rightArrow = makeArrowHead(ARROW_SIZE);
   rightArrow.position.set(bbox.max.x, yDim, center.z);
   rightArrow.rotation.z = 0;
-  group.add(rightArrow);
+  widthGroup.add(rightArrow);
 
   const widthText = `${width || 0} ${this.unitLabel}`;
   this.widthLabel = this.createTextSprite(widthText, mainSpan * 0.14);
@@ -327,11 +329,13 @@ private updateDimensionHelpers(width: number, drop: number): void {
     yDim - LABEL_GAP,
     center.z
   );
-  group.add(this.widthLabel);
+  widthGroup.add(this.widthLabel);
 
   // ---------------------
   // HEIGHT DIMENSION
   // ---------------------
+  const heightGroup = new THREE.Group();
+  group.add(heightGroup);
   const xDim = bbox.max.x + margin;
 
   const heightLineGeo = new THREE.BufferGeometry().setFromPoints([
@@ -340,17 +344,17 @@ private updateDimensionHelpers(width: number, drop: number): void {
   ]);
   const heightLine = new THREE.Line(heightLineGeo, lineMat);
   heightLine.computeLineDistances();
-  group.add(heightLine);
+  heightGroup.add(heightLine);
 
   const bottomArrow = makeArrowHead(ARROW_SIZE);
   bottomArrow.position.set(xDim, bbox.min.y, center.z);
   bottomArrow.rotation.z = -Math.PI / 2;
-  group.add(bottomArrow);
+  heightGroup.add(bottomArrow);
 
   const topArrow = makeArrowHead(ARROW_SIZE);
   topArrow.position.set(xDim, bbox.max.y, center.z);
   topArrow.rotation.z = Math.PI / 2;
-  group.add(topArrow);
+  heightGroup.add(topArrow);
 
   const heightText = `${drop || 0} ${this.unitLabel}`;
   this.heightLabel = this.createTextSprite(heightText, mainSpan * 0.14);
@@ -359,17 +363,19 @@ private updateDimensionHelpers(width: number, drop: number): void {
     (bbox.min.y + bbox.max.y) / 2,
     center.z
   );
-  group.add(this.heightLabel);
+  heightGroup.add(this.heightLabel);
+
+  // Visibility per dimension
+  widthGroup.visible = width > 0;
+  heightGroup.visible = drop > 0;
 
   this.render();
 }
 
 public enableDimensions(on: boolean): void {
   this.showDimensions = on;
-  if (this.measurementGroup) {
-    const visible = !!(on && (this.lastWidth > 0) && (this.lastDrop > 0));
-    this.measurementGroup.visible = visible;
-  }
+  // Recompute helpers so group + per-axis visibility update together
+  this.updateDimensionHelpers(this.lastWidth, this.lastDrop);
   this.render();
 }
   // ------------------------------------------------------

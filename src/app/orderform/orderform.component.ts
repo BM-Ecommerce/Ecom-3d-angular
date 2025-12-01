@@ -591,11 +591,11 @@ public onToggleLoopAnimate(): void {
         this.threeService.loadGltfModel('assets/rollerdoor.glb', 'generic');
       }
 
-      // Seed dimension overlays and apply visibility rule
+      // Seed dimension overlays and apply visibility rule (per-axis)
       this.threeService.setDimensions(this.width, this.drop);
       this.threeService.setUnitLabel(this.getUnitLabel());
-      const validDims = this.width > 0 && this.drop > 0;
-      if (validDims) {
+      const anyValid = this.width > 0 || this.drop > 0;
+      if (anyValid) {
         this.dimensionMode = 'on';
         this.threeService.enableDimensions(true);
       } else {
@@ -2281,11 +2281,11 @@ public onToggleLoopAnimate(): void {
     const totalWidth = Number(value) + fractionValue;
     this.width = totalWidth;
     this.updateFieldValues(field, value, 'Totalwidth');
-    const validDims = this.width > 0 && this.drop > 0;
-    if (this.dimensionMode === 'on' && !validDims) {
+    const anyValid = this.width > 0 || this.drop > 0;
+    if (this.dimensionMode === 'on' && !anyValid) {
       this.dimensionMode = 'off';
       this.threeService.enableDimensions(false);
-    } else if (validDims && this.dimensionMode === 'off') {
+    } else if (anyValid && this.dimensionMode === 'off') {
       // Values became valid: auto-show toggle and dimensions
       this.dimensionMode = 'on';
       this.threeService.enableDimensions(true);
@@ -2313,11 +2313,11 @@ public onToggleLoopAnimate(): void {
     const totalDrop = Number(value) + fractionValue;
     this.drop = totalDrop;
     this.updateFieldValues(field, value, 'TotalDrop');
-    const validDims = this.width > 0 && this.drop > 0;
-    if (this.dimensionMode === 'on' && !validDims) {
+    const anyValid = this.width > 0 || this.drop > 0;
+    if (this.dimensionMode === 'on' && !anyValid) {
       this.dimensionMode = 'off';
       this.threeService.enableDimensions(false);
-    } else if (validDims && this.dimensionMode === 'off') {
+    } else if (anyValid && this.dimensionMode === 'off') {
       // Values became valid: auto-show toggle and dimensions
       this.dimensionMode = 'on';
       this.threeService.enableDimensions(true);
