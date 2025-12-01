@@ -209,7 +209,7 @@ export class ThreeService implements OnDestroy {
   const w = canvas.width;
   const h = canvas.height;
 
-  ctx2.fillStyle = this.getPrimaryColorRGBA(0.85);
+  ctx2.fillStyle = this.getPrimaryColorRGBA(1);
   ctx2.beginPath();
   ctx2.moveTo(radius, 0);
   ctx2.lineTo(w - radius, 0);
@@ -265,6 +265,7 @@ export class ThreeService implements OnDestroy {
         } else {
           return `rgba(0,39,70,${alpha})`;
         }
+        
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
       }
       if (val.startsWith('rgb')) {
@@ -291,53 +292,6 @@ export class ThreeService implements OnDestroy {
       return `rgba(0,39,70,${alpha})`;
     } catch {
       return `rgba(0,39,70,${alpha})`;
-    }
-  }
-
-  private getPrimaryColorTHREE(): THREE.Color {
-    try {
-      const style = getComputedStyle(document.documentElement);
-      let val = style.getPropertyValue('--primary-color')?.trim();
-      const fallback = new THREE.Color(0x002746);
-      if (!val) return fallback;
-      const toColor = (r: number, g: number, b: number) => new THREE.Color(r / 255, g / 255, b / 255);
-      if (val.startsWith('#')) {
-        const hex = val.slice(1);
-        if (hex.length === 3) {
-          const r = parseInt(hex[0] + hex[0], 16);
-          const g = parseInt(hex[1] + hex[1], 16);
-          const b = parseInt(hex[2] + hex[2], 16);
-          return toColor(r, g, b);
-        }
-        if (hex.length === 6) {
-          const r = parseInt(hex.substring(0, 2), 16);
-          const g = parseInt(hex.substring(2, 4), 16);
-          const b = parseInt(hex.substring(4, 6), 16);
-          return toColor(r, g, b);
-        }
-        return fallback;
-      }
-      if (val.startsWith('rgb')) {
-        const nums = val.replace(/rgba?\(/, '').replace(/\)/, '').split(',').map(s => s.trim());
-        const r = parseFloat(nums[0]);
-        const g = parseFloat(nums[1]);
-        const b = parseFloat(nums[2]);
-        if (Number.isFinite(r) && Number.isFinite(g) && Number.isFinite(b)) return toColor(r, g, b);
-        return fallback;
-      }
-      const tmp = document.createElement('div');
-      tmp.style.color = val;
-      document.body.appendChild(tmp);
-      const cs = getComputedStyle(tmp).color; // rgb(r,g,b)
-      document.body.removeChild(tmp);
-      const nums = cs.replace(/rgba?\(/, '').replace(/\)/, '').split(',').map(s => s.trim());
-      const r = parseFloat(nums[0]);
-      const g = parseFloat(nums[1]);
-      const b = parseFloat(nums[2]);
-      if (Number.isFinite(r) && Number.isFinite(g) && Number.isFinite(b)) return toColor(r, g, b);
-      return fallback;
-    } catch {
-      return new THREE.Color(0x002746);
     }
   }
 
@@ -370,7 +324,7 @@ export class ThreeService implements OnDestroy {
   group.visible = !!(this.showDimensions && ((width > 0) || (drop > 0)));
 
   // Styles
-  const COLOR = this.getPrimaryColorTHREE();
+  const COLOR = this.getPrimaryColorRGBA(0.1);
   const ARROW_SIZE = mainSpan * 0.045;
   const LABEL_GAP = mainSpan * 0.06;
 
