@@ -969,7 +969,9 @@ public enableDimensions(on: boolean): void {
           if (this.camera && (this.camera as any).isPerspectiveCamera) {
             const fov = (this.camera.fov * Math.PI) / 180;
             const distance = safeMax / (2 * Math.tan(fov / 2));
-            const finalDist = distance * 1.45;
+            const aspect = window.innerWidth / window.innerHeight;
+            const padding = THREE.MathUtils.lerp(1.35, 2.0, Math.max(0, 1 - aspect));
+            const finalDist = distance * padding;
 
             this.camera.position.set(0, 0, finalDist);
             this.camera.near = Math.max(0.01, safeMax / 1000);
@@ -1388,7 +1390,57 @@ public enableDimensions(on: boolean): void {
       this.camera2d.updateProjectionMatrix();
     }
 
+    // Recompute 2D plane sizes when the container changes so textures stay aligned
+    this.resize2dGeometry();
+
     this.render();
+  }
+
+  // Keep 2D frame/background sized to the canvas after layout changes
+  private resize2dGeometry(): void {
+    if (!this.renderer || !this.camera2d || !this.frameMesh) return;
+
+    const canvas = this.renderer.domElement;
+    const canvasWidth = canvas.clientWidth;
+    const canvasHeight = canvas.clientHeight;
+    if (!canvasWidth || !canvasHeight) return;
+
+    const frameMaterial = this.frameMesh.material as THREE.MeshBasicMaterial;
+    const frameTexture = frameMaterial?.map;
+    const img = frameTexture?.image as HTMLImageElement | undefined;
+    if (!frameTexture || !img || !img.width || !img.height) return;
+
+    const aspect = img.width / img.height;
+    const canvasAspect = canvasWidth / canvasHeight;
+
+    let viewWidth: number;
+    let viewHeight: number;
+
+    if (aspect > canvasAspect) {
+      viewWidth = canvasWidth;
+      viewHeight = viewWidth / aspect;
+    } else {
+      viewHeight = canvasHeight;
+      viewWidth = viewHeight * aspect;
+    }
+
+    this.frameMesh.geometry?.dispose();
+    this.frameMesh.geometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
+    this.frameMesh.position.z = 0;
+
+    if (this.backgroundMesh) {
+      this.backgroundMesh.geometry?.dispose();
+      this.backgroundMesh.geometry = new THREE.PlaneGeometry(
+        viewWidth,
+        viewHeight
+      );
+      this.backgroundMesh.position.z = -1;
+
+      const bgMat = this.backgroundMesh.material as THREE.MeshBasicMaterial;
+      if (bgMat?.map) {
+        this.fitBackgroundToFrame(frameTexture, this.frameMesh, this.backgroundMesh);
+      }
+    }
   }
 
   // ------------------------------------------------------
