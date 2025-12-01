@@ -6,7 +6,6 @@
              [src]="freesampledata?.pei_ecomImage"
              [alt]="freesampledata?.productname || 'Product image'"
              (error)="onImageError($event)" />
-        <span class="fs-swatch-weave" aria-hidden="true"></span>
         <span class="fs-swatch-hole" aria-hidden="true"></span>
         <span class="fs-swatch-eyelet" aria-hidden="true"></span>
         <span class="fs-swatch-size">{{ swatchSizeLabel }}</span>
@@ -24,14 +23,13 @@
 
       <div class="fs-meta">
         <div class="fs-price" *ngIf="(freesampledata?.free_sample_price ?? 0) > 0">
+          <span class="fs-price-label">Price</span>
           <span class="fs-price-value">
             {{ freesampledata?.currencySymbol }} {{ freesampledata?.free_sample_price }}
           </span>
-          <span class="fs-price-note" *ngIf="freesampledata?.vatpercentage">
-            incl. {{ freesampledata?.vatpercentage }}% {{ freesampledata?.vatname }}
-          </span>
         </div>
         <div class="fs-price" *ngIf="(freesampledata?.free_sample_price ?? 0) == 0">
+          <span class="fs-price-label">Price</span>
           <span class="fs-price-value">Free</span>
         </div>
       </div>
@@ -40,14 +38,14 @@
         We’ll send a fabric swatch of the selected product so you can feel the material and check the color at home.
       </p>
 
-      <ul class="fs-points">
-        <li><mat-icon aria-hidden="true">inventory_2</mat-icon><span>Sample-size swatch</span></li>
-        <li><mat-icon aria-hidden="true">visibility</mat-icon><span>See color and texture in real light</span></li>
-        <li><mat-icon aria-hidden="true">local_shipping</mat-icon><span>Fast dispatch</span></li>
-      </ul>
+      <div class="fs-chips">
+        <span class="fs-chip"><mat-icon aria-hidden="true">inventory_2</mat-icon> Sample-size swatch</span>
+        <span class="fs-chip"><mat-icon aria-hidden="true">visibility</mat-icon> View color & texture</span>
+        <span class="fs-chip"><mat-icon aria-hidden="true">local_shipping</mat-icon> Fast dispatch</span>
+      </div>
 
       <div class="fs-actions">
-        <button mat-raised-button color="primary"
+        <button class="fs-cta" mat-raised-button color="primary"
                 [disabled]="button_disable"
                 [ngClass]="{ 'buttom-inactive-class': button_disable }"
                 (click)="buyFreeSample()">
