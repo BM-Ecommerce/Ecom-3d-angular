@@ -2,6 +2,7 @@ import { Component, Input, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef }
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../services/api.service';
 import Swal from 'sweetalert2';
 import { environment } from '../../environments/environment';
@@ -9,13 +10,14 @@ import { environment } from '../../environments/environment';
 @Component({
   selector: 'app-freesample',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatCardModule],
+  imports: [CommonModule, MatButtonModule, MatCardModule, MatIconModule],
   templateUrl: './freesample.component.html',
   styleUrls: ['./freesample.component.css'],
 
 })
 export class FreesampleComponent implements OnInit, OnChanges {
   @Input() freesampledata: any;
+  @Input() swatchSizeLabel: string = 'Approx. 10 × 10 cm';
 
   freeSampleOrderData: any = [];
   button_disable: boolean = false;
@@ -90,6 +92,13 @@ export class FreesampleComponent implements OnInit, OnChanges {
         console.log(err, "error");
       }
     });
+  }
+
+  onImageError(event: Event) {
+    const target = event?.target as HTMLImageElement | null;
+    if (target) {
+      target.style.display = 'none';
+    }
   }
 
 }
