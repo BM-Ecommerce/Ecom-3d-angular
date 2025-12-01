@@ -55,7 +55,7 @@
 
 /* Stitched inner border */
 .fs-swatch::before {
-  content: '';
+/*  content: ''; */
   position: absolute;
   inset: 8px;
   border-radius: 2px;
