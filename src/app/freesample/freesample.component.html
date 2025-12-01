@@ -42,11 +42,11 @@
 
     <div class="sample-cta">
       <button
+        class="sample-btn"
         [disabled]="button_disable"
         [ngClass]="{ 'button-inactive-class': button_disable, 'buttom-inactive-class': button_disable }"
         [attr.aria-busy]="button_disable"
-        mat-stroked-button
-        mat-button
+        mat-raised-button
         color="primary"
         (click)="buyFreeSample()"
       >
@@ -61,6 +61,7 @@
           </ng-container>
 
           <ng-template #idleLabel>
+            <mat-icon class="btn-icon" aria-hidden="true">shopping_cart</mat-icon>
             <span>Buy Free Sample</span>
             <ng-container *ngIf="freesampledata?.free_sample_price > 0; else freeBadge">
               <span class="price">
@@ -79,3 +80,4 @@
     </div>
   </div>
 </mat-card>
+

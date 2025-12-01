@@ -243,51 +243,69 @@
   display: flex;
   gap: 14px;
   align-items: center;
-  justify-content: space-around;
+  justify-content: center;
   flex-wrap: wrap;
   border-top: 1px solid #eef1f6;
   padding-top: 10px;
 }
 
-.sample-cta button {
+.sample-cta .sample-btn {
   justify-content: center;
-  padding: 6px 12px;
-  border-radius: 999px;
+  padding: 0 16px;
+  height: 40px;
+  min-width: 160px;
+  border-radius: var(--border-radius, 8px);
   font-weight: 700;
   letter-spacing: 0.01em;
-  border-color: #d1d5db;
-  color: #0f172a;
-  background-color: #ffffff;
-  min-width: 120px;
-  font-size: 13px;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
-  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+  font-size: 14px;
+  border: none;
+  color: #ffffff;
+  background-color: var(--primary-color, #002746);
+  box-shadow: var(--box-shadow, 0 0.5rem 1rem rgba(0, 0, 0, 0.1));
+  text-transform: none;
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
 }
 
-.sample-cta button:hover {
-  border-color: #94a3b8;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
-  transform: translateY(-1px);
+.sample-cta .sample-btn:hover {
+  filter: brightness(0.98);
+  box-shadow: 0 0.75rem 1.25rem rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }
 
-.sample-cta button:active {
+.sample-cta .sample-btn:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.14);
+  box-shadow: 0 0.35rem 0.75rem rgba(0, 0, 0, 0.1);
+}
+
+.sample-cta .sample-btn.button-inactive-class,
+.sample-cta .sample-btn.buttom-inactive-class,
+.sample-cta .sample-btn[disabled] {
+  color: #9ca3af;
+  background-color: #d6d6d6;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .btn-content {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
 }
 
 .btn-spinner {
   --mdc-circular-progress-active-indicator-color: currentColor;
 }
 
+.btn-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
 .price {
-  margin-left: 4px;
-  color: #0f766e;
+  margin-left: 2px;
+  color: inherit;
   font-weight: 700;
 }
 
@@ -296,8 +314,8 @@
   margin-left: 8px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #e6f7f3;
-  color: #0f766e;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
   font-size: 12px;
   line-height: 1.4;
   font-weight: 700;
