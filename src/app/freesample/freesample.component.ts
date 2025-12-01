@@ -39,7 +39,7 @@ export class FreesampleComponent implements OnInit, OnChanges {
     let form_data = this.freesampledata.form_data;
     let productId = this.freesampledata.product_id;
     let api_url = this.freesampledata.api_url;
-    let cartproductName = this.freesampledata.productname;
+    let cartproductName = this.freesampledata.cartproductName;
     let priceData = this.freesampledata.free_sample_price;
     let vatpercentage = Number(this.freesampledata.vatpercentage);
     let vatname = this.freesampledata.vatname;
@@ -48,6 +48,8 @@ export class FreesampleComponent implements OnInit, OnChanges {
     let categoryId = Number(this.freesampledata.catagory_id);
     let visualizer_url = this.freesampledata.pei_ecomImage;
     let action = this.freesampledata.type;
+    let colorid = this.freesampledata.color_id;
+    let fabricid = this.freesampledata.fabric_id;
 
 
 
@@ -63,7 +65,9 @@ export class FreesampleComponent implements OnInit, OnChanges {
       productname,
       categoryId,
       visualizer_url,
-      action
+      action,
+      colorid,
+      fabricid
     ).subscribe({
       next: (data) => {
         if (data.success) {

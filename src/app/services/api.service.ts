@@ -147,7 +147,7 @@ export class ApiService {
     const passData = `appSetup/fractionlist/${product_id}/-1/${faction_value}`;
     return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
   }
-  addToCart(formData: any, productId: string, apiUrl: string, cartproductName: string, priceData: any, vatpercentage: number, vatName: string, currenturl: string, productName: string, categoryId: number, visualizerImage?: string, action: string = "add_to_cart"): Observable<ApiResponse> {
+  addToCart(formData: any, productId: string, apiUrl: string, cartproductName: string, priceData: any, vatpercentage: number, vatName: string, currenturl: string, productName: string, categoryId: number, visualizerImage?: string, action: string = "add_to_cart",colorid?: number,fabricid?: number ): Observable<ApiResponse> {
     let body = new HttpParams()
       .set('action', action)
       .set('product_id', productId)
@@ -162,9 +162,14 @@ export class ApiService {
     if (visualizerImage) {
       body = body.set('visualizer_image', visualizerImage);
     }
+     if (colorid) {
+      body = body.set('color_id', colorid);
+    }
+     if (fabricid) {
+      body = body.set('fabric_id', fabricid);
+    }
     const endpoint = '/wp-content/plugins/blindmatrix-v4-hub/api.php';
     const requestUrl = `${apiUrl.replace(/\/+$/, '')}${endpoint}`;
-
     return this.http.post<ApiResponse>(requestUrl, body.toString(), {
       headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' })
     }).pipe(
