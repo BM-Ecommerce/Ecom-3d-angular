@@ -14,8 +14,10 @@
 
     <div class="fs-body">
       <div class="fs-header">
-        <div class="fs-badge">Free Sample</div>
-        <h3 class="fs-title">{{ freesampledata?.productname }}</h3>
+        <div class="fs-headline">
+          <h3 class="fs-title">{{ freesampledata?.productname }}</h3>
+          <div class="fs-badge">Free Sample</div>
+        </div>
         <div class="fs-subtitle" *ngIf="freesampledata?.cartproductName">
           {{ freesampledata.cartproductName }}
         </div>

@@ -107,6 +107,9 @@
 }
 
 .fs-header { margin-bottom: 8px; }
+.fs-headline { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.fs-title { flex: 1 1 auto; }
+.fs-badge { margin-bottom: 0; white-space: nowrap; }
 
 .fs-badge {
   display: inline-block;
@@ -178,4 +181,6 @@
   .fs-swatch { max-width: 160px; }
   .fs-cta { width: 100%; }
   .fs-chips { gap: 6px; }
+  .fs-headline { gap:8px; }
+  .fs-badge { font-size: 11px; padding: 4px 8px; }
 }
