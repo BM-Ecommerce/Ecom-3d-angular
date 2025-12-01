@@ -344,7 +344,7 @@ export class ThreeService implements OnDestroy {
   group.visible = !!(this.showDimensions && ((width > 0) || (drop > 0)));
 
   const COLOR = this.getPrimaryColorRGBA(1);
-  const ALPHA = this.getPrimaryOpacity(0.1);
+  const ALPHA = this.getPrimaryOpacity(0.3);
   const ARROW_SIZE = mainSpan * 0.045;
   const LABEL_GAP = mainSpan * 0.06;
 
