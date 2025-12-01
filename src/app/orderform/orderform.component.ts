@@ -298,7 +298,7 @@ hasDescriptionContent = false;
       "productname": this?.productname,
       "catagory_id": this?.fabricFieldType,
       "color_id": this.colorid,
-      "fabricid": this.fabricid,
+      "fabric_id": this.fabricid,
       "pei_ecomImage": this.background_color_image_url,
       "currencySymbol": this.currencySymbol
     }
@@ -2393,6 +2393,9 @@ public onToggleLoopAnimate(): void {
       this.productname,
       this.fabricFieldType,
       visualizerImage,
+      'add_to_cart',
+      this.colorid,
+      this.fabricid
     ).pipe(
       takeUntil(this.destroy$),
       finalize(() => {

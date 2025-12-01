@@ -48,6 +48,8 @@ export class FreesampleComponent implements OnInit, OnChanges {
     let categoryId = Number(this.freesampledata.catagory_id);
     let visualizer_url = this.freesampledata.pei_ecomImage;
     let action = this.freesampledata.type;
+    let colorid = this.freesampledata.color_id;
+    let fabricid = this.freesampledata.fabric_id;
 
 
 
@@ -63,7 +65,9 @@ export class FreesampleComponent implements OnInit, OnChanges {
       productname,
       categoryId,
       visualizer_url,
-      action
+      action,
+      colorid,
+      fabricid
     ).subscribe({
       next: (data) => {
         if (data.success) {
