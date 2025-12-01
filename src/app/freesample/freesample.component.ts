@@ -37,7 +37,8 @@ export class FreesampleComponent implements OnInit, OnChanges {
     this.button_disable = true;
 
     let form_data = this.freesampledata.form_data;
-    let productId = this.freesampledata.product_id;
+    let cartproductId = this.freesampledata.cart_productid;
+    let product_id = this.freesampledata.product_id;
     let api_url = this.freesampledata.api_url;
     let cartproductName = this.freesampledata.cartproductName;
     let priceData = this.freesampledata.free_sample_price;
@@ -55,7 +56,8 @@ export class FreesampleComponent implements OnInit, OnChanges {
 
     this.apiService.addToCart(
       form_data,
-      productId,
+      cartproductId,
+      product_id,
       api_url,
       cartproductName,
       priceData,
