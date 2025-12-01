@@ -29,3 +29,49 @@ body { margin: 0; font-family: 'Poppins', sans-serif!important; }
 .mat-form-field-appearance-legacy .mat-form-field-underline {
     background-color: rgba(0,0,0,.12);
 }
+
+/*
+  Global action icon sizing
+  - Adjust these three variables to control sizes per device.
+  - Applies to icons in visualizer controls and related-products toggles.
+*/
+:root {
+  --app-action-icon-size-desktop: 20px;
+  --app-action-icon-size-tablet: 18px;
+  --app-action-icon-size-mobile: 18px;
+  /* Current active size used below */
+  --app-action-icon-size: var(--app-action-icon-size-desktop);
+}
+
+/* Tablet breakpoint */
+@media (max-width: 1023.98px) {
+  :root { --app-action-icon-size: var(--app-action-icon-size-tablet); }
+}
+
+/* Mobile breakpoint */
+@media (max-width: 767.98px) {
+  :root { --app-action-icon-size: var(--app-action-icon-size-mobile); }
+}
+
+/* Apply the size to the targeted icon areas */
+.visualizer-controls .mat-icon,
+.visualizer-view-controls-dimentions .mat-icon,
+.related-products-headcontainer .mat-icon {
+  width: var(--app-action-icon-size) !important;
+  height: var(--app-action-icon-size) !important;
+  font-size: var(--app-action-icon-size) !important;
+  line-height: var(--app-action-icon-size) !important;
+}
+
+/* Ensure SVG mat-icons scale with the host size */
+.visualizer-controls .mat-icon svg,
+.visualizer-view-controls-dimentions .mat-icon svg,
+.related-products-headcontainer .mat-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.mat-icon-button {
+    width: 35px;
+    height: 35px;
+    line-height: 35px;
+}
