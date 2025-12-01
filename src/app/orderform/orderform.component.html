@@ -17,7 +17,7 @@
       {{ errorMessage }}
     </div>
 
-    <div id="configurator-root" class="product_visualizer_wrapper">
+    <div id="configurator-root" class="product_visualizer_wrapper" [class.fullscreen]="isFullscreen">
 
       <div class="visualizer-container">
 
@@ -37,12 +37,15 @@
             </div>
             <!-- Shutter Image -->
             <app-configurator [shutterdata]="shutterdata" *ngIf="this.category == 5"></app-configurator>
-            <div class="product_preview" #visualizerContainer (mousemove)="onMouseMove($event)"
-              (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()" *ngIf="this.category != 5">
+            <div class="product_preview" [class.fullscreen]="isFullscreen" #visualizerContainer (mousemove)="onMouseMove($event)"
+                (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()" *ngIf="this.category != 5">
               <div id="main-img"  #mainImg [ngClass]="{ 'view3d': is3DOn }" class="configuratorpreviewimage">
                 <canvas #visualizerCanvas></canvas>
                 <div #zoomLens class="zoom-lens" [hidden]="!isZooming"></div>
-                <div class="visualizer-controls">
+                <div *ngIf="is3DOn" class="visualizer-controls">
+                  <button *ngIf="is3DOn" type="button" mat-icon-button (click)="toggleFullscreen()" aria-label="Toggle fullscreen" matTooltip="{{ isFullscreen ? 'Exit Fullscreen' : 'Fullscreen' }}" matTooltipPosition="right">
+                    <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+                  </button>
                   <button *ngIf="is3DOn" type="button"  matTooltip="Refresh" [matTooltipDisabled]="isMobile" matTooltipPosition="right" mat-icon-button (click)="resetCamera()" aria-label="Reset view">
                     <mat-icon>refresh</mat-icon>
                   </button>

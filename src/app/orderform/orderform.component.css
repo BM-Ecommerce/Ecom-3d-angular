@@ -1279,4 +1279,73 @@ mat-button-toggle-group:disabled {
     left: 10px;
     display: flex;
     flex-direction: column;
+}/* Fullscreen visualizer */
+.product_preview.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #0b0f14;
+  padding: 12px;
+  display: grid;
+  grid-template-rows: 1fr;
+}
+.product_preview.fullscreen #main-img { position: relative; }
+.product_preview.fullscreen .visualizer-container,
+.product_preview.fullscreen .visualizer-main,
+.product_preview.fullscreen #main-img,
+.product_preview.fullscreen .configuratorpreviewimage {
+  height: 100% !important;
+}
+.product_preview.fullscreen canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+.product_preview .visualizer-controls {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  right: auto;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1002;
+  background: rgba(0,0,0,0.4);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+.product_preview .visualizer-controls .mat-icon { color: #fff; }
+.product_preview .visualizer-controls button.mat-icon-button {
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+  border-radius: 8px;
+}
+.product_preview.fullscreen .visualizer-controls button.mat-icon-button:hover {
+  background: rgba(255,255,255,0.16);
+}
+.product_preview.fullscreen .visualizer-view-controls,
+.product_preview.fullscreen .visualizer-view-controls-dimentions {
+  position: absolute;
+  right: 12px;
+  left: auto;
+  bottom: 12px;
+  z-index: 1002;
+}
+/* Hide 2D/3D view toggle in fullscreen; keep dimensions toggle visible */
+.product_preview.fullscreen .visualizer-view-controls { display: none !important; }
+.product_preview.fullscreen .visualizer-view-controls-dimentions > mat-button-toggle-group {
+  background: rgba(0,0,0,0.35);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+  padding: 4px;
+}
+@media (max-width: 768px){
+  .product_preview.fullscreen { padding: 8px; }
+  .product_preview.fullscreen .visualizer-controls { top: 50%; left: 8px; transform: translateY(-50%); }
+  .product_preview.fullscreen .visualizer-view-controls,
+  .product_preview.fullscreen .visualizer-view-controls-dimentions { right: 8px; bottom: 8px; }
 }

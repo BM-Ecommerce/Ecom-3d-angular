@@ -283,6 +283,9 @@ hasDescriptionContent = false;
   enableSelectSearch: boolean = true;
   showDimensionsToggle: boolean = false;
   dimensionMode: 'on' | 'off' = 'on'; 
+  isFullscreen: boolean = false;
+  
+  private prevIs3DOn: boolean = false;
 
   private updateShowDimensionsToggle(): void {
     try {
@@ -616,6 +619,17 @@ public onToggleLoopAnimate(): void {
     setTimeout(() => this.onWindowResize(), 0);
   }
   toggle3D() {
+    // In fullscreen, enforce 3D mode and ignore 2D toggle
+    if (this.isFullscreen) {
+      if (!this.is3DOn) {
+        this.is3DOn = true;
+        this.setupVisualizer(this.productname);
+        if (this.background_color_image_url) {
+          this.threeService.updateTextures(this.background_color_image_url);
+        }
+      }
+      return;
+    }
     this.is3DOn = !this.is3DOn;
     this.setupVisualizer(this.productname);
     if (this.is3DOn && this.background_color_image_url) {
@@ -631,6 +645,52 @@ public onToggleLoopAnimate(): void {
     }
     setTimeout(() => this.onWindowResize(), 0);
   }
+  
+  private isNativeFullscreen(): boolean {
+    const d: any = document as any;
+    return !!(document.fullscreenElement || d.webkitFullscreenElement || d.msFullscreenElement);
+  }
+
+  toggleFullscreen(): void {
+    const entering = !this.isNativeFullscreen();
+    const wrapper = this.containerRef?.nativeElement || document.getElementById('configurator-root');
+    if (entering) {
+      this.prevIs3DOn = this.is3DOn;
+      if (!this.is3DOn) {
+        this.is3DOn = true;
+        this.setupVisualizer(this.productname);
+        if (this.background_color_image_url) {
+          this.threeService.updateTextures(this.background_color_image_url);
+        }
+      }
+      const el: any = wrapper;
+      if (el && el.requestFullscreen) el.requestFullscreen();
+      else if (el && el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el && el.msRequestFullscreen) el.msRequestFullscreen();
+      this.isFullscreen = true;
+    } else {
+      const d: any = document as any;
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (d.webkitExitFullscreen) d.webkitExitFullscreen();
+      else if (d.msExitFullscreen) d.msExitFullscreen();
+      // will sync in fullscreenchange listener
+    }
+    setTimeout(() => this.onWindowResize(), 0);
+  }
+
+  @HostListener('document:fullscreenchange')
+  onFullscreenChange(): void {
+    this.isFullscreen = this.isNativeFullscreen();
+    if (!this.isFullscreen) {
+      if (this.prevIs3DOn !== this.is3DOn) {
+        this.is3DOn = this.prevIs3DOn;
+        this.setupVisualizer(this.productname);
+      }
+    }
+    setTimeout(() => this.onWindowResize(), 0);
+  }
+
+  
   @HostListener('window:resize')
   onWindowResize(): void {
     this.updateIsMobile();
