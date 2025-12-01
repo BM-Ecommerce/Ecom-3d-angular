@@ -281,8 +281,16 @@ hasDescriptionContent = false;
   hinge_color_field_names:any[] = ['hingecolors','hingecolour','hingecolours'];
   color_field_names:any[] = ['colours','colour','color'];
   enableSelectSearch: boolean = true;
-  showDimensionsToggle: boolean = true;
-  dimensionMode: 'on' | 'off' = 'off'; 
+  showDimensionsToggle: boolean = false;
+  dimensionMode: 'on' | 'off' = 'on'; 
+
+  private updateShowDimensionsToggle(): void {
+    try {
+      // Show the toggle whenever either dimension has a value OR user turned dimensions on
+      this.showDimensionsToggle = (this.dimensionMode === 'on') || (this.width > 0 || this.drop > 0);
+      this.cd.markForCheck();
+    } catch { /* ignore */ }
+  }
 
   get_freesample() {
     this.freesample = {
@@ -592,17 +600,11 @@ public onToggleLoopAnimate(): void {
         this.threeService.loadGltfModel('assets/rollerdoor.glb', 'generic');
       }
 
-      // Seed dimension overlays and apply visibility rule (per-axis)
+      // Seed dimension overlays and respect current toggle (no auto-on/off)
       this.threeService.setDimensions(this.width, this.drop);
       this.threeService.setUnitLabel(this.getUnitLabel());
-      const anyValid = this.width > 0 || this.drop > 0;
-      if (anyValid) {
-        this.dimensionMode = 'on';
-        this.threeService.enableDimensions(true);
-      } else {
-        this.dimensionMode = 'off';
-        this.threeService.enableDimensions(false);
-      }
+      this.updateShowDimensionsToggle();
+      this.threeService.enableDimensions(this.dimensionMode === 'on');
 
     } else {
       this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
@@ -2187,10 +2189,8 @@ public onToggleLoopAnimate(): void {
       const totalWidth = mainWidth + fractionValue;
       this.width = totalWidth;
       this.updateFieldValues(this.widthField, mainWidth, 'Totalwidth');
-      // Update 3D dimension overlays
-      if (this.is3DOn) {
-        this.threeService.setDimensions(this.width, this.drop);
-      }
+      this.threeService.setDimensions(this.width, this.drop);
+      this.updateShowDimensionsToggle();
     }
     if (values['dropfraction'] !== this.previousFormValue['dropfraction'] && this.dropField) {
       let mainDrop = Number(this.orderForm.get('field_' + this.dropField.fieldid)?.value) || 0;
@@ -2198,10 +2198,8 @@ public onToggleLoopAnimate(): void {
       const totalDrop = mainDrop + fractionValue;
       this.drop = totalDrop;
       this.updateFieldValues(this.dropField, mainDrop, 'TotalDrop');
-      // Update 3D dimension overlays
-      if (this.is3DOn) {
-        this.threeService.setDimensions(this.width, this.drop);
-      }
+      this.threeService.setDimensions(this.width, this.drop);
+      this.updateShowDimensionsToggle();
     }
     for (const key in values) {
       if (!key.startsWith('field_')) continue;
@@ -2282,27 +2280,16 @@ public onToggleLoopAnimate(): void {
     const totalWidth = Number(value) + fractionValue;
     this.width = totalWidth;
     this.updateFieldValues(field, value, 'Totalwidth');
-    const anyValid = this.width > 0 || this.drop > 0;
-    if (this.dimensionMode === 'on' && !anyValid) {
-      this.dimensionMode = 'off';
-      this.threeService.enableDimensions(false);
-    } else if (anyValid && this.dimensionMode === 'off') {
-      // Values became valid: auto-show toggle and dimensions
-      this.dimensionMode = 'on';
-      this.threeService.enableDimensions(true);
-    }
-    if (this.is3DOn) {
-      this.threeService.setDimensions(this.width, this.drop);
-    }
+    this.threeService.setDimensions(this.width, this.drop);
+    // Only update toggle visibility; do not auto-change mode
+    this.updateShowDimensionsToggle();
   }
   getUnitLabel(): string {
-    const selected = this.unitOption.find(
+    const selected = this.unitOption?.find(
       (o: { optionid: number; optionname: string }) => o.optionid === this.unittype
     );
-
-    if (!selected) return "";
-
-    return selected.optionname === "Inches" ? "inch" : selected.optionname;
+    const label = selected?.optionname || this.unittypename || '';
+    return label === 'Inches' ? 'inch' : label;
   }
   private handleDropChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
@@ -2314,24 +2301,16 @@ public onToggleLoopAnimate(): void {
     const totalDrop = Number(value) + fractionValue;
     this.drop = totalDrop;
     this.updateFieldValues(field, value, 'TotalDrop');
-    const anyValid = this.width > 0 || this.drop > 0;
-    if (this.dimensionMode === 'on' && !anyValid) {
-      this.dimensionMode = 'off';
-      this.threeService.enableDimensions(false);
-    } else if (anyValid && this.dimensionMode === 'off') {
-      // Values became valid: auto-show toggle and dimensions
-      this.dimensionMode = 'on';
-      this.threeService.enableDimensions(true);
-    }
-    if (this.is3DOn) {
-      this.threeService.setDimensions(this.width, this.drop);
-    }
+    this.threeService.setDimensions(this.width, this.drop);
+    // Only update toggle visibility; do not auto-change mode
+    this.updateShowDimensionsToggle();
   }
 
   toggleDimensions(event?: MatButtonToggleChange) {
     const mode = (event?.value ?? this.dimensionMode) as 'on' | 'off';
     this.dimensionMode = mode;
     this.threeService.enableDimensions(mode === 'on');
+    this.updateShowDimensionsToggle();
   }
   private handleRestOptionChange(params: any, field: ProductField, value: any): void {
     if (value === null || value === undefined || value === '') {

@@ -92,7 +92,8 @@
                       </mat-button-toggle>
                     </mat-button-toggle-group>
                   </div>
-          <div *ngIf="is3DOn" class="visualizer-view-controls-dimentions">
+                    <!--
+          <div  *ngIf="is3DOn" class="visualizer-view-controls-dimentions">
                   <mat-button-toggle-group
                       name="dimensionToggle"
                       *ngIf="show_image_icons && showDimensionsToggle && (width > 0 || drop > 0)"
@@ -100,18 +101,17 @@
                       (change)="toggleDimensions($event)"
                       appearance="standard">
 
-                  <!-- Show Dimensions Icon -->
                   <mat-button-toggle value="on">
                     <mat-icon>straighten</mat-icon>
                   </mat-button-toggle>
 
-                  <!-- Hide Dimensions Icon -->
                   <mat-button-toggle value="off">
                     <mat-icon>visibility_off</mat-icon>
                   </mat-button-toggle>
 
                 </mat-button-toggle-group>
               </div>
+               -->
               </div>
             </div>
            <div *ngIf="!is3DOn && category != 5 && product_img_array.length > 1" class="slider-container">
