@@ -295,6 +295,27 @@ export class ThreeService implements OnDestroy {
     }
   }
 
+  private getPrimaryOpacity(defaultAlpha: number): number {
+    try {
+      const style = getComputedStyle(document.documentElement);
+      let val = style.getPropertyValue('--primary-color')?.trim();
+      if (!val) return defaultAlpha;
+      if (/^rgba\(/i.test(val)) {
+        const nums = val.replace(/rgba?\(/i, '').replace(/\)/, '').split(',').map(s => s.trim());
+        const a = parseFloat(nums[3]);
+        return Number.isFinite(a) ? a : defaultAlpha;
+      }
+      if (/^hsla\(/i.test(val)) {
+        const nums = val.replace(/hsla\(/i, '').replace(/\)/, '').split(',').map(s => s.trim());
+        const a = parseFloat(nums[3]);
+        return Number.isFinite(a) ? a : defaultAlpha;
+      }
+      return defaultAlpha;
+    } catch {
+      return defaultAlpha;
+    }
+  }
+
   private ensureMeasurementGroup(): THREE.Group {
     if (!this.measurementGroup) {
       this.measurementGroup = new THREE.Group();
@@ -320,11 +341,10 @@ export class ThreeService implements OnDestroy {
     this.disposeObject(child);
   }
 
-  // Show when toggled on and at least one dimension is > 0
   group.visible = !!(this.showDimensions && ((width > 0) || (drop > 0)));
 
-  // Styles
-  const COLOR = this.getPrimaryColorRGBA(0.1);
+  const COLOR = this.getPrimaryColorRGBA(1);
+  const ALPHA = this.getPrimaryOpacity(0.1);
   const ARROW_SIZE = mainSpan * 0.045;
   const LABEL_GAP = mainSpan * 0.06;
 
@@ -332,21 +352,29 @@ export class ThreeService implements OnDestroy {
     color: COLOR,
     dashSize: mainSpan * 0.04,
     gapSize: mainSpan * 0.02,
-    depthTest: false
+    depthTest: false,
+    transparent: true,
+    opacity: ALPHA
   });
 
-  // Arrowhead maker
-  const makeArrowHead = (size: number) => {
-    const geo = new THREE.BufferGeometry();
-    const verts = new Float32Array([
-      0, 0, 0,
-      -size,  size * 0.5, 0,
-      -size, -size * 0.5, 0
-    ]);
-    geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-    const mat = new THREE.MeshBasicMaterial({ color: COLOR, depthTest: false });
-    return new THREE.Mesh(geo, mat);
-  };
+const makeArrowHead = (size: number) => {
+  const geo = new THREE.BufferGeometry();
+  const verts = new Float32Array([
+    0, 0, 0,
+    -size,  size * 0.5, 0,
+    -size, -size * 0.5, 0
+  ]);
+  geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+
+  const mat = new THREE.MeshBasicMaterial({
+    color: COLOR,
+    depthTest: false,
+    transparent: false, 
+    opacity: 1
+  });
+
+  return new THREE.Mesh(geo, mat);
+};
 
   // ---------------------
   // WIDTH DIMENSION
