@@ -287,7 +287,8 @@ hasDescriptionContent = false;
   get_freesample() {
     this.freesample = {
       "status": this?.freesameple_status,
-      "product_id": this?.routeParams?.cart_productid,
+      "cart_productid": this?.routeParams?.cart_productid,
+      "product_id": this.product_id,
       "type": "free_sample",
       "free_sample_price": this?.freesample_price,
       "form_data": this?.orderitemdata(false, true),
@@ -300,7 +301,7 @@ hasDescriptionContent = false;
       "productname": this?.productname,
       "catagory_id": this?.fabricFieldType,
       "color_id": this.colorid,
-      "fabricid": this.fabricid,
+      "fabric_id": this.fabricid,
       "pei_ecomImage": this.background_color_image_url,
       "currencySymbol": this.currencySymbol
     }
@@ -2447,7 +2448,7 @@ public onToggleLoopAnimate(): void {
       visualizerImage = this.threeService.getCanvasDataURL(); // string already
     }
 
-    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, this.routeParams.site,
+    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid,Number(this.product_id), this.routeParams.site,
       this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname),
       this.pricedata,
       this.vatpercentage,
@@ -2456,6 +2457,9 @@ public onToggleLoopAnimate(): void {
       this.productname,
       this.fabricFieldType,
       visualizerImage,
+      'add_to_cart',
+      this.colorid,
+      this.fabricid
     ).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
