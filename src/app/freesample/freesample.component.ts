@@ -39,7 +39,7 @@ export class FreesampleComponent implements OnInit, OnChanges {
     let form_data = this.freesampledata.form_data;
     let productId = this.freesampledata.product_id;
     let api_url = this.freesampledata.api_url;
-    let cartproductName = this.freesampledata.productname;
+    let cartproductName = this.freesampledata.cartproductName;
     let priceData = this.freesampledata.free_sample_price;
     let vatpercentage = Number(this.freesampledata.vatpercentage);
     let vatname = this.freesampledata.vatname;
