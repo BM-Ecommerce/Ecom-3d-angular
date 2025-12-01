@@ -187,8 +187,8 @@ export class ThreeService implements OnDestroy {
   }
 
   private createTextSprite(text: string, baseScale: number): THREE.Sprite {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d')!;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
 
   const padding = 18;
   const fontSize = 60;
@@ -209,7 +209,7 @@ export class ThreeService implements OnDestroy {
   const w = canvas.width;
   const h = canvas.height;
 
-  ctx2.fillStyle = 'rgba(0,39,70,0.85)'; 
+  ctx2.fillStyle = this.getPrimaryColorRGBA(1);
   ctx2.beginPath();
   ctx2.moveTo(radius, 0);
   ctx2.lineTo(w - radius, 0);
@@ -244,6 +244,78 @@ export class ThreeService implements OnDestroy {
   return sprite;
 }
 
+  private getPrimaryColorRGBA(alpha: number): string {
+    try {
+      const style = getComputedStyle(document.documentElement);
+      let val = style.getPropertyValue('--primary-color')?.trim();
+      if (!val) return `rgba(0,39,70,${alpha})`;
+      // Normalize value
+      // Supported: #RGB, #RRGGBB, rgb(r,g,b), rgba(r,g,b,a)
+      if (val.startsWith('#')) {
+        const hex = val.slice(1);
+        let r = 0, g = 0, b = 0;
+        if (hex.length === 3) {
+          r = parseInt(hex[0] + hex[0], 16);
+          g = parseInt(hex[1] + hex[1], 16);
+          b = parseInt(hex[2] + hex[2], 16);
+        } else if (hex.length === 6) {
+          r = parseInt(hex.substring(0, 2), 16);
+          g = parseInt(hex.substring(2, 4), 16);
+          b = parseInt(hex.substring(4, 6), 16);
+        } else {
+          return `rgba(0,39,70,${alpha})`;
+        }
+        
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+      if (val.startsWith('rgb')) {
+        // rgb(…)/rgba(…)
+        const nums = val.replace(/rgba?\(/, '').replace(/\)/, '').split(',').map(s => s.trim());
+        const r = parseFloat(nums[0]);
+        const g = parseFloat(nums[1]);
+        const b = parseFloat(nums[2]);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+      // Attempt CSS color keywords via temp element
+      const tmp = document.createElement('div');
+      tmp.style.color = val;
+      document.body.appendChild(tmp);
+      const cs = getComputedStyle(tmp).color; // rgb(r,g,b)
+      document.body.removeChild(tmp);
+      const nums = cs.replace(/rgba?\(/, '').replace(/\)/, '').split(',').map(s => s.trim());
+      const r = parseFloat(nums[0]);
+      const g = parseFloat(nums[1]);
+      const b = parseFloat(nums[2]);
+      if (Number.isFinite(r) && Number.isFinite(g) && Number.isFinite(b)) {
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+      return `rgba(0,39,70,${alpha})`;
+    } catch {
+      return `rgba(0,39,70,${alpha})`;
+    }
+  }
+
+  private getPrimaryOpacity(defaultAlpha: number): number {
+    try {
+      const style = getComputedStyle(document.documentElement);
+      let val = style.getPropertyValue('--primary-color')?.trim();
+      if (!val) return defaultAlpha;
+      if (/^rgba\(/i.test(val)) {
+        const nums = val.replace(/rgba?\(/i, '').replace(/\)/, '').split(',').map(s => s.trim());
+        const a = parseFloat(nums[3]);
+        return Number.isFinite(a) ? a : defaultAlpha;
+      }
+      if (/^hsla\(/i.test(val)) {
+        const nums = val.replace(/hsla\(/i, '').replace(/\)/, '').split(',').map(s => s.trim());
+        const a = parseFloat(nums[3]);
+        return Number.isFinite(a) ? a : defaultAlpha;
+      }
+      return defaultAlpha;
+    } catch {
+      return defaultAlpha;
+    }
+  }
+
   private ensureMeasurementGroup(): THREE.Group {
     if (!this.measurementGroup) {
       this.measurementGroup = new THREE.Group();
@@ -269,11 +341,10 @@ export class ThreeService implements OnDestroy {
     this.disposeObject(child);
   }
 
-  // Show when toggled on and at least one dimension is > 0
   group.visible = !!(this.showDimensions && ((width > 0) || (drop > 0)));
 
-  // Styles
-  const COLOR = new THREE.Color(0x002746);
+  const COLOR = this.getPrimaryColorRGBA(1);
+  const ALPHA = this.getPrimaryOpacity(0.3);
   const ARROW_SIZE = mainSpan * 0.045;
   const LABEL_GAP = mainSpan * 0.06;
 
@@ -281,21 +352,29 @@ export class ThreeService implements OnDestroy {
     color: COLOR,
     dashSize: mainSpan * 0.04,
     gapSize: mainSpan * 0.02,
-    depthTest: false
+    depthTest: false,
+    transparent: true,
+    opacity: ALPHA
   });
 
-  // Arrowhead maker
-  const makeArrowHead = (size: number) => {
-    const geo = new THREE.BufferGeometry();
-    const verts = new Float32Array([
-      0, 0, 0,
-      -size,  size * 0.5, 0,
-      -size, -size * 0.5, 0
-    ]);
-    geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-    const mat = new THREE.MeshBasicMaterial({ color: COLOR, depthTest: false });
-    return new THREE.Mesh(geo, mat);
-  };
+const makeArrowHead = (size: number) => {
+  const geo = new THREE.BufferGeometry();
+  const verts = new Float32Array([
+    0, 0, 0,
+    -size,  size * 0.5, 0,
+    -size, -size * 0.5, 0
+  ]);
+  geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+
+  const mat = new THREE.MeshBasicMaterial({
+    color: COLOR,
+    depthTest: false,
+    transparent: false, 
+    opacity: 1
+  });
+
+  return new THREE.Mesh(geo, mat);
+};
 
   // ---------------------
   // WIDTH DIMENSION
