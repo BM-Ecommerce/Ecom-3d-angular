@@ -37,7 +37,7 @@
             </div>
             <!-- Shutter Image -->
             <app-configurator [shutterdata]="shutterdata" *ngIf="this.category == 5"></app-configurator>
-            <div class="product_preview" [class.fullscreen]="isFullscreen" #visualizerContainer (mousemove)="onMouseMove($event)"
+            <div class="product_preview" [class.fullscreen]="isFullscreen" [class.fullscreen-mobile]="isFullscreenMobile" #visualizerContainer (mousemove)="onMouseMove($event)"
                 (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()" *ngIf="this.category != 5">
               <div id="main-img"  #mainImg [ngClass]="{ 'view3d': is3DOn }" class="configuratorpreviewimage">
                 <canvas #visualizerCanvas></canvas>
@@ -82,6 +82,17 @@
                             {{ isLooping ? 'stop' : 'play_arrow' }}
                           </mat-icon>
                         </button>
+                </div>
+
+                <div *ngIf="isFullscreen && selected_color_option" class="fullscreen-color-chip" [class.mobile]="isFullscreenMobile">
+                  <img *ngIf="selected_color_option.optionimage"
+                       [src]="apiUrl + '/api/public' + selected_color_option.optionimage"
+                       (error)="onImageError($event)"
+                       [alt]="selected_color_option.optionname || 'Selected colour'">
+                  <div class="fullscreen-color-chip__text">
+                    <span class="chip-label">Colour</span>
+                    <span class="chip-name">{{ selected_color_option.optionname || 'Selected' }}</span>
+                  </div>
                 </div>
                 
                 <div class="visualizer-view-controls">

@@ -1289,6 +1289,10 @@ mat-button-toggle-group:disabled {
   display: grid;
   grid-template-rows: 1fr;
 }
+.product_preview.fullscreen.fullscreen-mobile {
+  padding: 8px;
+  grid-template-rows: 1fr;
+}
 .product_preview.fullscreen #main-img { position: relative; }
 .product_preview.fullscreen .visualizer-container,
 .product_preview.fullscreen .visualizer-main,
@@ -1317,6 +1321,10 @@ mat-button-toggle-group:disabled {
   border-radius: 12px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.25);
 }
+.product_preview:not(.fullscreen) .visualizer-controls button.mat-icon-button {
+  width: 40px;
+  height: 40px;
+}
 .product_preview .visualizer-controls .mat-icon { color: #fff; }
 .product_preview .visualizer-controls button.mat-icon-button {
   color: #fff;
@@ -1343,9 +1351,104 @@ mat-button-toggle-group:disabled {
   border-radius: 999px;
   padding: 4px;
 }
+.product_preview.fullscreen .fullscreen-color-chip {
+  position: absolute;
+  left: 12px;
+  bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.55);
+  color: #f7f7f7;
+  border-radius: 14px;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  z-index: 1003;
+}
+.product_preview.fullscreen .fullscreen-color-chip img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.product_preview.fullscreen .fullscreen-color-chip__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.product_preview.fullscreen .chip-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  color: #bfc7d3;
+}
+.product_preview.fullscreen .chip-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+}
+.product_preview.fullscreen .fullscreen-color-chip.mobile {
+  left: auto;
+  right: 12px;
+  bottom: auto;
+  top: 12px;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.product_preview.fullscreen-mobile .visualizer-controls {
+  top: auto;
+  bottom: 16px;
+  left: 12px;
+  right: auto;
+  transform: none;
+  flex-direction: row;
+  gap: 10px;
+}
+.product_preview.fullscreen-mobile .visualizer-view-controls,
+.product_preview.fullscreen-mobile .visualizer-view-controls-dimentions {
+  right: 12px;
+  bottom: 16px;
+}
+@media (max-width: 768px){
+  /* Normal view mobile: dock controls bottom-left and lay out horizontally */
+  .product_preview:not(.fullscreen) .visualizer-controls {
+    top: auto;
+    bottom: 12px;
+    left: 12px;
+    right: auto;
+    transform: none;
+    flex-direction: row;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 12px;
+  }
+  .product_preview:not(.fullscreen) .visualizer-controls button.mat-icon-button {
+    width: 42px;
+    height: 42px;
+  }
+}
 @media (max-width: 768px){
   .product_preview.fullscreen { padding: 8px; }
-  .product_preview.fullscreen .visualizer-controls { top: 50%; left: 8px; transform: translateY(-50%); }
+  .product_preview.fullscreen:not(.fullscreen-mobile) .visualizer-controls { top: 50%; left: 8px; transform: translateY(-50%); }
   .product_preview.fullscreen .visualizer-view-controls,
   .product_preview.fullscreen .visualizer-view-controls-dimentions { right: 8px; bottom: 8px; }
+  .product_preview.fullscreen .fullscreen-color-chip {
+    left: 8px;
+    bottom: 10px;
+    padding: 10px;
+  }
+  .product_preview.fullscreen .fullscreen-color-chip img {
+    width: 40px;
+    height: 40px;
+  }
+  .product_preview.fullscreen .fullscreen-color-chip.mobile {
+    top: 10px;
+    right: 10px;
+    left: auto;
+    bottom: auto;
+  }
 }

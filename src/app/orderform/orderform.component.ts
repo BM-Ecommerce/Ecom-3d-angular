@@ -273,6 +273,7 @@ hasDescriptionContent = false;
   tiltrod : string="";
   siteurl = environment.site;
   selected_img_option:number = 0;
+  selected_color_option: any = null;
   selected_list_data:any = {};
   shutter_selected_img_options:any={};
   list_value:string = "list";
@@ -284,6 +285,7 @@ hasDescriptionContent = false;
   showDimensionsToggle: boolean = false;
   dimensionMode: 'on' | 'off' = 'on'; 
   isFullscreen: boolean = false;
+  isFullscreenMobile: boolean = false;
   
   private prevIs3DOn: boolean = false;
 
@@ -668,6 +670,7 @@ public onToggleLoopAnimate(): void {
       else if (el && el.webkitRequestFullscreen) el.webkitRequestFullscreen();
       else if (el && el.msRequestFullscreen) el.msRequestFullscreen();
       this.isFullscreen = true;
+      this.isFullscreenMobile = window.matchMedia('(max-width: 768px)').matches;
     } else {
       const d: any = document as any;
       if (document.exitFullscreen) document.exitFullscreen();
@@ -681,6 +684,7 @@ public onToggleLoopAnimate(): void {
   @HostListener('document:fullscreenchange')
   onFullscreenChange(): void {
     this.isFullscreen = this.isNativeFullscreen();
+    this.isFullscreenMobile = window.matchMedia('(max-width: 768px)').matches;
     if (!this.isFullscreen) {
       if (this.prevIs3DOn !== this.is3DOn) {
         this.is3DOn = this.prevIs3DOn;
@@ -689,8 +693,6 @@ public onToggleLoopAnimate(): void {
     }
     setTimeout(() => this.onWindowResize(), 0);
   }
-
-  
   @HostListener('window:resize')
   onWindowResize(): void {
     this.updateIsMobile();
@@ -2211,8 +2213,13 @@ public onToggleLoopAnimate(): void {
       }
     }
 
-    if(((field.fieldtypeid == 5 && field.fieldlevel == 2) || (field.fieldtypeid === 20 && field.fieldlevel == 1))){
+    const effectiveLevel = field.level ?? field.fieldlevel;
+    if ((field.fieldtypeid === 5 && effectiveLevel === 2) || field.fieldtypeid === 20) {
       this.selected_img_option = targetField.optionid;
+      const pickedOption = Array.isArray(selectedOption)
+        ? selectedOption[selectedOption.length - 1]
+        : selectedOption;
+      this.selected_color_option = pickedOption || null;
     }
 
     if(field.fieldtypeid == 3){
