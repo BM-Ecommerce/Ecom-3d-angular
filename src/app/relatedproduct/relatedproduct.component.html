@@ -49,16 +49,21 @@
                 [attr.data-img]="imgpath + product.colorimage"
                 [style.background-image]="showframe ? 'url(' + imgpath + product.colorimage + ')' : null"
                 [src]="getRelatedImage(product)"
-                alt="{{ product.productname }}"
+                alt="{{ relatedproducts.ecomproductname }}"
                 (error)="onImageError($event)"
               />
             </div>
 
             <div class="rp-info">
               <p class="rp-name">
-                {{ product.productname }}
-                <span class="rp-fabric">{{ product.fabricname }}</span>
-                <span class="rp-color">{{ product.colorname }}</span>
+                {{ relatedproducts.ecomproductname }}
+                <span class="rp-fabric" *ngIf="product.fabricname">
+                      {{ product.fabricname }}
+                    </span>
+
+                    <span class="rp-color" *ngIf="product.colorname">
+                      {{ product.colorname }}
+                    </span>
               </p>
 
               <p class="rp-price" *ngIf="product.minprice">
@@ -76,17 +81,23 @@
               [attr.data-img]="imgpath + product.colorimage"
               [style.background-image]="showframe ? 'url(' + imgpath + product.colorimage + ')' : null"
               [src]="getRelatedImage(product)"
-              alt="{{ product.productname }}"
+              alt="{{ relatedproducts.ecomproductname }}"
               (error)="onImageError($event)"
             />
             </div>
 
             <div class="rp-info">
               <p class="rp-name">
-                {{ product.productname }}
-                <span class="rp-fabric">{{ product.fabricname }}</span>
-                <span class="rp-color">{{ product.colorname }}</span>
-              </p>
+                    {{ relatedproducts.ecomproductname }}
+
+                    <span class="rp-fabric" *ngIf="product.fabricname">
+                      {{ product.fabricname }}
+                    </span>
+
+                    <span class="rp-color" *ngIf="product.colorname">
+                      {{ product.colorname }}
+                    </span>
+                  </p>
 
               <p class="rp-price" *ngIf="product.minprice">
                 From: {{ currencySymbol }}{{ product.minprice }}

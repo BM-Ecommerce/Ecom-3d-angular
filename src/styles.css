@@ -32,6 +32,16 @@ body { margin: 0; font-family: 'Poppins', sans-serif!important; }
 .mat-form-field mat-hint {
   font-size: 11px !important;
 }
+ .fs-cta span.mat-button-wrapper{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+ }
+ .fs-cta span.mat-button-wrapper .mat-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 19px;
+}
 /*
   Global action icon sizing
   - Adjust these three variables to control sizes per device.

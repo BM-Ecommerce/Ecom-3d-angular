@@ -328,7 +328,8 @@ hasDescriptionContent = false;
       siteurl: this.siteurl,
       relatedframeimage:this.relatedframeimage,
       currencySymbol:this.currencySymbol,         
-      product_id: this.product_id         
+      product_id: this.product_id,
+      ecomproductname:this.ecomproductname        
     };
   }
   inchfraction_array: FractionOption[] = [

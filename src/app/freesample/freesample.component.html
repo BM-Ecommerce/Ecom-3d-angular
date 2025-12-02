@@ -43,7 +43,6 @@
       <div class="fs-chips">
         <span class="fs-chip"><mat-icon aria-hidden="true">inventory_2</mat-icon> Sample-size swatch</span>
         <span class="fs-chip"><mat-icon aria-hidden="true">visibility</mat-icon> View color & texture</span>
-        <span class="fs-chip"><mat-icon aria-hidden="true">local_shipping</mat-icon> Fast dispatch</span>
       </div>
 
       <div class="fs-actions">
@@ -53,7 +52,7 @@
                 (click)="buyFreeSample()">
           <mat-icon>shopping_bag</mat-icon>
           <span>
-            {{ button_disable ? 'Adding…' : ((freesampledata?.free_sample_price ?? 0) > 0 ? 'Add Sample to Cart' : 'Get Free Sample') }}
+            {{ button_disable ? 'Adding…' : ((freesampledata?.free_sample_price ?? 0) > 0 ? 'Buy Sample' : 'Get Free Sample') }}
           </span>
         </button>
       </div>

@@ -165,7 +165,10 @@
 .fs-chip mat-icon { font-size: 16px; height: 16px; width: 16px; color: #6366f1; }
 
 .fs-actions { margin-top: auto; }
-.fs-cta { min-width: 220px; }
+.fs-cta { 
+  min-width: 100px;
+ }
+
 .fs-actions button mat-icon { margin-right: 6px; }
 
 /* Disabled state */
