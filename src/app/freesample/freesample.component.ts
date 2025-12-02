@@ -17,7 +17,7 @@ import { environment } from '../../environments/environment';
 })
 export class FreesampleComponent implements OnInit, OnChanges {
   @Input() freesampledata: any;
-  @Input() swatchSizeLabel: string = 'Approx. 10 × 10 cm';
+  @Input() swatchSizeLabel: string = 'Approx. 10 × 10';
 
   freeSampleOrderData: any = [];
   button_disable: boolean = false;
