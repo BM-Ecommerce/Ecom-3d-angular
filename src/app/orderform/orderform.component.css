@@ -915,13 +915,7 @@ mat-button-toggle-group:disabled {
     display: flex;
     flex-direction: column;
 }
-.visualizer-view-controls mat-button-toggle-group {
-  background: var(--fs-panel-bg);
-  color: var(--fs-text);
-  border-radius: 10px;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
+
 .hide_section {
   display: none !important;
 }
@@ -1424,7 +1418,7 @@ mat-button-toggle-group:disabled {
   gap: 10px;
   padding: 12px;
   width: min(220px, 34vw);
-  max-height: 82vh;
+  max-height: 50vh;
   overflow-y: auto;
   background: var(--fs-panel-bg);
   border-radius: 14px;
@@ -1433,6 +1427,26 @@ mat-button-toggle-group:disabled {
   box-shadow: var(--fs-panel-shadow);
   z-index: 1003;
   border: 1px solid var(--fs-panel-border);
+  scroll-behavior: smooth;
+}
+.product_preview.fullscreen .fullscreen-color-strip::-webkit-scrollbar {
+  width: 7px;
+}
+
+.product_preview.fullscreen .fullscreen-color-strip::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.product_preview.fullscreen .fullscreen-color-strip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(4px);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.product_preview.fullscreen .fullscreen-color-strip::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.55);
 }
 .product_preview.fullscreen .fullscreen-color-strip__group {
   display: flex;

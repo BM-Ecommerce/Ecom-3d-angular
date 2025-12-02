@@ -91,11 +91,11 @@
 
               <div class="meta-row" *ngIf="fabricname">
                 <span class="meta-label">Fabric</span>
-                <span class="meta-value">{{ fabricname }}</span>
+                <span class="meta-value">{{ fabricLabelName }}</span>
               </div>
 
               <div class="meta-row" *ngIf="selected_color_option">
-                  <div class="meta-label">Colour</div>
+                  <div class="meta-label">{{ colorLabelName }}</div>
                   <div class="meta-value">
                     {{ selected_color_option.optionname || 'Selected' }}
                   </div>
@@ -114,8 +114,8 @@
                         (click)="onFullscreenColorSelect(option, field)">
                         <img *ngIf="option.optionimage"
                              [src]="apiUrl + '/api/public' + option.optionimage"
-                             (error)="onImageError($event)"
-                             [alt]="option.optionname || 'Colour'">
+                           tabsproduct  (error)="onImageError($event)"
+                             [alt]="option.optionname || colorLabelName">
                         <span>{{ option.optionname }}</span>
                       </button>
                     </div>
@@ -598,7 +598,9 @@
     </mat-tab>
 
     <mat-tab *ngIf="hasDescriptionContent" label="Details">
-      <div class="tabsproduct" [innerHTML]="productdescription"></div>
+      <p class="tabsproduct">
+        <span [innerHTML]="productdescription"></span>
+      </p>
     </mat-tab>
 
   </mat-tab-group>

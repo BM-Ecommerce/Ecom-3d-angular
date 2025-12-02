@@ -382,6 +382,8 @@ hasDescriptionContent = false;
   widthField: any = 0;
   dropField: any = 0;
   fabricFieldType: any = 0;
+  fabricLabelName: any = "";
+  colorLabelName: any = "";
   ecomsampleprice = 0;
   ecomFreeSample = '0';
   delivery_duration = '';
@@ -1240,12 +1242,15 @@ public onToggleLoopAnimate(): void {
               matrial = 0;
               filter = filterresponseData.optionarray[field.fieldid];
             } else if (field.fieldtypeid === 5) {
+              this.fabricLabelName = field.labelnamecode;
               matrial = 1;
               filter = filterresponseData.coloridsarray;
             } else if (field.fieldtypeid === 20) {
+              this.colorLabelName = field.labelnamecode;
               matrial = 2;
               filter = filterresponseData.coloridsarray;
             } else if (field.fieldtypeid === 21) {
+              this.fabricLabelName = field.labelnamecode;
               matrial = 0;
               filter = filterresponseData.coloridsarray;
             }
@@ -1836,6 +1841,7 @@ public onToggleLoopAnimate(): void {
             filter = filterresponseData.optionarray[subfield.fieldid];
           } else if (subfield.fieldtypeid === 5 || subfield.fieldtypeid === 20 || subfield.fieldtypeid === 21) {
             matrial = 2;
+            this.colorLabelName = subfield.labelnamecode;
             filter = filterresponseData.coloridsarray;
           }
 
