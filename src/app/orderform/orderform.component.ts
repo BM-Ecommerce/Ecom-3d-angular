@@ -669,9 +669,6 @@ public onToggleLoopAnimate(): void {
       if (el && el.requestFullscreen) el.requestFullscreen();
       else if (el && el.webkitRequestFullscreen) el.webkitRequestFullscreen();
       else if (el && el.msRequestFullscreen) el.msRequestFullscreen();
-      this.isFullscreen = true;
-      this.isFullscreenMobile = window.matchMedia('(max-width: 768px)').matches;
-      this.refreshFullscreenTexture();
     } else {
       const d: any = document as any;
       if (document.exitFullscreen) document.exitFullscreen();
