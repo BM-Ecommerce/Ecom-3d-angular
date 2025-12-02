@@ -1474,9 +1474,8 @@ mat-button-toggle-group:disabled {
 .product_preview.fullscreen .fullscreen-color-strip.mobile {
   top: auto;
   bottom: 12px;
-  left: 8px;
-  right: 8px;
-  transform: none;
+  left: 50%;
+  transform: translateX(-50%) !important;
   width: auto;
   max-height: 38vh;
   padding: 8px 10px;

@@ -43,7 +43,7 @@
                 <canvas #visualizerCanvas></canvas>
                 <div #zoomLens class="zoom-lens" [hidden]="!isZooming"></div>
                 <div *ngIf="is3DOn" class="visualizer-controls">
-                  <button *ngIf="is3DOn" type="button" mat-icon-button (click)="toggleFullscreen()" aria-label="Toggle fullscreen" matTooltip="{{ isFullscreen ? 'Exit Fullscreen' : 'Fullscreen' }}" matTooltipPosition="right">
+                  <button *ngIf="is3DOn && !isMobile" type="button" mat-icon-button (click)="toggleFullscreen()" aria-label="Toggle fullscreen" matTooltip="{{ isFullscreen ? 'Exit Fullscreen' : 'Fullscreen' }}" matTooltipPosition="right">
                     <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
                   </button>
                   <button *ngIf="is3DOn" type="button"  matTooltip="Refresh" [matTooltipDisabled]="isMobile" matTooltipPosition="right" mat-icon-button (click)="resetCamera()" aria-label="Reset view">
