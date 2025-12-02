@@ -156,11 +156,15 @@
 
 .fs-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .fs-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; color: #0f172a;
-  padding: 6px 10px; border-radius: 999px;
-  background: #eef2ff;
-  border: 1px solid #e0e7ff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: #0f172a;
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: #eef2ff;
+    border: 1px solid #e0e7ff;
 }
 .fs-chip mat-icon { font-size: 16px; height: 16px; width: 16px; color: #6366f1; }
 
