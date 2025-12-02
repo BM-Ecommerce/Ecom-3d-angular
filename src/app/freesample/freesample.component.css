@@ -166,7 +166,7 @@
     background: #eef2ff;
     border: 1px solid #e0e7ff;
 }
-.fs-chip mat-icon { font-size: 16px; height: 16px; width: 16px; color: #6366f1; }
+.fs-chip mat-icon { font-size: 16px; height: 16px; width: 16px; color: var(--primary-color); }
 
 .fs-actions { margin-top: auto; }
 .fs-cta { 
