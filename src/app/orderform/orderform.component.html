@@ -84,6 +84,24 @@
                         </button>
                 </div>
 
+            <div *ngIf="isFullscreen" class="fullscreen-meta" [class.mobile]="isFullscreenMobile">
+              <div class="meta-product">
+                {{ productname || ecomproductname }}
+              </div>
+
+              <div class="meta-row" *ngIf="fabricname">
+                <span class="meta-label">Fabric</span>
+                <span class="meta-value">{{ fabricname }}</span>
+              </div>
+
+              <div class="meta-row" *ngIf="selected_color_option">
+                  <div class="meta-label">Colour</div>
+                  <div class="meta-value">
+                    {{ selected_color_option.optionname || 'Selected' }}
+                  </div>
+              </div>
+            </div>
+
                 <div *ngIf="isFullscreen && getFullscreenColorFields().length" class="fullscreen-color-strip" [class.mobile]="isFullscreenMobile">
                   <div *ngFor="let field of getFullscreenColorFields()" class="fullscreen-color-strip__group">
                     <div class="strip-title">{{ field.fieldname }}</div>
@@ -104,17 +122,6 @@
                   </div>
                 </div>
 
-                <div *ngIf="isFullscreen && selected_color_option" class="fullscreen-color-chip" [class.mobile]="isFullscreenMobile">
-                  <img *ngIf="selected_color_option.optionimage"
-                       [src]="apiUrl + '/api/public' + selected_color_option.optionimage"
-                       (error)="onImageError($event)"
-                       [alt]="selected_color_option.optionname || 'Selected colour'">
-                  <div class="fullscreen-color-chip__text">
-                    <span class="chip-label">Colour</span>
-                    <span class="chip-name">{{ selected_color_option.optionname || 'Selected' }}</span>
-                  </div>
-                </div>
-                
                 <div class="visualizer-view-controls">
                     <mat-button-toggle-group name="viewMode" *ngIf="show_image_icons"  [value]="is3DOn ? '3d' : '2d'" (change)="toggle3D()"
                       appearance="standard">
