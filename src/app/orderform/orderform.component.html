@@ -206,7 +206,7 @@
                   <div class="parameter-wrapper inline-toggle radio">
                     <span class="mat-label" id="example-toggle-group-label">
                       {{ field.fieldname }}
-                      <span class="icon-wrapper">
+                      <span *ngIf="hasContent(field.fieldInformation)" class="icon-wrapper">
                         <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
                           [hideDelay]="1000" class="info-icon"
                           [attr.aria-label]="'Information about ' + field.fieldname">
@@ -232,7 +232,7 @@
                     <mat-form-field>
                       <mat-label>
                         {{ field.fieldname }}
-                        <span class="icon-wrapper">
+                        <span *ngIf="hasContent(field.fieldInformation)" class="icon-wrapper">
                           <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
                             [hideDelay]="1000" class="info-icon"
                             [attr.aria-label]="'Information about ' + field.fieldname">
@@ -264,7 +264,7 @@
                     <mat-form-field [class.hide_section]="isShutterColorSection(field) || isAccessoriesListSection(field)">
                       <mat-label>
                         {{ field.fieldname }}
-                        <span class="icon-wrapper">
+                        <span *ngIf="hasContent(field.fieldInformation)" class="icon-wrapper">
                           <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
                             [hideDelay]="1000" class="info-icon"
                             [attr.aria-label]="'Information about ' + field.fieldname">
@@ -295,7 +295,7 @@
                   <label>
                     {{ field.fieldname }}
                     <span class="required" *ngIf="field.mandatory == 1">*</span>
-                    <span class="icon-wrapper">
+                    <span *ngIf="hasContent(field.fieldInformation)" class="icon-wrapper">
                       <mat-icon
                         *ngIf="hasContent(field.fieldInformation)"
                         [appHtmlTooltip]="field.fieldInformation"
@@ -332,7 +332,7 @@
                      <mat-form-field [class.hide_section]="isColorSection(field)">
                       <mat-label>
                         {{ field.fieldname }}
-                        <span class="icon-wrapper">
+                        <span *ngIf="hasContent(field.fieldInformation)" class="icon-wrapper">
                           <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
                             [hideDelay]="1000" class="info-icon"
                             [attr.aria-label]="'Information about ' + field.fieldname">
@@ -380,7 +380,7 @@
                   <label>
                     {{ field.fieldname }}
                     <span class="required" *ngIf="field.mandatory == 1">*</span>
-                    <span class="icon-wrapper">
+                    <span *ngIf="hasContent(field.fieldInformation)" class="icon-wrapper">
                       <mat-icon
                         *ngIf="hasContent(field.fieldInformation)"
                         [appHtmlTooltip]="field.fieldInformation"
@@ -409,7 +409,7 @@
                     <mat-form-field>
                       <mat-label>
                         {{ field.fieldname }}
-                        <span class="icon-wrapper">
+                        <span *ngIf="hasContent(field.fieldInformation)" class="icon-wrapper">
                           <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
                             [hideDelay]="1000" class="info-icon"
                             [attr.aria-label]="'Information about ' + field.fieldname">
@@ -448,7 +448,7 @@
                     <mat-form-field class="fraction-field">
                       <mat-label>
                         {{ field.fieldname }}
-                        <span class="icon-wrapper">
+                        <span *ngIf="hasContent(field.fieldInformation)" class="icon-wrapper">
                           <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
                             [hideDelay]="1000" class="info-icon"
                             [attr.aria-label]="'Information about ' + field.fieldname">
@@ -483,7 +483,7 @@
                     <mat-form-field class="fraction-field">
                       <mat-label>
                         {{ field.fieldname }}
-                        <span class="icon-wrapper">
+                        <span *ngIf="hasContent(field.fieldInformation)" class="icon-wrapper">
                           <mat-icon *ngIf="hasContent(field.fieldInformation)" [appHtmlTooltip]="field.fieldInformation"
                             [hideDelay]="1000" class="info-icon"
                             [attr.aria-label]="'Information about ' + field.fieldname">
