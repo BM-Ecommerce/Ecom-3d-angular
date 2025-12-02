@@ -86,16 +86,16 @@
 
             <div *ngIf="isFullscreen" class="fullscreen-meta" [class.mobile]="isFullscreenMobile">
               <div class="meta-product">
-                {{ productname || ecomproductname }}
+                {{ ecomproductname }}
               </div>
 
               <div class="meta-row" *ngIf="fabricname">
-                <span class="meta-label">{{ fabricLabelName }}</span>
+                <span class="meta-label">{{ fabricLabelName }}:</span>
                 <span class="meta-value">{{ this.fabricname }}</span>
               </div>
 
               <div class="meta-row" *ngIf="selected_color_option">
-                  <div class="meta-label">{{ colorLabelName }}</div>
+                  <div class="meta-label">{{ colorLabelName }}:</div>
                   <div class="meta-value">
                     {{ selected_color_option.optionname || 'Selected' }}
                   </div>

@@ -1243,15 +1243,16 @@ public onToggleLoopAnimate(): void {
               matrial = 0;
               filter = filterresponseData.optionarray[field.fieldid];
             } else if (field.fieldtypeid === 5) {
-              this.fabricLabelName = field.labelnamecode;
+              console.log(field);
+              this.fabricLabelName = field.fieldname;
               matrial = 1;
               filter = filterresponseData.coloridsarray;
             } else if (field.fieldtypeid === 20) {
-              this.colorLabelName = field.labelnamecode;
+              this.colorLabelName = field.fieldname;
               matrial = 2;
               filter = filterresponseData.coloridsarray;
             } else if (field.fieldtypeid === 21) {
-              this.fabricLabelName = field.labelnamecode;
+              this.fabricLabelName = field.fieldname;
               matrial = 0;
               filter = filterresponseData.coloridsarray;
             }
