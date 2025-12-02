@@ -671,6 +671,7 @@ public onToggleLoopAnimate(): void {
       else if (el && el.msRequestFullscreen) el.msRequestFullscreen();
       this.isFullscreen = true;
       this.isFullscreenMobile = window.matchMedia('(max-width: 768px)').matches;
+      this.refreshFullscreenTexture();
     } else {
       const d: any = document as any;
       if (document.exitFullscreen) document.exitFullscreen();
@@ -685,6 +686,9 @@ public onToggleLoopAnimate(): void {
   onFullscreenChange(): void {
     this.isFullscreen = this.isNativeFullscreen();
     this.isFullscreenMobile = window.matchMedia('(max-width: 768px)').matches;
+    if (this.isFullscreen) {
+      this.refreshFullscreenTexture();
+    }
     if (!this.isFullscreen) {
       if (this.prevIs3DOn !== this.is3DOn) {
         this.is3DOn = this.prevIs3DOn;
@@ -710,6 +714,42 @@ public onToggleLoopAnimate(): void {
     } catch {
       this.isMobile = false;
     }
+  }
+
+  getFullscreenColorFields(): ProductField[] {
+    return (this.parameters_data || []).filter((field) => {
+      const level = field.level ?? field.fieldlevel;
+      return (field.fieldtypeid === 5 && level === 2) || field.fieldtypeid === 20;
+    });
+  }
+
+  getColorOptions(field: ProductField): any[] {
+    return this.option_data[field.fieldid] || [];
+  }
+
+  onFullscreenColorSelect(option: any, field: ProductField): void {
+    this.onImageClick(option, field);
+    const url = this.resolveTextureUrl(option);
+    if (url && this.is3DOn) {
+      this.threeService.updateTextures(url);
+    }
+  }
+
+  private refreshFullscreenTexture(): void {
+    const url = this.resolveTextureUrl(this.selected_color_option);
+    if (url) {
+      this.threeService.updateTextures(url);
+    }
+  }
+
+  private resolveTextureUrl(option?: any): string {
+    if (option?.optionimage) {
+      return this.apiUrl + '/api/public' + option.optionimage;
+    }
+    if (this.background_color_image_url) {
+      return this.background_color_image_url;
+    }
+    return '';
   }
 
   // Adjusts the 2D container height on mobile/tablet to match the frame image aspect ratio

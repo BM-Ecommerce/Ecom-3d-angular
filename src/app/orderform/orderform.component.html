@@ -84,6 +84,26 @@
                         </button>
                 </div>
 
+                <div *ngIf="isFullscreen && getFullscreenColorFields().length" class="fullscreen-color-strip" [class.mobile]="isFullscreenMobile">
+                  <div *ngFor="let field of getFullscreenColorFields()" class="fullscreen-color-strip__group">
+                    <div class="strip-title">{{ field.fieldname }}</div>
+                    <div class="strip-scroller">
+                      <button
+                        type="button"
+                        class="color-pill"
+                        [class.active]="selected_img_option == option.optionid"
+                        *ngFor="let option of getColorOptions(field)"
+                        (click)="onFullscreenColorSelect(option, field)">
+                        <img *ngIf="option.optionimage"
+                             [src]="apiUrl + '/api/public' + option.optionimage"
+                             (error)="onImageError($event)"
+                             [alt]="option.optionname || 'Colour'">
+                        <span>{{ option.optionname }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <div *ngIf="isFullscreen && selected_color_option" class="fullscreen-color-chip" [class.mobile]="isFullscreenMobile">
                   <img *ngIf="selected_color_option.optionimage"
                        [src]="apiUrl + '/api/public' + selected_color_option.optionimage"

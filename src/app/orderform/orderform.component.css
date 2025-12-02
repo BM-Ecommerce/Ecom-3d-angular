@@ -1399,6 +1399,98 @@ mat-button-toggle-group:disabled {
   gap: 10px;
   padding: 10px 12px;
 }
+.product_preview.fullscreen .fullscreen-color-strip {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  left: auto;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  width: min(180px, 34vw);
+  max-height: 82vh;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.5);
+  border-radius: 14px;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+  z-index: 1003;
+}
+.product_preview.fullscreen .fullscreen-color-strip__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.product_preview.fullscreen .strip-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  letter-spacing: 0.01em;
+}
+.product_preview.fullscreen .strip-scroller {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.product_preview.fullscreen .strip-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+.product_preview.fullscreen .strip-scroller::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 999px;
+}
+.product_preview.fullscreen .color-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  min-width: 0;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.product_preview.fullscreen .color-pill img {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.product_preview.fullscreen .color-pill.active,
+.product_preview.fullscreen .color-pill:hover {
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.35);
+}
+.product_preview.fullscreen .fullscreen-color-strip.mobile {
+  top: auto;
+  bottom: 12px;
+  left: 8px;
+  right: 8px;
+  transform: none;
+  width: auto;
+  max-height: 38vh;
+  padding: 8px 10px;
+}
+.product_preview.fullscreen .fullscreen-color-strip.mobile .strip-scroller {
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 10px;
+}
+.product_preview.fullscreen .fullscreen-color-strip.mobile .color-pill {
+  width: auto;
+  min-width: 120px;
+}
 .product_preview.fullscreen-mobile .visualizer-controls {
   top: auto;
   bottom: 16px;
