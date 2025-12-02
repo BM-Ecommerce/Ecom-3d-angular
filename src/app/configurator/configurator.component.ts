@@ -1,4 +1,5 @@
-import { Component, ElementRef, Input, AfterViewInit, OnDestroy, HostListener, OnChanges, ChangeDetectorRef,SimpleChanges,Renderer2, RendererFactory2,ViewEncapsulation } from '@angular/core';
+import { Component, ElementRef, Input, AfterViewInit, OnDestroy, HostListener, OnChanges, ChangeDetectorRef,SimpleChanges,Renderer2, RendererFactory2,ViewEncapsulation, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FormsModule } from '@angular/forms';
@@ -50,11 +51,15 @@ export class ConfiguratorComponent implements AfterViewInit, OnDestroy {
   chosen_tilt_rod : string="";
   slatsState: string = 'open'; 
 
-  constructor(rendererFactory: RendererFactory2,private cdr: ChangeDetectorRef, private el: ElementRef,) {
+  private isBrowser = false;
+
+  constructor(rendererFactory: RendererFactory2,private cdr: ChangeDetectorRef, private el: ElementRef, @Inject(PLATFORM_ID) platformId: Object) {
     this.renderer = rendererFactory.createRenderer(null, null);
+    this.isBrowser = isPlatformBrowser(platformId);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (!this.isBrowser) return;
     this.chosen_color_url= this.shutterdata?.colorurl ?? '';
     if(!this.chosen_color_url){
       this.chosen_color_url  = 'assets/default-shutter-img.png';
@@ -135,6 +140,7 @@ export class ConfiguratorComponent implements AfterViewInit, OnDestroy {
   }
   
   ngAfterViewInit(): void {
+    if (!this.isBrowser) return;
     const span = this.el.nativeElement.querySelector('.mouseHole-top');
     this.renderer.setStyle(span, 'background-image', 'url("assets/MouseHole_Top.png")');
     this.chosen_color_url  ='assets/default-shutter-img.png';
@@ -192,6 +198,7 @@ export class ConfiguratorComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (!this.isBrowser) return;
     // remove event listeners
     if (this.resizeListener) this.resizeListener();
     if (this.bodyClickListener) document.body.removeEventListener('click', this.bodyClickListener);
@@ -202,6 +209,7 @@ export class ConfiguratorComponent implements AfterViewInit, OnDestroy {
 
    @HostListener('window:resize')
    setPanelWidth() {
+    if (!this.isBrowser) return;
     if (window.innerWidth <= 768) {
      const panels = document.querySelectorAll('.panel');
      const baseWidth = 200;

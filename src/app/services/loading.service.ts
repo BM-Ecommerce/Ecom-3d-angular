@@ -13,14 +13,27 @@ export class LoadingService {
   // Progress smoothing
   private currentProgress = 0;
   private targetProgress = 0;
-  private rafId: number | null = null;
+  private rafId: any = null;
   private hideTimer: any = null;
   private resetTimer: any = null;
   private readonly minVisibleMs = 200; // keep bar visible briefly to avoid flicker
 
+  private readonly requestAnimFrame: (cb: FrameRequestCallback) => any;
+  private readonly cancelAnimFrame: (id: any) => void;
+
   readonly isLoading$: Observable<boolean> = this.isLoadingSubject.asObservable();
   readonly visible$: Observable<boolean> = this.visibleSubject.asObservable();
   readonly progress$: Observable<number> = this.progressSubject.asObservable();
+
+  constructor() {
+    this.requestAnimFrame = typeof requestAnimationFrame === 'function'
+      ? requestAnimationFrame
+      : (cb: FrameRequestCallback) => setTimeout(cb, 16);
+
+    this.cancelAnimFrame = typeof cancelAnimationFrame === 'function'
+      ? cancelAnimationFrame
+      : (id: any) => clearTimeout(id as any);
+  }
 
   start(key: string): void {
     if (!this.enabled) return;
@@ -93,11 +106,11 @@ export class LoadingService {
       this.progressSubject.next(Math.round(this.currentProgress));
 
       if (this.currentProgress !== this.targetProgress) {
-        this.rafId = requestAnimationFrame(step);
+        this.rafId = this.requestAnimFrame(step);
       } else {
         this.rafId = null;
       }
     };
-    this.rafId = requestAnimationFrame(step);
+    this.rafId = this.requestAnimFrame(step);
   }
 }

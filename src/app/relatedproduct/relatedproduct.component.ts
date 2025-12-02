@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ChangeDetectorRef, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectorRef, OnChanges, SimpleChanges, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../services/api.service';
 import { takeUntil } from 'rxjs/operators';
@@ -7,6 +7,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { CarouselModule } from 'ngx-owl-carousel-o';
 import { environment } from '../../environments/environment';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-relatedproduct',
@@ -35,6 +36,8 @@ export class RelatedproductComponent implements OnInit, OnChanges {
   private composedMap: Record<string, string> = {};
   private composingSet = new Set<string>();
 
+  private isBrowser = false;
+
   imgpath = `${environment.apiUrl}/api/public/storage/attachments/${environment.apiName}/material/colour/`;
 
   customOptions2: any = {
@@ -60,15 +63,20 @@ export class RelatedproductComponent implements OnInit, OnChanges {
 
   constructor(
     private apiService: ApiService,
-    private cd: ChangeDetectorRef
-  ) { }
+    private cd: ChangeDetectorRef,
+    @Inject(PLATFORM_ID) platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   ngOnInit(): void {
+    if (!this.isBrowser) return;
     this.checkDevice();
     window.addEventListener('resize', () => this.checkDevice());
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (!this.isBrowser) return;
     if (changes['relatedproducts'] && changes['relatedproducts'].currentValue) {
       this.relatedframeimage = this.relatedproducts.relatedframeimage;
       this.currencySymbol = this.relatedproducts.currencySymbol;

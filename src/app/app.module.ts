@@ -18,7 +18,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
     AppComponent
   ],
   imports: [
-    BrowserModule,
+    BrowserModule.withServerTransition({ appId: 'serverApp' }),
     ReactiveFormsModule,
     HttpClientModule,
     RouterModule,

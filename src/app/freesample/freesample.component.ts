@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../services/api.service';
 import Swal from 'sweetalert2';
 import { environment } from '../../environments/environment';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-freesample',
@@ -22,10 +23,15 @@ export class FreesampleComponent implements OnInit, OnChanges {
   freeSampleOrderData: any = [];
   button_disable: boolean = false;
 
+  private isBrowser = false;
+
   constructor(
     private cdr: ChangeDetectorRef,
     private apiService: ApiService,
-  ) { }
+    @Inject(PLATFORM_ID) platformId: Object,
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   ngOnInit(): void {
   }
@@ -82,7 +88,9 @@ export class FreesampleComponent implements OnInit, OnChanges {
             }
           }).then(() => {
             this.button_disable = false;
-             window.location.href = environment.site + '/cart';
+            if (this.isBrowser) {
+              window.location.href = environment.site + '/cart';
+            }
             this.cdr.detectChanges();
           });
         } else {
