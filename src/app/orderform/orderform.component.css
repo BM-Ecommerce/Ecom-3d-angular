@@ -621,7 +621,7 @@ mat-button-toggle.mat-button-toggle-checked {
   transform: scale(1.1);
 }
 .parameter-wrapper mat-button-toggle {
-  padding: 0 12px !important;     
+  padding: 0 5px !important;     
 }
 .parameter-wrapper.inline-toggle.radio {
     flex-direction: row;
