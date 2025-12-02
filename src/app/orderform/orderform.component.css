@@ -190,6 +190,7 @@ textarea {
     font-weight: 500;
     color: var(--dark-gray);
     display: inline-block;
+    margin: 0 0 16px;
 }
 
 .radio-group {
