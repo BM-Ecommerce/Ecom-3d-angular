@@ -117,6 +117,7 @@ export class ThreeService implements OnDestroy {
       found: boolean;
     }
   >();
+  private zoomHoleRect: { x: number; y: number; width: number; height: number } | null = null;
 
   // RAF id
   private animationFrameId?: number;
@@ -1382,6 +1383,8 @@ public enableDimensions(on: boolean): void {
         viewWidth = viewHeight * aspect;
       }
 
+      this.updateZoomHoleRect(viewWidth, viewHeight, frameTexture);
+
       const frameGeometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
       const frameMaterial = new THREE.MeshBasicMaterial({
         map: frameTexture,
@@ -1556,6 +1559,8 @@ public enableDimensions(on: boolean): void {
       viewHeight = canvasHeight;
       viewWidth = viewHeight * aspect;
     }
+
+    this.updateZoomHoleRect(viewWidth, viewHeight, frameTexture);
 
     this.frameMesh.geometry?.dispose();
     this.frameMesh.geometry = new THREE.PlaneGeometry(viewWidth, viewHeight);
@@ -1996,6 +2001,12 @@ public enableDimensions(on: boolean): void {
     this.isZooming = enabled;
   }
 
+  public isPointInZoomHole(x: number, y: number): boolean {
+    if (!this.zoomHoleRect) return true;
+    const { x: hx, y: hy, width, height } = this.zoomHoleRect;
+    return x >= hx && x <= hx + width && y >= hy && y <= hy + height;
+  }
+
   private render(): void {
     if (!this.renderer || !this.scene) return;
 
@@ -2016,6 +2027,13 @@ public enableDimensions(on: boolean): void {
         const lensX = this.mouseX;
         const lensY = this.mouseY;
         const lensRadius = this.lensRadius;
+
+        if (
+          this.zoomHoleRect &&
+          !this.isPointInZoomHole(lensX, lensY)
+        ) {
+          return;
+        }
 
         const worldX =
           this.camera2d.left +
@@ -2197,5 +2215,46 @@ public enableDimensions(on: boolean): void {
     );
 
     backgroundMesh.updateMatrixWorld(true);
+  }
+
+  private updateZoomHoleRect(
+    viewWidth: number,
+    viewHeight: number,
+    frameTexture: THREE.Texture
+  ): void {
+    if (!this.renderer) {
+      this.zoomHoleRect = null;
+      return;
+    }
+
+    const img = frameTexture.image as HTMLImageElement;
+    if (!img || !img.width || !img.height) {
+      this.zoomHoleRect = null;
+      return;
+    }
+
+    const hole = this.detectTransparentRegion(img, 40);
+    if (!hole.found) {
+      this.zoomHoleRect = null;
+      return;
+    }
+
+    const canvas = this.renderer.domElement;
+    const canvasWidth = canvas.clientWidth;
+    const canvasHeight = canvas.clientHeight;
+    if (!canvasWidth || !canvasHeight) {
+      this.zoomHoleRect = null;
+      return;
+    }
+
+    const offsetX = (canvasWidth - viewWidth) / 2;
+    const offsetY = (canvasHeight - viewHeight) / 2;
+
+    const width = (hole.maxX - hole.minX) * (viewWidth / hole.width);
+    const height = (hole.maxY - hole.minY) * (viewHeight / hole.height);
+    const x = offsetX + (hole.minX / hole.width) * viewWidth;
+    const y = offsetY + (hole.minY / hole.height) * viewHeight;
+
+    this.zoomHoleRect = { x, y, width, height };
   }
 }

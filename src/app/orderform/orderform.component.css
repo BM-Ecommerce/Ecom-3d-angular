@@ -504,7 +504,7 @@ textarea {
 
 .product_preview {
     position: relative;
-    cursor: crosshair;
+    cursor: default;
     padding-bottom: unset!important;
     background: var(--card-bg);
     border-radius: var(--border-radius);
@@ -512,7 +512,7 @@ textarea {
 }
 
 .product_preview.zooming {
-    cursor: none;
+    cursor: crosshair;
 }
 
 

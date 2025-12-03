@@ -37,7 +37,7 @@
             </div>
             <!-- Shutter Image -->
             <app-configurator [shutterdata]="shutterdata" *ngIf="this.category == 5"></app-configurator>
-            <div class="product_preview" [class.fullscreen]="isFullscreen" [class.fullscreen-mobile]="isFullscreenMobile" #visualizerContainer (mousemove)="onMouseMove($event)"
+            <div class="product_preview" [class.fullscreen]="isFullscreen" [class.fullscreen-mobile]="isFullscreenMobile" [class.zooming]="isZooming" #visualizerContainer (mousemove)="onMouseMove($event)"
                 (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()" *ngIf="this.category != 5">
               <div id="main-img"  #mainImg [ngClass]="{ 'view3d': is3DOn }" class="configuratorpreviewimage">
                 <canvas #visualizerCanvas></canvas>

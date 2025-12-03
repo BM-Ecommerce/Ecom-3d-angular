@@ -1023,6 +1023,20 @@ public onToggleLoopAnimate(): void {
     const rect = this.containerRef.nativeElement.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
+
+    if (!this.threeService.isPointInZoomHole(x, y)) {
+      if (this.isZooming) {
+        this.isZooming = false;
+        this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+      }
+      return;
+    }
+
+    if (!this.isZooming) {
+      this.isZooming = true;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(true));
+    }
+
     if (this.mouseMoveRaf !== null) return;
     this.mouseMoveRaf = this.ngZone.runOutsideAngular(() =>
       requestAnimationFrame(() => {
@@ -1034,8 +1048,8 @@ public onToggleLoopAnimate(): void {
 
   onMouseEnter(): void {
     if (!this.is3DOn) {
-      this.isZooming = true;
-      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(true));
+      this.isZooming = false;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
     }
   }
 
