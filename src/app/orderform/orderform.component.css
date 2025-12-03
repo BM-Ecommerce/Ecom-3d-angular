@@ -1431,23 +1431,50 @@ mat-button-toggle-group:disabled {
   position: absolute;
   top: 50%;
   right: 12px;
-  left: auto;
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px; /* more space between sections */
   padding: 12px;
-  width: min(220px, 34vw);
-  max-height: 50vh;
-  overflow-y: auto;
+  width: min(240px, 34vw);
   background: var(--fs-panel-bg);
   border-radius: 14px;
-  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   box-shadow: var(--fs-panel-shadow);
   z-index: 1003;
   border: 1px solid var(--fs-panel-border);
-  scroll-behavior: smooth;
+  overflow: visible; /* no overall scroll */
+}
+
+.fullscreen-color-strip.single .strip-scroller{
+  max-height: unset;
+}
+
+/* Make each section independent */
+.fullscreen-color-strip__group {
+  background: var(--fs-section-bg, rgba(255,255,255,0.12));
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--fs-panel-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Scroll only inside each section */
+.fullscreen-color-strip__group .strip-scroller {
+  max-height: 150px; /* adjust height */
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Optional: better scrollbars */
+.fullscreen-color-strip__group .strip-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+.fullscreen-color-strip__group .strip-scroller::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.3);
+  border-radius: 4px;
 }
 .product_preview.fullscreen .fullscreen-color-strip::-webkit-scrollbar {
   width: 7px;

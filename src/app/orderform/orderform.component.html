@@ -114,7 +114,7 @@
               </div>
             </div>
 
-                <div *ngIf="isFullscreen && getFullscreenColorFields().length" class="fullscreen-color-strip" [class.mobile]="isFullscreenMobile">
+                <div *ngIf="isFullscreen && getFullscreenColorFields().length" class="fullscreen-color-strip" [class.mobile]="isFullscreenMobile" [class.single]="getFullscreenColorFields().length === 1">
                   <div *ngFor="let field of getFullscreenColorFields()" class="fullscreen-color-strip__group">
                     <div class="strip-title">{{ field.fieldname }}</div>
                     <div class="strip-scroller">
