@@ -109,7 +109,7 @@
                       <button
                         type="button"
                         class="color-pill"
-                        [class.active]="selected_img_option == option.optionid || selected_frame_option == option.optionid || selected_curtain_option == option.optionid"
+                        [class.active]="isFullscreenOptionActive(field, option)"
                         *ngFor="let option of getColorOptions(field)"
                         (click)="onFullscreenColorSelect(option, field)">
                         <img *ngIf="option.optionimage"

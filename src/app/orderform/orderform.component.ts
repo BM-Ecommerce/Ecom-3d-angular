@@ -272,6 +272,8 @@ hasDescriptionContent = false;
   slatsize : string="";
   tiltrod : string="";
   siteurl = environment.site;
+  readonly frameColorKey = 'framecolour';
+  readonly curtainColorKey = 'curtaincolour';
   selected_img_option:number = 0;
   selected_frame_option:number = 0;
   selected_curtain_option:number = 0;
@@ -725,14 +727,18 @@ public onToggleLoopAnimate(): void {
     }
   }
 
+  private normalizeFieldName(name?: string): string {
+    return (name || '').replace(/\s+/g, '').toLowerCase();
+  }
+
   getFullscreenColorFields(): ProductField[] {
     return (this.parameters_data || []).filter((field) => {
       const level = field.level ?? field.fieldlevel;
-      const name = (field.fieldname || '').toLowerCase();
+      const normalizedName = this.normalizeFieldName(field.fieldname);
 
       const isCurtainOrFrame =
         field.fieldtypeid === 3 &&
-        (name === 'curtain colour' || name === 'frame colour');
+        (normalizedName === this.curtainColorKey || normalizedName === this.frameColorKey);
 
       const matchesFullscreenRule =
         (field.fieldtypeid === 5 && level === 2) ||
@@ -746,19 +752,50 @@ public onToggleLoopAnimate(): void {
     return this.option_data[field.fieldid] || field.optionsvalue || [];
   }
 
+  isFullscreenOptionActive(field: ProductField, option: ProductOption): boolean {
+    const normalizedName = this.normalizeFieldName(field.fieldname);
+    if (field.fieldtypeid === 3) {
+      const optionId = Number(option.optionid) || 0;
+      if (normalizedName === this.frameColorKey) {
+        return this.selected_frame_option === optionId;
+      }
+      if (normalizedName === this.curtainColorKey) {
+        return this.selected_curtain_option === optionId;
+      }
+    }
+    const level = field.level ?? field.fieldlevel;
+    if ((field.fieldtypeid === 5 && level === 2) || field.fieldtypeid === 20) {
+      return this.selected_img_option === option.optionid;
+    }
+    return this.selected_img_option === option.optionid;
+  }
+
   onFullscreenColorSelect(option: any, field: ProductField): void {
     this.onImageClick(option, field);
     const url = this.resolveTextureUrl(option);
-    if (url && this.is3DOn) {
-      const name = (field.fieldname || '').toLowerCase();
-      if (name === 'frame colour') {
-        this.threeService.updateFrame(url);
-      } else if (name === 'curtain colour') {
-        this.threeService.updateTextures(url);
-      } else {
-        this.threeService.updateTextures(url);
-      }
+    const normalizedName = this.normalizeFieldName(field.fieldname);
+
+    if (!url || !this.is3DOn) {
+      return;
     }
+
+    if (field.fieldtypeid === 3 && normalizedName === this.frameColorKey) {
+      this.selected_frame_option = Number(option.optionid) || 0;
+      this.threeService.updateFrame(url);
+      return;
+    }
+
+    if (field.fieldtypeid === 3 && normalizedName === this.curtainColorKey) {
+      this.selected_curtain_option = Number(option.optionid) || 0;
+    }
+
+    const level = field.level ?? field.fieldlevel;
+    if ((field.fieldtypeid === 5 && level === 2) || field.fieldtypeid === 20) {
+      this.selected_img_option = option.optionid;
+      this.selected_color_option = option;
+    }
+
+    this.threeService.updateTextures(url);
   }
 
   private refreshFullscreenTexture(): void {
@@ -1495,6 +1532,7 @@ public onToggleLoopAnimate(): void {
       if (!selectedOption) return;
       
       const canUpdate = !isInitial || (field.optiondefault && params.color_id);
+      const normalizedFieldName = this.normalizeFieldName(field.fieldname);
 
       if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
         this.fabricid = value;
@@ -1516,12 +1554,12 @@ public onToggleLoopAnimate(): void {
         this.prepareFrameThumbnails();
       }
 
-      if (canUpdate && (field.fieldtypeid === 3 && field.fieldname == "Curtain Colour") && selectedOption.optionimage) {
-
+      if (canUpdate && field.fieldtypeid === 3 && normalizedFieldName === this.curtainColorKey && selectedOption.optionimage) {
+        this.selected_curtain_option = Number(selectedOption.optionid) || 0;
         this.threeService.updateTextures(this.apiUrl + '/api/public' + selectedOption.optionimage);
       }
-      if (canUpdate && (field.fieldtypeid === 3 && field.fieldname == "Frame Colour") && selectedOption.optionimage) {
-
+      if (canUpdate && field.fieldtypeid === 3 && normalizedFieldName === this.frameColorKey && selectedOption.optionimage) {
+        this.selected_frame_option = Number(selectedOption.optionid) || 0;
         this.threeService.updateFrame(this.apiUrl + '/api/public' + selectedOption.optionimage);
       }
       // Accessories Type.
@@ -2296,20 +2334,20 @@ public onToggleLoopAnimate(): void {
     if(field.fieldtypeid == 3){
       // Shutter
       if(this.category == 5){
-          const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
+          const chosen_field_name = this.normalizeFieldName(field.fieldname);
           if(this.hinge_color_field_names.includes(chosen_field_name)){
-            this.shutter_selected_img_options.hingecolour = targetField.optionid;
+            this.shutter_selected_img_options.hingecolour = Number(targetField.optionid) || 0;
           }
           if(this.color_field_names.includes(chosen_field_name)){
-            this.shutter_selected_img_options.color = targetField.optionid;
+            this.shutter_selected_img_options.color = Number(targetField.optionid) || 0;
           }
      }else{
-       const chosen_field_name = (field.fieldname || '').toLowerCase();
-        if(chosen_field_name == 'frame colour'){
-          this.selected_frame_option = targetField.optionid;
+       const chosen_field_name = this.normalizeFieldName(field.fieldname);
+        if(chosen_field_name === this.frameColorKey){
+          this.selected_frame_option = Number(targetField.optionid) || 0;
         }
-        if(chosen_field_name == 'curtain colour'){
-          this.selected_curtain_option = targetField.optionid;
+        if(chosen_field_name === this.curtainColorKey){
+          this.selected_curtain_option = Number(targetField.optionid) || 0;
         }
      }
     }
