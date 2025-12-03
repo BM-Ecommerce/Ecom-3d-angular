@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, shareReplay } from 'rxjs/operators';
 
 interface ApiCommonParams {
   api_url: string;
@@ -23,6 +23,7 @@ interface ApiResponse {
 })
 export class ApiService {
   private apiUrl = 'http://localhost/wordpress/wp-content/plugins/blindmatrix-v4-api/api.php';
+  private cache = new Map<string, Observable<ApiResponse>>();
 
   constructor(private http: HttpClient) { }
 
@@ -97,22 +98,37 @@ export class ApiService {
     return throwError(() => new Error('An error occurred. Please try again later.'));
   }
 
+  private cacheKey(prefix: string, params: any): string {
+    return `${prefix}:${JSON.stringify(params)}`;
+  }
+
+  private fromCacheOr<T extends ApiResponse>(key: string, factory: () => Observable<T>): Observable<T> {
+    const cached = this.cache.get(key) as Observable<T> | undefined;
+    if (cached) return cached;
+    const obs = factory().pipe(shareReplay(1));
+    this.cache.set(key, obs as any);
+    return obs;
+  }
+
   getProductData(params: ApiCommonParams): Observable<ApiResponse> {
     const { api_url, api_key, api_name, product_id, ...payload } = params;
     const passData = `getproductsdetails/${product_id}`;
-    return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
+    const key = this.cacheKey('productData', { passData, payload });
+    return this.fromCacheOr(key, () => this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name));
   }
 
   getRecipeList(params: ApiCommonParams): Observable<ApiResponse> {
     const { api_url, api_key, api_name, product_id, ...payload } = params;
     const passData = `products/recipe/list/${product_id}`;
-    return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
+    const key = this.cacheKey('recipeList', { passData, payload });
+    return this.fromCacheOr(key, () => this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name));
   }
 
   getFractionList(params: ApiCommonParams): Observable<ApiResponse> {
     const { api_url, api_key, api_name, product_id, ...payload } = params;
     const passData = `appSetup/fractionlist/${product_id}`;
-    return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
+    const key = this.cacheKey('fractionList', { passData, payload });
+    return this.fromCacheOr(key, () => this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name));
   }
 
   getProductParameters(params: ApiCommonParams, recipeId: number): Observable<ApiResponse> {
@@ -121,7 +137,8 @@ export class ApiService {
       return throwError(() => new Error('recipeid is required'));
     }
     const passData = `products/fields/withdefault/list/${recipeId}/1/0`;
-    return this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name);
+    const key = this.cacheKey('productParams', { passData, payload });
+    return this.fromCacheOr(key, () => this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name));
   }
   getminandmax(params: ApiCommonParams, colorid: string, unittype: number, pricegroup: number, fabricFieldType: number): Observable<ApiResponse> {
     const { api_url, api_key, api_name, product_id, category } = params;
@@ -145,7 +162,8 @@ export class ApiService {
   getFractionData(params: ApiCommonParams, faction_value: any): Observable<ApiResponse> {
     const { api_url, api_key, api_name, product_id, ...payload } = params;
     const passData = `appSetup/fractionlist/${product_id}/-1/${faction_value}`;
-    return this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name);
+    const key = this.cacheKey('fractionData', { passData, payload });
+    return this.fromCacheOr(key, () => this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name));
   }
   addToCart(formData: any, cart_productId: string, productId: number, apiUrl: string, cartproductName: string, priceData: any, vatpercentage: number, vatName: string, currenturl: string, productName: string, categoryId: number, visualizerImage?: string, action: string = "add_to_cart",colorid?: number,fabricid?: number ): Observable<ApiResponse> {
     let body = new HttpParams()

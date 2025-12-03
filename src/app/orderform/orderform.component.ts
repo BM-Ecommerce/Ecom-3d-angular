@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, SimpleChanges, HostListener, Inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, SimpleChanges, HostListener, Inject, NgZone } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { environment } from '../../environments/environment';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -219,6 +219,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   background_color_image_url!: string;
   private destroy$ = new Subject<void>();
   private readonly MAX_NESTING_LEVEL = 8;
+  private resizeRaf: number | null = null;
+  private mouseMoveRaf: number | null = null;
   private priceGroupField?: ProductField;
   private supplierField?: ProductField;
   private qtyField?: ProductField;
@@ -476,7 +478,8 @@ hasDescriptionContent = false;
     private http: HttpClient,
     @Inject(LoadingService) public loading: LoadingService,
     private matIconRegistry: MatIconRegistry,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private ngZone: NgZone
   ) {
     // initial minimal group; will be replaced in initializeFormControls
     this.orderForm = this.fb.group({
@@ -567,6 +570,14 @@ hasDescriptionContent = false;
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    if (this.resizeRaf !== null) {
+      cancelAnimationFrame(this.resizeRaf);
+      this.resizeRaf = null;
+    }
+    if (this.mouseMoveRaf !== null) {
+      cancelAnimationFrame(this.mouseMoveRaf);
+      this.mouseMoveRaf = null;
+    }
   }
 
   ngAfterViewInit(): void {
@@ -718,6 +729,16 @@ public onToggleLoopAnimate(): void {
   }
   @HostListener('window:resize')
   onWindowResize(): void {
+    if (this.resizeRaf !== null) return;
+    this.resizeRaf = this.ngZone.runOutsideAngular(() =>
+      requestAnimationFrame(() => {
+        this.resizeRaf = null;
+        this.ngZone.run(() => this.performResize());
+      })
+    ) as any;
+  }
+
+  private performResize(): void {
     this.updateIsMobile();
     if (this.containerRef) {
       this.threeService.onResize(this.containerRef.nativeElement);
@@ -998,25 +1019,30 @@ public onToggleLoopAnimate(): void {
   }
 
   onMouseMove(event: MouseEvent): void {
-    if (!this.is3DOn) {
-      const rect = this.containerRef.nativeElement.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      this.threeService.setZoom(x, y);
-    }
+    if (this.is3DOn) return;
+    const rect = this.containerRef.nativeElement.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    if (this.mouseMoveRaf !== null) return;
+    this.mouseMoveRaf = this.ngZone.runOutsideAngular(() =>
+      requestAnimationFrame(() => {
+        this.mouseMoveRaf = null;
+        this.threeService.setZoom(x, y);
+      })
+    ) as any;
   }
 
   onMouseEnter(): void {
     if (!this.is3DOn) {
       this.isZooming = true;
-      this.threeService.enableZoom(true);
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(true));
     }
   }
 
   onMouseLeave(): void {
     if (!this.is3DOn) {
       this.isZooming = false;
-      this.threeService.enableZoom(false);
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
     }
   }
   private fetchInitialData(params: any): void {

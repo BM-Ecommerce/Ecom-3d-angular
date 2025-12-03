@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { clone } from 'three/examples/jsm/utils/SkeletonUtils';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { LoadingService } from './loading.service';
 
@@ -45,6 +46,8 @@ export class ThreeService implements OnDestroy {
 
   // Current GLTF model root
   private currentModelRoot?: THREE.Object3D;
+  private gltfCache = new Map<string, Promise<any>>();
+  private textureCache = new Map<string, THREE.Texture>();
 
   // Lighting
   private directionalLight?: THREE.DirectionalLight;
@@ -152,6 +155,7 @@ export class ThreeService implements OnDestroy {
     private zone: NgZone,
     @Inject(LoadingService) private loading: LoadingService
   ) {
+    THREE.Cache.enabled = true;
     // Global loading manager (textures + GLTF)
     this.loadingManager = new THREE.LoadingManager();
     this.loadingManager.onStart = () => {
@@ -184,6 +188,48 @@ export class ThreeService implements OnDestroy {
   public setUnitLabel(unit: string): void {
     this.unitLabel = unit || '';
     this.updateDimensionHelpers(this.lastWidth, this.lastDrop);
+  }
+
+  private loadGltfCached(url: string): Promise<any> {
+    const key = url;
+    const existing = this.gltfCache.get(key);
+    if (existing) return existing;
+    const p = new Promise<any>((resolve, reject) => {
+      this.gltfLoader.load(
+        url,
+        (gltf) => resolve(gltf),
+        undefined,
+        (err) => reject(err)
+      );
+    });
+    this.gltfCache.set(key, p);
+    return p;
+  }
+
+  private cloneGltf(gltf: any): any {
+    const clonedScene = clone(gltf.scene);
+    return {
+      scene: clonedScene,
+      animations: gltf.animations
+    };
+  }
+
+  private loadTextureCached(url: string): Promise<THREE.Texture> {
+    if (!url) return Promise.reject('no url');
+    const existing = this.textureCache.get(url);
+    if (existing) return Promise.resolve(existing);
+    return new Promise<THREE.Texture>((resolve, reject) => {
+      this.textureLoader.load(
+        url,
+        (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace;
+          this.textureCache.set(url, tex);
+          resolve(tex);
+        },
+        undefined,
+        (err) => reject(err)
+      );
+    });
   }
 
   private createTextSprite(text: string, baseScale: number): THREE.Sprite {
@@ -711,6 +757,7 @@ public enableDimensions(on: boolean): void {
 
     const width = container.clientWidth;
     const height = container.clientHeight;
+    const isMobile = typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false;
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xeeeeee);
@@ -728,11 +775,12 @@ public enableDimensions(on: boolean): void {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvasEl,
       alpha: true,
-      antialias: true
+      antialias: !isMobile
     });
-    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.enabled = !isMobile;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    const pixelRatio = Math.min((typeof window !== 'undefined' ? window.devicePixelRatio : 1) || 1, 1.5);
+    this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height, false);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1;
@@ -814,9 +862,7 @@ public enableDimensions(on: boolean): void {
     this.cube5Meshes = [];
     this.Wood = [];
 
-    this.gltfLoader.load(
-      gltfUrl,
-      (gltf) => {
+    const apply = (gltf: any) => {
         // Remove old model
         if (this.currentModelRoot) {
           this.scene.remove(this.currentModelRoot);
@@ -849,33 +895,33 @@ public enableDimensions(on: boolean): void {
 
             // Start in closed pose
             this.rollerAction.stop();
-            this.rollerAction.enabled = true;
-            this.rollerAction.reset();
-            this.rollerAction.time = 0;
-            this.mixer.update(0);
-            this.rollerAction.stop();
-          } else {
-            this.actions = {};
-            this.rollerAction = undefined;
-            gltf.animations.forEach((clip) => {
-              const action = this.mixer!.clipAction(clip);
-              action.loop = THREE.LoopOnce;
-              action.clampWhenFinished = true;
-              this.actions![clip.name] = action;
-            });
+        this.rollerAction.enabled = true;
+        this.rollerAction.reset();
+        this.rollerAction.time = 0;
+        this.mixer.update(0);
+        this.rollerAction.stop();
+      } else {
+        this.actions = {};
+        this.rollerAction = undefined;
+        gltf.animations.forEach((clip: any) => {
+          const action = this.mixer!.clipAction(clip);
+          action.loop = THREE.LoopOnce;
+          action.clampWhenFinished = true;
+          this.actions![clip.name] = action;
+        });
 
-            Object.values(this.actions).forEach((action) => {
-              action.stop();
-              action.enabled = true;
-              action.reset();
-              action.time = 0;
-            });
-            this.mixer.update(0);
-          }
-        } else {
-          this.hideAnimation = true;
-          this.mixer = undefined;
-          this.rollerAction = null;
+        Object.values(this.actions).forEach((action: any) => {
+          action.stop();
+          action.enabled = true;
+          action.reset();
+          action.time = 0;
+        });
+        this.mixer.update(0);
+      }
+    } else {
+      this.hideAnimation = true;
+      this.mixer = undefined;
+      this.rollerAction = null;
         }
 
         this.isAnimateOpen = false;
@@ -884,7 +930,7 @@ public enableDimensions(on: boolean): void {
         const profile = this.getBlindMaterialProfile(type);
 
         // Traverse scene, normalize materials and pick slats/fabric parts
-        gltf.scene.traverse((child) => {
+    gltf.scene.traverse((child: any) => {
           if ((child as any).isMesh) {
             const mesh = child as THREE.Mesh;
             let mat = mesh.material as any;
@@ -990,7 +1036,7 @@ public enableDimensions(on: boolean): void {
 
         // If a shared texture material already exists, apply to slats
       if (this.textureMaterial && this.cube5Meshes.length > 0) {
-        this.cube5Meshes.forEach((mesh) => {
+        this.cube5Meshes.forEach((mesh: any) => {
           mesh.material = this.textureMaterial!;
           (mesh.material as THREE.Material).needsUpdate = true;
           mesh.castShadow = true;
@@ -1078,7 +1124,7 @@ public enableDimensions(on: boolean): void {
 
         // Re-apply shared texture if present
         if (this.textureMaterial && this.cube5Meshes.length > 0) {
-          this.cube5Meshes.forEach((mesh) => {
+          this.cube5Meshes.forEach((mesh: any) => {
             mesh.material = this.textureMaterial!;
             (mesh.material as THREE.Material).needsUpdate = true;
           });
@@ -1086,12 +1132,20 @@ public enableDimensions(on: boolean): void {
 
         // Update measurement arrows/labels using latest width/drop
         this.updateDimensionHelpers(this.lastWidth, this.lastDrop);
-      },
-      undefined,
-      (error) => {
-        console.error(error);
-      }
-    );
+      };
+
+    const cached = this.gltfCache.get(gltfUrl);
+    if (cached) {
+      cached.then((gltf) => apply(this.cloneGltf(gltf))).catch((err) => console.error(err));
+      return;
+    }
+    const loadPromise = new Promise<any>((resolve, reject) => {
+      this.gltfLoader.load(gltfUrl, resolve, undefined, reject);
+    });
+    this.gltfCache.set(gltfUrl, loadPromise);
+    loadPromise
+      .then((gltf) => apply(this.cloneGltf(gltf)))
+      .catch((err) => console.error(err));
   }
 
   // ------------------------------------------------------
@@ -1112,7 +1166,7 @@ public enableDimensions(on: boolean): void {
     }
 
     if (this.actions) {
-      Object.values(this.actions).forEach((action) => {
+      Object.values(this.actions).forEach((action: any) => {
         action.stop();
         action.enabled = true;
         action.reset();
@@ -1565,19 +1619,15 @@ public enableDimensions(on: boolean): void {
       return;
     }
 
-    const urlWithCacheBust = `${backgroundUrl}?t=${Date.now()}`;
-
-    this.textureLoader.load(
-      urlWithCacheBust,
-      (texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      // Favor clarity: reduce blurring on magnification
-      texture.minFilter = THREE.LinearMipmapLinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-      texture.needsUpdate = true;
+    this.loadTextureCached(backgroundUrl)
+      .then((texture) => {
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        // Favor clarity: reduce blurring on magnification
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+        texture.needsUpdate = true;
 
         // Pattern-based blind types
         if (
@@ -1644,7 +1694,7 @@ public enableDimensions(on: boolean): void {
             }
 
             if (Array.isArray(mesh.material)) {
-              mesh.material.forEach((m) => m.dispose());
+              mesh.material.forEach((m: any) => m.dispose());
             } else if (mesh.material) {
               mesh.material.dispose();
             }
@@ -1660,12 +1710,10 @@ public enableDimensions(on: boolean): void {
         } else {
           this.pendingTextureUrl = backgroundUrl;
         }
-      },
-      undefined,
-      (err) => {
-        console.error('Texture load error:', err);
-      }
-    );
+      })
+      .catch((err) => {
+        console.error('Texture load failed', err);
+      });
   }
 
   private applyPatternToVenetian(
@@ -1682,7 +1730,7 @@ public enableDimensions(on: boolean): void {
 
       this.Wood.forEach((mesh) => {
         if (Array.isArray(mesh.material)) {
-          mesh.material.forEach((m) => m.dispose());
+          mesh.material.forEach((m: any) => m.dispose());
         } else if (mesh.material) {
           (mesh.material as THREE.Material).dispose();
         }
@@ -1794,7 +1842,7 @@ public enableDimensions(on: boolean): void {
       geom.attributes['uv'].needsUpdate = true;
 
       if (Array.isArray(mesh.material)) {
-        mesh.material.forEach((mat) => mat.dispose());
+        mesh.material.forEach((mat: any) => mat.dispose());
       } else {
         (mesh.material as THREE.Material).dispose();
       }
@@ -1876,7 +1924,7 @@ public enableDimensions(on: boolean): void {
         const woodProfile = this.getBlindMaterialProfile('generic');
 
         if (Array.isArray(this.cubeMesh.material)) {
-          this.cubeMesh.material.forEach((m) => m.dispose());
+          this.cubeMesh.material.forEach((m: any) => m.dispose());
         } else if (this.cubeMesh.material) {
           (this.cubeMesh.material as THREE.Material).dispose();
         }
