@@ -1446,7 +1446,7 @@ mat-button-toggle-group:disabled {
 }
 
 .fullscreen-color-strip.single .strip-scroller{
-  max-height: unset;
+  max-height: 380px;
 }
 
 /* Make each section independent */

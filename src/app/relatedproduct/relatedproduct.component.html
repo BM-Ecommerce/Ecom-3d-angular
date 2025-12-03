@@ -38,7 +38,7 @@
     </div>
     <div class="related-products-bodycontainer">
       <owl-carousel-o *ngIf="!gridView" [options]="customOptions2">
-        <ng-template carouselSlide *ngFor="let product of related_products">
+        <ng-template carouselSlide *ngFor="let product of related_products; trackBy: trackByRelatedProduct">
           <a
             [href]="buildVisualizerUrl(product)"
             class="rp-link related-product-card"
@@ -74,7 +74,7 @@
         </ng-template>
       </owl-carousel-o>
       <div class="related-products-grid" *ngIf="gridView">
-        <div class="related-product-card" *ngFor="let product of related_products">
+        <div class="related-product-card" *ngFor="let product of related_products; trackBy: trackByRelatedProduct">
           <a [href]="buildVisualizerUrl(product)" class="rp-link" target="_blank">
             <div class="rp-image-box">
             <img

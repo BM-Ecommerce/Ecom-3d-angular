@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ChangeDetectorRef, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectorRef, OnChanges, SimpleChanges, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../services/api.service';
 import { takeUntil } from 'rxjs/operators';
@@ -21,8 +21,9 @@ import { environment } from '../../environments/environment';
   ],
   templateUrl: './relatedproduct.component.html',
   styleUrls: ['./relatedproduct.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RelatedproductComponent implements OnInit, OnChanges {
+export class RelatedproductComponent implements OnInit, OnChanges, OnDestroy {
   @Input() relatedproducts: any;
 
   private destroy$ = new Subject<void>();
@@ -36,6 +37,7 @@ export class RelatedproductComponent implements OnInit, OnChanges {
   // Composited thumbnails cache: key -> dataURL
   private composedMap: Record<string, string> = {};
   private composingSet = new Set<string>();
+  private resizeHandler = () => this.checkDevice();
 
   imgpath = `${environment.apiUrl}/api/public/storage/attachments/${environment.apiName}/material/colour/`;
 
@@ -67,7 +69,7 @@ export class RelatedproductComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     this.checkDevice();
-    window.addEventListener('resize', () => this.checkDevice());
+    window.addEventListener('resize', this.resizeHandler);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -76,6 +78,12 @@ export class RelatedproductComponent implements OnInit, OnChanges {
       this.currencySymbol = this.relatedproducts.currencySymbol;
       this.getRelatedProducts();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    window.removeEventListener('resize', this.resizeHandler);
   }
 
   private getRelatedProducts(): void {
@@ -118,6 +126,10 @@ export class RelatedproductComponent implements OnInit, OnChanges {
   }
   checkDevice() {
     this.isDesktop = window.innerWidth >= 1024; // Desktop breakpoint
+  }
+
+  trackByRelatedProduct(index: number, product: any): any {
+    return product?.productid ?? product?.pei_productid ?? index;
   }
   onImageError(event: Event) {
     const img = event.target as HTMLImageElement;

@@ -115,14 +115,14 @@
             </div>
 
                 <div *ngIf="isFullscreen && getFullscreenColorFields().length" class="fullscreen-color-strip" [class.mobile]="isFullscreenMobile" [class.single]="getFullscreenColorFields().length === 1">
-                  <div *ngFor="let field of getFullscreenColorFields()" class="fullscreen-color-strip__group">
+                  <div *ngFor="let field of getFullscreenColorFields(); trackBy: trackByFieldId" class="fullscreen-color-strip__group">
                     <div class="strip-title">{{ field.fieldname }}</div>
                     <div class="strip-scroller">
                       <button
                         type="button"
                         class="color-pill"
                         [class.active]="isFullscreenOptionActive(field, option)"
-                        *ngFor="let option of getColorOptions(field)"
+                        *ngFor="let option of getColorOptions(field); trackBy: trackByOptionId"
                         (click)="onFullscreenColorSelect(option, field)">
                         <img *ngIf="option.optionimage"
                              [src]="apiUrl + '/api/public' + option.optionimage"

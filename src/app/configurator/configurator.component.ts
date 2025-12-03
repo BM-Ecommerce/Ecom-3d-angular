@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, AfterViewInit, OnDestroy, HostListener, OnChanges, ChangeDetectorRef,SimpleChanges,Renderer2, RendererFactory2,ViewEncapsulation } from '@angular/core';
+import { Component, ElementRef, Input, AfterViewInit, OnDestroy, HostListener, OnChanges, ChangeDetectorRef,SimpleChanges,Renderer2, RendererFactory2,ViewEncapsulation, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FormsModule } from '@angular/forms';
@@ -32,13 +32,15 @@ declare global {
   imports: [CommonModule,MatButtonToggleModule,FormsModule],
   templateUrl: './configurator.component.html',
   styleUrls: ['./configurator.component.css'],
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConfiguratorComponent implements AfterViewInit, OnDestroy {
   @Input() shutterdata: any = {};
   private renderer: Renderer2;
   private resizeListener?: () => void;
   private bodyClickListener?: (e: Event) => void;
+  private listenersAttached = false;
   private st: any = {};
   private loadingafter = false;
   chosen_color_url: string="";
@@ -112,18 +114,22 @@ export class ConfiguratorComponent implements AfterViewInit, OnDestroy {
       this.midpane(this.chosen_mid_rails ? this.chosen_mid_rails :1,this.chosen_slat_size);
     }
 
-    window.addEventListener('resize', resizeHandler);
-    this.resizeListener = () => window.removeEventListener('resize', resizeHandler);
+    if (!this.resizeListener) {
+      window.addEventListener('resize', resizeHandler);
+      this.resizeListener = () => window.removeEventListener('resize', resizeHandler);
+    }
 
     // body click handler that triggers configuratorpreview on radio changes (replicate jQuery body click)
-    this.bodyClickListener = (e: Event) => {
-      const target = e.target as HTMLElement;
-      const id = (target && target.id) ? target.id : '';
-      if ((id && id.toLowerCase().indexOf('radio_') > -1) || !!target.closest('.no_of_panels_elements')) {
-        window.configuratorpreview && window.configuratorpreview();
-      }
-    };
-    document.body.addEventListener('click', this.bodyClickListener);
+    if (!this.bodyClickListener) {
+      this.bodyClickListener = (e: Event) => {
+        const target = e.target as HTMLElement;
+        const id = (target && target.id) ? target.id : '';
+        if ((id && id.toLowerCase().indexOf('radio_') > -1) || !!target.closest('.no_of_panels_elements')) {
+          window.configuratorpreview && window.configuratorpreview();
+        }
+      };
+      document.body.addEventListener('click', this.bodyClickListener);
+    }
 
     // call configuratorpreview on ready as original did
     try {
@@ -169,18 +175,22 @@ export class ConfiguratorComponent implements AfterViewInit, OnDestroy {
         window.resizeimagepreview && window.resizeimagepreview();
       }
     };
-    window.addEventListener('resize', resizeHandler);
-    this.resizeListener = () => window.removeEventListener('resize', resizeHandler);
+    if (!this.resizeListener) {
+      window.addEventListener('resize', resizeHandler);
+      this.resizeListener = () => window.removeEventListener('resize', resizeHandler);
+    }
 
     // body click handler that triggers configuratorpreview on radio changes (replicate jQuery body click)
-    this.bodyClickListener = (e: Event) => {
-      const target = e.target as HTMLElement;
-      const id = (target && target.id) ? target.id : '';
-      if ((id && id.toLowerCase().indexOf('radio_') > -1) || !!target.closest('.no_of_panels_elements')) {
-        window.configuratorpreview && window.configuratorpreview();
-      }
-    };
-    document.body.addEventListener('click', this.bodyClickListener);
+    if (!this.bodyClickListener) {
+      this.bodyClickListener = (e: Event) => {
+        const target = e.target as HTMLElement;
+        const id = (target && target.id) ? target.id : '';
+        if ((id && id.toLowerCase().indexOf('radio_') > -1) || !!target.closest('.no_of_panels_elements')) {
+          window.configuratorpreview && window.configuratorpreview();
+        }
+      };
+      document.body.addEventListener('click', this.bodyClickListener);
+    }
 
     // call configuratorpreview on ready as original did
     try {
