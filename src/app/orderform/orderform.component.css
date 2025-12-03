@@ -137,16 +137,38 @@ textarea {
 
 .slider-container {
     position: absolute;
-    bottom: 20px;
+    bottom: 10px;
     left: 50%;
     top: unset;
     transform: translateX(-50%);
-    width: 50%;
+    width: 41%;
     background: rgba(255, 255, 255, 0.8);
     border-radius: 10px;
     padding: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     text-align: center;
+}
+.slider-container .owl-carousel .owl-stage {
+    display: flex;
+    align-items: center;
+}
+.slider-container .owl-carousel .owl-item {
+    width: 60px !important; /* fixed width to avoid autoWidth-like sizing */
+    flex: 0 0 60px;
+}
+.slider-container .frame-card img {
+    width: 100% !important;
+    max-width: 120px;
+    height: auto;
+}
+:host ::ng-deep .slider-container .owl-carousel .owl-stage {
+    display: flex;
+    align-items: center;
+}
+:host ::ng-deep .slider-container .owl-carousel .owl-item {
+    width: 60px !important;
+    flex: 0 0 60px;
+    margin: 0 10px;
 }
 
 .toggle-frames-btn {

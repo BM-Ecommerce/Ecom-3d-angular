@@ -443,10 +443,17 @@ hasDescriptionContent = false;
       autoWidth: false,
       pullDrag: true,
       dots: false,
-      items:3,
       navSpeed: 700,
       navText: ['<', '>'],
-      nav: false
+      nav: false,
+      // Explicit sizing so Owl doesn't split stage into 3 equal widths that look like autoWidth
+      items: 5,
+      responsive: {
+        0: { items: 2 },
+        480: { items: 3 },
+        768: { items: 4 },
+        1024: { items: 5 }
+      }
     };
   constructor(
     private apiService: ApiService,
