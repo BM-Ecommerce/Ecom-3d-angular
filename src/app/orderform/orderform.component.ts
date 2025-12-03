@@ -273,6 +273,8 @@ hasDescriptionContent = false;
   tiltrod : string="";
   siteurl = environment.site;
   selected_img_option:number = 0;
+  selected_frame_option:number = 0;
+  selected_curtain_option:number = 0;
   selected_color_option: any = null;
   selected_list_data:any = {};
   shutter_selected_img_options:any={};
@@ -726,19 +728,36 @@ public onToggleLoopAnimate(): void {
   getFullscreenColorFields(): ProductField[] {
     return (this.parameters_data || []).filter((field) => {
       const level = field.level ?? field.fieldlevel;
-      return (field.fieldtypeid === 5 && level === 2) || field.fieldtypeid === 20;
+      const name = (field.fieldname || '').toLowerCase();
+
+      const isCurtainOrFrame =
+        field.fieldtypeid === 3 &&
+        (name === 'curtain colour' || name === 'frame colour');
+
+      const matchesFullscreenRule =
+        (field.fieldtypeid === 5 && level === 2) ||
+        field.fieldtypeid === 20 ||
+        isCurtainOrFrame;
+
+      return field.showfieldecomonjob == 1 && matchesFullscreenRule;
     });
   }
-
   getColorOptions(field: ProductField): any[] {
-    return this.option_data[field.fieldid] || [];
+    return this.option_data[field.fieldid] || field.optionsvalue || [];
   }
 
   onFullscreenColorSelect(option: any, field: ProductField): void {
     this.onImageClick(option, field);
     const url = this.resolveTextureUrl(option);
     if (url && this.is3DOn) {
-      this.threeService.updateTextures(url);
+      const name = (field.fieldname || '').toLowerCase();
+      if (name === 'frame colour') {
+        this.threeService.updateFrame(url);
+      } else if (name === 'curtain colour') {
+        this.threeService.updateTextures(url);
+      } else {
+        this.threeService.updateTextures(url);
+      }
     }
   }
 
@@ -2284,6 +2303,14 @@ public onToggleLoopAnimate(): void {
           if(this.color_field_names.includes(chosen_field_name)){
             this.shutter_selected_img_options.color = targetField.optionid;
           }
+     }else{
+       const chosen_field_name = (field.fieldname || '').toLowerCase();
+        if(chosen_field_name == 'frame colour'){
+          this.selected_frame_option = targetField.optionid;
+        }
+        if(chosen_field_name == 'curtain colour'){
+          this.selected_curtain_option = targetField.optionid;
+        }
      }
     }
      // Accessories
