@@ -230,6 +230,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   isSubmitting = false;
   errorMessage: string | null = null;
   jsondata: JsonDataItem[] = [];
+  fullscreenColorFields: ProductField[] = [];
+  colorOptionsMap: Record<number, ProductOption[]> = {};
+  private derivedDirty = true;
   // Product data
   showFractions = false;
   product_details_arr: Record<string, string> = {};
@@ -483,6 +486,7 @@ hasDescriptionContent = false;
       qty: [1, [Validators.required, Validators.min(1)]]
     });
     this.previousFormValue = this.orderForm.value;
+    this.updateProductTitle();
   }
 
   // Composed frame thumbnails cache for frame cards
@@ -735,8 +739,12 @@ public onToggleLoopAnimate(): void {
     return (name || '').replace(/\s+/g, '').toLowerCase();
   }
 
-  getFullscreenColorFields(): ProductField[] {
-    return (this.parameters_data || []).filter((field) => {
+  private markDerivedDirty(): void {
+    this.derivedDirty = true;
+  }
+
+  private refreshDerivedCollections(): void {
+    const fields = (this.parameters_data || []).filter((field) => {
       const level = field.level ?? field.fieldlevel;
       const normalizedName = this.normalizeFieldName(field.fieldname);
 
@@ -751,9 +759,29 @@ public onToggleLoopAnimate(): void {
 
       return field.showfieldecomonjob == 1 && matchesFullscreenRule;
     });
+
+    const map: Record<number, ProductOption[]> = {};
+    (this.parameters_data || []).forEach((field) => {
+      map[field.fieldid] = this.option_data[field.fieldid] || field.optionsvalue || [];
+    });
+
+    this.fullscreenColorFields = fields;
+    this.colorOptionsMap = map;
+    this.derivedDirty = false;
   }
-  getColorOptions(field: ProductField): any[] {
-    return this.option_data[field.fieldid] || field.optionsvalue || [];
+
+  get fullscreenColorFieldsView(): ProductField[] {
+    if (this.derivedDirty) {
+      this.refreshDerivedCollections();
+    }
+    return this.fullscreenColorFields;
+  }
+
+  colorOptionsFor(field: ProductField): ProductOption[] {
+    if (this.derivedDirty) {
+      this.refreshDerivedCollections();
+    }
+    return this.colorOptionsMap[field.fieldid] || [];
   }
 
   isFullscreenOptionActive(field: ProductField, option: ProductOption): boolean {
@@ -1004,6 +1032,7 @@ public onToggleLoopAnimate(): void {
           this.ecomproductname = data.pei_ecomProductName;
           this.productname = data.label;
           this.productslug = this.productname.toLowerCase().replace(/ /g, '-');
+          this.updateProductTitle();
           if(this.productslug.toLowerCase().includes('roller')){
             this.iconname ="roller-blinds";
           }else if(this.productslug.toLowerCase().includes('vertical')){
@@ -1110,6 +1139,7 @@ public onToggleLoopAnimate(): void {
         if (data && data[0]) {
           const response = data[0];
           this.parameters_data = response.data || [];
+          this.markDerivedDirty();
           this.apiUrl = params.api_url;
           this.routeParams = params;
         this.chosenAccessoriesFieldId = this.routeParams.fabric_id;
@@ -1404,6 +1434,7 @@ public onToggleLoopAnimate(): void {
           }
 
           this.option_data[field.fieldid] = filteredOptions;
+          this.markDerivedDirty();
           // Recompute filteredOptions using current search term (if any)
           const existingSearch = this.enableSelectSearch
             ? (this.searchCtrl[field.fieldid]?.value || '').toString().toLowerCase().trim()
@@ -1449,6 +1480,7 @@ public onToggleLoopAnimate(): void {
           }
           return true;
         });
+        this.markDerivedDirty();
 
         return true;
       }),
@@ -1541,10 +1573,12 @@ public onToggleLoopAnimate(): void {
       if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
         this.fabricid = value;
         this.fabricname = selectedOption.optionname;
+        this.updateProductTitle();
       }
       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
         this.colorid = value;
         this.colorname = selectedOption.optionname;
+        this.updateProductTitle();
       }
       if (canUpdate && (field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
         this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
@@ -1940,8 +1974,9 @@ public onToggleLoopAnimate(): void {
                 this.removeFieldSafely(subfield.fieldid);
                 return null;
               }
-                
+              
               this.option_data[subfield.fieldid] = filteredOptions;
+              this.markDerivedDirty();
               // Preserve existing search control when reloading same subfield; otherwise create
               if (!this.searchCtrl[subfield.fieldid]) {
                 this.searchCtrl[subfield.fieldid] = new FormControl('');
@@ -2057,6 +2092,7 @@ public onToggleLoopAnimate(): void {
     this.parameters_data = this.parameters_data.filter(
       f => !(f.fieldid === fieldId && f.allparentFieldId === fieldPath)
     );
+    this.markDerivedDirty();
 
     const controlName = `field_${fieldId}`;
     if (this.orderForm.contains(controlName)) {
@@ -2065,6 +2101,7 @@ public onToggleLoopAnimate(): void {
 
     if (this.option_data[fieldId]) {
       delete this.option_data[fieldId];
+      this.markDerivedDirty();
     }
 
     this.cd.markForCheck();
@@ -2110,6 +2147,7 @@ public onToggleLoopAnimate(): void {
         toRemove.allparentFieldId === f.allparentFieldId
       )
     );
+    this.markDerivedDirty();
 
     // 5. Clean nested structure
     this.cleanNestedStructure(parentFieldId, fieldsToRemove, isMainField);
@@ -2121,8 +2159,11 @@ public onToggleLoopAnimate(): void {
         this.orderForm.removeControl(controlName);
       }
       delete this.option_data[field.fieldid];
+      delete this.filteredOptions[field.fieldid];
+      delete this.searchCtrl[field.fieldid];
     });
 
+    this.markDerivedDirty();
     this.cd.markForCheck();
   }
 
@@ -2455,6 +2496,7 @@ public onToggleLoopAnimate(): void {
       this.selected_option_data = this.selected_option_data.filter(
         item => !item.fieldoptionlinkid || !allLinkIdsToRemove.has(item.fieldoptionlinkid)
       );
+      this.markDerivedDirty();
     }
   }
   hasContent(htmlOrText: string | undefined): boolean {
@@ -2690,6 +2732,10 @@ public onToggleLoopAnimate(): void {
     }
     return extras ? `${ecomproductname} - ${extras}` : ecomproductname;
   }
+
+  private updateProductTitle(): void {
+    this.productTitle = this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname);
+  }
   private getVat(): Observable<any> {
     return this.apiService.getVat(
       this.routeParams
@@ -2888,6 +2934,18 @@ public onToggleLoopAnimate(): void {
 
   trackByOptionId(index: number, opt: any): any {
     return opt?.optionid ?? index;
+  }
+
+  trackByProductImage(index: number, img: any): any {
+    return img?.id ?? img?.optionid ?? img?.pi_frameimage ?? index;
+  }
+
+  trackByAccordion(index: number, item: { label: string, value: any }): any {
+    return item?.label ?? index;
+  }
+
+  trackByFraction(index: number, frac: FractionOption): any {
+    return frac?.id ?? frac?.decimalvalue ?? index;
   }
 
   // Public API: toggle search globally

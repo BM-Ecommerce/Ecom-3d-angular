@@ -27,7 +27,7 @@
             <div class="product-header">
               <div class="productaname">
                 <h1 class="product-title">
-                  <span>{{ buildProductTitle(ecomproductname, fabricname, colorname) }}</span>
+                  <span>{{ productTitle }}</span>
                 </h1>
               </div>
               <div class="price-box" *ngIf="grossPricenum != 0 && isCalculatingPrice">
@@ -114,15 +114,15 @@
               </div>
             </div>
 
-                <div *ngIf="isFullscreen && getFullscreenColorFields().length" class="fullscreen-color-strip" [class.mobile]="isFullscreenMobile" [class.single]="getFullscreenColorFields().length === 1">
-                  <div *ngFor="let field of getFullscreenColorFields(); trackBy: trackByFieldId" class="fullscreen-color-strip__group">
+                <div *ngIf="isFullscreen && fullscreenColorFieldsView.length" class="fullscreen-color-strip" [class.mobile]="isFullscreenMobile" [class.single]="fullscreenColorFieldsView.length === 1">
+                  <div *ngFor="let field of fullscreenColorFieldsView; trackBy: trackByFieldId" class="fullscreen-color-strip__group">
                     <div class="strip-title">{{ field.fieldname }}</div>
                     <div class="strip-scroller">
                       <button
                         type="button"
                         class="color-pill"
                         [class.active]="isFullscreenOptionActive(field, option)"
-                        *ngFor="let option of getColorOptions(field); trackBy: trackByOptionId"
+                        *ngFor="let option of colorOptionsFor(field); trackBy: trackByOptionId"
                         (click)="onFullscreenColorSelect(option, field)">
                         <img *ngIf="option.optionimage"
                              [src]="apiUrl + '/api/public' + option.optionimage"
@@ -169,7 +169,7 @@
             </div>
            <div *ngIf="!is3DOn && category != 5 && product_img_array.length > 1" class="slider-container">
               <owl-carousel-o [options]="customOptions">
-                <ng-template carouselSlide *ngFor="let product_img of product_img_array">
+                <ng-template carouselSlide *ngFor="let product_img of product_img_array; trackBy: trackByProductImage">
                   <div 
                     class="frame-card" 
                     [class.selected]="isSelectedFrame(product_img)" 
@@ -230,7 +230,7 @@
                     <mat-button-toggle-group [formControlName]="'field_' + field.fieldid"
                       aria-labelledby="example-toggle-group-label" appearance="standard">
 
-                      <mat-button-toggle *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
+                      <mat-button-toggle *ngFor="let option of option_data[field.fieldid] || field.optionsvalue; trackBy: trackByOptionId"
                         [value]="option.optionid" [id]="'unittype_'+option.optionid">
                         {{ option.optionname }}
                       </mat-button-toggle>
@@ -288,7 +288,7 @@
                         [multiple]="field.selection == 1" [attr.aria-label]="field.fieldname">
                         <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
                       
-                        <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue"
+                        <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue; trackBy: trackByOptionId"
                           [value]="option.optionid">
                           <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
                             <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
@@ -319,7 +319,7 @@
                     </span>
                   </label>
                   <div class="color-grid">
-                    <div *ngFor="let option of option_data[field.fieldid]" class="color-item" [class.color_selected]="is_shutter_color_list_view(field,option) || is_accessories_list_view(field,option)" (click)="onImageClick(option,field)">
+                    <div *ngFor="let option of option_data[field.fieldid]; trackBy: trackByOptionId" class="color-item" [class.color_selected]="is_shutter_color_list_view(field,option) || is_accessories_list_view(field,option)" (click)="onImageClick(option,field)">
                       <div>
                         <img [src]="apiUrl + '/api/public' + option.optionimage" (error)="onImageError($event)" [title]="option.optionname" [alt]="option.optionname" />
                         <div class="circle-check" *ngIf="is_shutter_color_list_view(field,option) || is_accessories_list_view(field,option)">✓</div>
@@ -404,7 +404,7 @@
                     </span>
                   </label>
                   <div class="color-grid">
-                    <div *ngFor="let option of option_data[field.fieldid]" class="color-item" [class.color_selected]="this.selected_img_option == option.optionid" (click)="onImageClick(option,field)">
+                    <div *ngFor="let option of option_data[field.fieldid]; trackBy: trackByOptionId" class="color-item" [class.color_selected]="this.selected_img_option == option.optionid" (click)="onImageClick(option,field)">
                       <div>
                         <img [src]="apiUrl + '/api/public' + option.optionimage"  (error)="onImageError($event)" [title]="option.optionname" [alt]="option.optionname" />
                         <div class="circle-check" *ngIf="this.selected_img_option == option.optionid">✓</div>
@@ -481,7 +481,7 @@
                       <mat-label>Fraction</mat-label>
                       <mat-select formControlName="widthfraction" id="widthfraction" aria-label="Width fraction">
                         <mat-option [value]="0">0</mat-option>
-                        <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
+                        <mat-option *ngFor="let fraction of inchfraction_array; trackBy: trackByFraction" [value]="fraction.decimalvalue">
                           {{ fraction.name }}
                         </mat-option>
                       </mat-select>
@@ -516,7 +516,7 @@
                       <mat-label>Fraction</mat-label>
                       <mat-select formControlName="dropfraction" id="dropfraction" aria-label="Drop fraction">
                         <mat-option [value]="0">0</mat-option>
-                        <mat-option *ngFor="let fraction of inchfraction_array" [value]="fraction.decimalvalue">
+                        <mat-option *ngFor="let fraction of inchfraction_array; trackBy: trackByFraction" [value]="fraction.decimalvalue">
                           {{ fraction.name }}
                         </mat-option>
                       </mat-select>
@@ -580,7 +580,7 @@
                 <div id="allparametervalue">
                   <table class="show-order-details-contents">
                     <tbody>
-                      <tr *ngFor="let item of accordionData">
+                      <tr *ngFor="let item of accordionData; trackBy: trackByAccordion">
                         <td><strong>{{ item.label }}:</strong></td>
                         <td>{{ item.value }}</td>
                       </tr>
