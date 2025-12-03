@@ -100,6 +100,18 @@
                     {{ selected_color_option.optionname || 'Selected' }}
                   </div>
               </div>
+              <div class="meta-row" *ngIf="selected_framecolor_option">
+                  <div class="meta-label">{{ FrameLabelName }}:</div>
+                  <div class="meta-value">
+                    {{ selected_framecolor_option.optionname || 'Selected' }}
+                  </div>
+              </div>
+                <div class="meta-row" *ngIf="selected_curtaincolor_option">
+                  <div class="meta-label">{{ CurtainLabelName }}:</div>
+                  <div class="meta-value">
+                    {{ selected_curtaincolor_option.optionname || 'Selected' }}
+                  </div>
+              </div>
             </div>
 
                 <div *ngIf="isFullscreen && getFullscreenColorFields().length" class="fullscreen-color-strip" [class.mobile]="isFullscreenMobile">

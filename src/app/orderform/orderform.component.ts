@@ -278,6 +278,8 @@ hasDescriptionContent = false;
   selected_frame_option:number = 0;
   selected_curtain_option:number = 0;
   selected_color_option: any = null;
+  selected_framecolor_option: any = null;
+  selected_curtaincolor_option: any = null;
   selected_list_data:any = {};
   shutter_selected_img_options:any={};
   list_value:string = "list";
@@ -389,6 +391,8 @@ hasDescriptionContent = false;
   fabricFieldType: any = 0;
   fabricLabelName: any = "";
   colorLabelName: any = "";
+  FrameLabelName: any = "";
+  CurtainLabelName: any = "";
   ecomsampleprice = 0;
   ecomFreeSample = '0';
   delivery_duration = '';
@@ -1557,10 +1561,12 @@ public onToggleLoopAnimate(): void {
       if (canUpdate && field.fieldtypeid === 3 && normalizedFieldName === this.curtainColorKey && selectedOption.optionimage) {
         this.selected_curtain_option = Number(selectedOption.optionid) || 0;
         this.threeService.updateTextures(this.apiUrl + '/api/public' + selectedOption.optionimage);
+        this.CurtainLabelName = field.fieldname;
       }
       if (canUpdate && field.fieldtypeid === 3 && normalizedFieldName === this.frameColorKey && selectedOption.optionimage) {
         this.selected_frame_option = Number(selectedOption.optionid) || 0;
         this.threeService.updateFrame(this.apiUrl + '/api/public' + selectedOption.optionimage);
+        this.FrameLabelName = field.fieldname;
       }
       // Accessories Type.
      if('single_view' != this.routeParams?.fabric && 2 == this.category){
@@ -2345,9 +2351,17 @@ public onToggleLoopAnimate(): void {
        const chosen_field_name = this.normalizeFieldName(field.fieldname);
         if(chosen_field_name === this.frameColorKey){
           this.selected_frame_option = Number(targetField.optionid) || 0;
+           const pickedOption = Array.isArray(selectedOption)
+          ? selectedOption[selectedOption.length - 1]
+          : selectedOption;
+         this.selected_framecolor_option = pickedOption || null;
         }
         if(chosen_field_name === this.curtainColorKey){
           this.selected_curtain_option = Number(targetField.optionid) || 0;
+            const pickedOption = Array.isArray(selectedOption)
+          ? selectedOption[selectedOption.length - 1]
+          : selectedOption;
+          this.selected_curtaincolor_option = pickedOption || null;
         }
      }
     }
