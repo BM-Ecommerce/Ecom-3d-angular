@@ -130,9 +130,6 @@ mat-button-toggle.mat-button-toggle-checked {
   grid-column-gap: 10px;
   grid-row-gap: 10px;
 }
-.rp-name span {
-  margin-left: 5px; 
-}
 ::ng-deep mat-button-toggle-group.viewmode {
   margin: 0 10px;
 }
