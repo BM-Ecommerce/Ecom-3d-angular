@@ -1,5 +1,4 @@
 :host {
-  --primary-color-rgb: 0, 194, 255;
   --secondary-color: #6c757d;
   --secondary-hover: #5a6268;
   --light-gray: #f8f9fa;
@@ -1542,10 +1541,15 @@ mat-button-toggle-group:disabled {
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.08);
 }
-.product_preview.fullscreen .color-pill.active,
+.product_preview.fullscreen .color-pill.active {
+  background: rgba(var(--primary-color-rgb), 0.22) !important;
+  border-color: rgba(var(--primary-color-rgb), 0.55) !important;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+}
 .product_preview.fullscreen .color-pill:hover {
-  background: rgba(255,255,255,0.18);
-  border-color: rgba(255,255,255,0.35);
+  background: rgba(var(--primary-color-rgb), 0.14);
+  border-color: rgba(var(--primary-color-rgb), 0.38);
 }
 .product_preview.fullscreen .fullscreen-color-strip.mobile {
   top: auto;
