@@ -214,6 +214,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('mainImg', { static: false }) private mainImgRef!: ElementRef<HTMLElement>;
 
   public isLooping: boolean = false;
+  public patternRepeatEnabled = false;
+  public patternRepeatScale = 1;
   isZooming = false;
   mainframe!: string;
   background_color_image_url!: string;
@@ -618,6 +620,7 @@ public onToggleLoopAnimate(): void {
 
     if (this.is3DOn) {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
+      this.applyPatternRepeatSettings();
         if(productname.toLowerCase().includes('perfect fit roller')){
             this.threeService.loadGltfModel('assets/perfectfitroller.glb', 'rollerblinds');
         }else if (productname.toLowerCase().includes('roller blinds')) {
@@ -646,6 +649,7 @@ public onToggleLoopAnimate(): void {
 
     } else {
       this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
+      this.applyPatternRepeatSettings();
       if (this.mainframe) {
         this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
         this.update2DContainerHeightFromFrame();
@@ -679,6 +683,40 @@ public onToggleLoopAnimate(): void {
       this.update2DContainerHeightFromFrame();
     }
     setTimeout(() => this.onWindowResize(), 0);
+  }
+
+  onPatternRepeatToggle(): void {
+    this.patternRepeatEnabled = !this.patternRepeatEnabled;
+    this.applyPatternRepeatSettings();
+    this.cd.markForCheck();
+  }
+
+  onPatternRepeatScaleChange(event: any): void {
+    const value = parseFloat(event?.target?.value ?? event ?? 1);
+    if (isNaN(value) || value <= 0) return;
+    this.patternRepeatScale = value;
+    this.patternRepeatEnabled = true;
+    this.applyPatternRepeatSettings();
+    this.cd.markForCheck();
+  }
+
+  setPatternRepeatScale(value: number): void {
+    if (value <= 0) return;
+    this.patternRepeatScale = value;
+    this.patternRepeatEnabled = true;
+    this.applyPatternRepeatSettings();
+    this.cd.markForCheck();
+  }
+
+  private applyPatternRepeatSettings(): void {
+    this.threeService.setPatternRepeatEnabled(this.patternRepeatEnabled);
+    this.threeService.setPatternRepeatScale(this.patternRepeatScale);
+
+    if (this.is3DOn && this.background_color_image_url) {
+      this.threeService.updateTextures(this.background_color_image_url);
+    } else if (!this.is3DOn && this.mainframe) {
+      this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+    }
   }
   
   private isNativeFullscreen(): boolean {

@@ -1710,3 +1710,56 @@ mat-button-toggle-group:disabled {
     bottom: auto;
   }
 }
+
+.pattern-repeat-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.pattern-repeat-controls label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.pattern-repeat-controls input[type='number'] {
+  width: 70px;
+  padding: 4px 6px;
+}
+
+.pattern-repeat-controls .repeat-scale {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pattern-repeat-controls .repeat-scale label {
+  font-weight: 500;
+}
+
+.pattern-repeat-mini {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  font-size: 12px;
+}
+
+.pattern-repeat-mini .mini-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pattern-repeat-mini .mini-scale {
+  display: flex;
+  align-items: center;
+}
+
+.pattern-repeat-mini input[type='number'] {
+  width: 60px;
+  padding: 4px 6px;
+}

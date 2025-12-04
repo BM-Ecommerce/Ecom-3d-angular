@@ -82,6 +82,22 @@
                             {{ isLooping ? 'stop' : 'play_arrow' }}
                           </mat-icon>
                         </button>
+                        <div *ngIf="is3DOn" class="pattern-repeat-mini">
+                          <label class="mini-toggle">
+                            <input type="checkbox" [checked]="patternRepeatEnabled" (change)="onPatternRepeatToggle()" />
+                            Repeat
+                          </label>
+                          <div *ngIf="patternRepeatEnabled" class="mini-scale">
+                            <input
+                              type="number"
+                              min="0.1"
+                              step="0.1"
+                              [value]="patternRepeatScale"
+                              (input)="onPatternRepeatScaleChange($event)"
+                              aria-label="Pattern repeat scale"
+                            />
+                          </div>
+                        </div>
                 </div>
 
             <div *ngIf="isFullscreen" class="fullscreen-meta" [class.mobile]="isFullscreenMobile">
@@ -131,6 +147,23 @@
                         <span>{{ option.optionname }}</span>
                       </button>
                     </div>
+                  </div>
+                </div>
+                <div class="pattern-repeat-controls">
+                  <label class="repeat-toggle">
+                    <input type="checkbox" [checked]="patternRepeatEnabled" (change)="onPatternRepeatToggle()" />
+                    Pattern repeat
+                  </label>
+                  <div class="repeat-scale" *ngIf="patternRepeatEnabled">
+                    <label for="repeat-scale-input">Scale</label>
+                    <input
+                      id="repeat-scale-input"
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [value]="patternRepeatScale"
+                      (input)="onPatternRepeatScaleChange($event)"
+                    />
                   </div>
                 </div>
 
