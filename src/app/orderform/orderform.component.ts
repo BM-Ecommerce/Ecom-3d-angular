@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, SimpleChanges, HostListener, Inject, NgZone } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { environment } from '../../environments/environment';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -721,6 +721,11 @@ public onToggleLoopAnimate(): void {
     const text = command.toLowerCase().trim();
     let handled = false;
 
+    const widthControl = this.getWidthControl();
+    const dropControl = this.getDropControl();
+    const qtyControl = this.orderForm.get('qty');
+    const numericValue = this.extractNumber(text);
+
     if (/\b(loop|repeat)\b/.test(text)) {
       this.onToggleLoopAnimate();
       handled = true;
@@ -737,10 +742,86 @@ public onToggleLoopAnimate(): void {
     } else if (/toggle/.test(text)) {
       this.onAnimate();
       handled = true;
+    } else if (numericValue !== null && /\b(width|wide)\b/.test(text) && widthControl) {
+      handled = this.setNumericControl(widthControl, numericValue);
+      this.voiceStatusMessage = handled
+        ? `Set width to ${numericValue}`
+        : 'Could not set width';
+    } else if (numericValue !== null && /(drop|height|tall|length)/.test(text) && dropControl) {
+      handled = this.setNumericControl(dropControl, numericValue);
+      this.voiceStatusMessage = handled
+        ? `Set drop to ${numericValue}`
+        : 'Could not set drop';
+    } else if (numericValue !== null && /(quantity|qty|pieces|units|count)/.test(text) && qtyControl) {
+      handled = this.setNumericControl(qtyControl, numericValue);
+      this.voiceStatusMessage = handled
+        ? `Set quantity to ${numericValue}`
+        : 'Could not set quantity';
+    } else if (/(material|fabric)/.test(text)) {
+      handled = this.setMaterialByVoice(text);
+      if (handled && !this.voiceStatusMessage.startsWith('Set ')) {
+        this.voiceStatusMessage = 'Material updated';
+      }
     }
 
-    this.voiceStatusMessage = handled ? `Heard: ${text}` : `Not recognized: ${text}`;
+    if (!this.voiceStatusMessage || this.voiceStatusMessage.startsWith('Listening')) {
+      this.voiceStatusMessage = handled ? `Heard: ${text}` : `Not recognized: ${text}`;
+    }
     this.cd.markForCheck();
+  }
+
+  private getWidthControl(): AbstractControl | null {
+    if (!this.widthField) return null;
+    return this.orderForm.get(`field_${this.widthField.fieldid}`);
+  }
+
+  private getDropControl(): AbstractControl | null {
+    if (!this.dropField) return null;
+    return this.orderForm.get(`field_${this.dropField.fieldid}`);
+  }
+
+  private extractNumber(text: string): number | null {
+    const match = text.match(/(-?\d+(?:\.\d+)?)/);
+    if (!match) return null;
+    const value = parseFloat(match[1]);
+    return isNaN(value) ? null : value;
+  }
+
+  private setNumericControl(control: AbstractControl | null, value: number): boolean {
+    if (!control || isNaN(value)) return false;
+    control.setValue(value);
+    control.markAsDirty();
+    control.markAsTouched();
+    this.cd.markForCheck();
+    return true;
+  }
+
+  private setMaterialByVoice(text: string): boolean {
+    const materialField = (this.parameters_data || []).find((f) => {
+      const name = `${f.fieldname || ''} ${f.labelnamecode || ''}`.toLowerCase();
+      return name.includes('material') || name.includes('fabric');
+    });
+
+    if (!materialField) return false;
+    const control = this.orderForm.get(`field_${materialField.fieldid}`);
+    if (!control) return false;
+
+    const spoken = text.replace(/.*?(material|fabric)/, '').trim();
+    const options = (materialField.optionsvalue || materialField.optionvalue || []) as any[];
+    const match = options.find((opt: any) => {
+      const label = `${opt.optionname || opt.value || ''}`.toLowerCase();
+      return label.includes(spoken.toLowerCase());
+    });
+
+    const valueToSet = match ? match.optionid ?? match.value : spoken;
+    control.setValue(valueToSet);
+    control.markAsDirty();
+    control.markAsTouched();
+    this.cd.markForCheck();
+    this.voiceStatusMessage = match
+      ? `Set material to ${match.optionname || spoken}`
+      : `Set material to ${spoken}`;
+    return true;
   }
   private setupVisualizer(productname: string): void {
     if (!this.canvasRef || !this.containerRef) return;
