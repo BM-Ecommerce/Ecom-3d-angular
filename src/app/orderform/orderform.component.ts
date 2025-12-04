@@ -214,11 +214,16 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('mainImg', { static: false }) private mainImgRef!: ElementRef<HTMLElement>;
 
   public isLooping: boolean = false;
+  public isVoiceSupported = false;
+  public isVoiceListening = false;
+  public voiceStatusMessage: string = '';
+  private voiceListeningRequested = false;
   isZooming = false;
   mainframe!: string;
   background_color_image_url!: string;
   private destroy$ = new Subject<void>();
   private readonly MAX_NESTING_LEVEL = 8;
+  private voiceRecognition: any = null;
   private resizeRaf: number | null = null;
   private mouseMoveRaf: number | null = null;
   private priceGroupField?: ProductField;
@@ -565,6 +570,7 @@ hasDescriptionContent = false;
       this.cd.markForCheck();
     });
     this.get_freesample();
+    this.setupVoiceRecognition();
   }
 
   ngOnDestroy(): void {
@@ -577,6 +583,14 @@ hasDescriptionContent = false;
     if (this.mouseMoveRaf !== null) {
       cancelAnimationFrame(this.mouseMoveRaf);
       this.mouseMoveRaf = null;
+    }
+    this.stopVoiceCommands();
+    if (this.voiceRecognition) {
+      this.voiceRecognition.onresult = null;
+      this.voiceRecognition.onerror = null;
+      this.voiceRecognition.onstart = null;
+      this.voiceRecognition.onend = null;
+      this.voiceRecognition = null;
     }
   }
 
@@ -613,6 +627,121 @@ public onToggleLoopAnimate(): void {
     this.isLooping = true;
   }
 }
+
+  private setupVoiceRecognition(): void {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      this.isVoiceSupported = false;
+      return;
+    }
+
+    this.isVoiceSupported = true;
+    this.voiceRecognition = new SpeechRecognition();
+    this.voiceRecognition.lang = 'en-US';
+    this.voiceRecognition.continuous = false;
+    this.voiceRecognition.interimResults = false;
+
+    this.voiceRecognition.onstart = () => {
+      this.isVoiceListening = true;
+      this.voiceStatusMessage = 'Listening for commands';
+      this.cd.markForCheck();
+    };
+
+    this.voiceRecognition.onend = () => {
+      this.isVoiceListening = false;
+      if (this.voiceListeningRequested) {
+        this.restartVoiceRecognition();
+      } else {
+        this.cd.markForCheck();
+      }
+    };
+
+    this.voiceRecognition.onerror = (event: any) => {
+      this.isVoiceListening = false;
+      if (event?.error === 'no-speech' && this.voiceListeningRequested) {
+        this.voiceStatusMessage = 'No speech detected, listening again...';
+        this.restartVoiceRecognition();
+      } else {
+        this.voiceStatusMessage = 'Voice error';
+        this.cd.markForCheck();
+      }
+    };
+
+    this.voiceRecognition.onresult = (event: any) => {
+      const transcript = event?.results?.[0]?.[0]?.transcript;
+      if (transcript) {
+        this.handleVoiceCommand(transcript);
+      }
+    };
+  }
+
+  public toggleVoiceCommands(): void {
+    if (!this.voiceRecognition) return;
+    this.voiceListeningRequested ? this.stopVoiceCommands() : this.startVoiceCommands();
+  }
+
+  public startVoiceCommands(): void {
+    if (!this.voiceRecognition) return;
+    this.voiceListeningRequested = true;
+    try {
+      this.voiceRecognition.start();
+      this.voiceStatusMessage = 'Listening for commands';
+    } catch {
+      this.voiceStatusMessage = 'Unable to start voice';
+      this.voiceListeningRequested = false;
+    }
+    this.cd.markForCheck();
+  }
+
+  public stopVoiceCommands(): void {
+    if (!this.voiceRecognition) return;
+    this.voiceListeningRequested = false;
+    try {
+      this.voiceRecognition.stop();
+    } catch {}
+    this.isVoiceListening = false;
+    this.voiceStatusMessage = 'Voice stopped';
+    this.cd.markForCheck();
+  }
+
+  private restartVoiceRecognition(): void {
+    if (!this.voiceRecognition || !this.voiceListeningRequested) return;
+    try {
+      this.voiceRecognition.start();
+      this.voiceStatusMessage = 'Listening for commands';
+    } catch {
+      // ignore restart errors
+    }
+    this.cd.markForCheck();
+  }
+
+  private handleVoiceCommand(command: string): void {
+    const text = command.toLowerCase().trim();
+    let handled = false;
+
+    if (/\b(loop|repeat)\b/.test(text)) {
+      this.onToggleLoopAnimate();
+      handled = true;
+    } else if (/(stop|pause|halt)/.test(text)) {
+      this.onStopAnimate();
+      this.isLooping = false;
+      handled = true;
+    } else if (/(open|raise|start|play)/.test(text)) {
+      this.openAnimate();
+      handled = true;
+    } else if (/(close|shut|down)/.test(text)) {
+      this.closeAnimate();
+      handled = true;
+    } else if (/toggle/.test(text)) {
+      this.onAnimate();
+      handled = true;
+    }
+
+    this.voiceStatusMessage = handled ? `Heard: ${text}` : `Not recognized: ${text}`;
+    this.cd.markForCheck();
+  }
   private setupVisualizer(productname: string): void {
     if (!this.canvasRef || !this.containerRef) return;
 

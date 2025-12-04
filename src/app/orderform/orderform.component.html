@@ -82,6 +82,19 @@
                             {{ isLooping ? 'stop' : 'play_arrow' }}
                           </mat-icon>
                         </button>
+                      <button *ngIf="is3DOn && isVoiceSupported"
+                              type="button"
+                              mat-icon-button
+                              matTooltip="{{ isVoiceListening ? 'Stop voice commands' : 'Start voice commands' }}"
+                              [matTooltipDisabled]="isMobile"
+                              matTooltipPosition="right"
+                              (click)="toggleVoiceCommands()"
+                              aria-label="Toggle voice commands">
+                        <mat-icon>{{ isVoiceListening ? 'mic_off' : 'mic' }}</mat-icon>
+                      </button>
+                </div>
+                <div *ngIf="is3DOn && isVoiceSupported && voiceStatusMessage" class="voice-status">
+                  {{ voiceStatusMessage }}
                 </div>
 
             <div *ngIf="isFullscreen" class="fullscreen-meta" [class.mobile]="isFullscreenMobile">
