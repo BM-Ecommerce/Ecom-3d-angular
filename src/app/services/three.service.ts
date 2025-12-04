@@ -1281,10 +1281,29 @@ public enableDimensions(on: boolean): void {
   }
 
   // Export image from canvas
-  public getCanvasDataURL(): string | undefined {
+  public getCanvasDataURL(maxDimension: number = 1000, quality: number = 0.7): string | undefined {
     if (!this.renderer) return undefined;
+
     this.render();
-    return this.renderer.domElement.toDataURL('image/png');
+
+    const canvas = this.renderer.domElement;
+    const { width, height } = canvas;
+    const largestSide = Math.max(width, height);
+    const scale = largestSide > maxDimension ? maxDimension / largestSide : 1;
+
+    if (scale < 1) {
+      const scaledCanvas = document.createElement('canvas');
+      scaledCanvas.width = Math.round(width * scale);
+      scaledCanvas.height = Math.round(height * scale);
+
+      const context = scaledCanvas.getContext('2d');
+      if (context) {
+        context.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+        return scaledCanvas.toDataURL('image/jpeg', quality);
+      }
+    }
+
+    return canvas.toDataURL('image/jpeg', quality);
   }
 
   // ------------------------------------------------------
