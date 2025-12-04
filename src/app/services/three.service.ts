@@ -1291,10 +1291,41 @@ public enableDimensions(on: boolean): void {
 
   public setPatternRepeatEnabled(enabled: boolean): void {
     this.patternRepeatEnabled = enabled;
+    this.applyPatternRepeatToTextures();
   }
 
   public setPatternRepeatScale(scale: number): void {
-    this.patternRepeatScale = Math.max(0.1, scale);
+    const safe = Number.isFinite(scale) && scale > 0 ? scale : 1;
+    this.patternRepeatScale = Math.max(0.1, safe);
+    this.applyPatternRepeatToTextures();
+  }
+
+  private applyPatternRepeatToTextures(): void {
+    const repeat = this.patternRepeatEnabled
+      ? Math.max(0.1, this.patternRepeatScale || 1)
+      : 1;
+
+    const updateTexture = (tex?: THREE.Texture) => {
+      if (!tex) return;
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(repeat, repeat);
+      tex.needsUpdate = true;
+    };
+
+    if (this.textureMaterial?.map) {
+      updateTexture(this.textureMaterial.map as THREE.Texture);
+    }
+
+    const bgMaterial = this.backgroundMesh?.material as
+      | THREE.MeshBasicMaterial
+      | undefined;
+
+    if (bgMaterial?.map) {
+      updateTexture(bgMaterial.map as THREE.Texture);
+    }
+
+    this.render();
   }
 
   // ------------------------------------------------------

@@ -216,6 +216,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   public isLooping: boolean = false;
   public patternRepeatEnabled = false;
   public patternRepeatScale = 1;
+  public patternRepeatScaleInput = '1';
   isZooming = false;
   mainframe!: string;
   background_color_image_url!: string;
@@ -692,17 +693,29 @@ public onToggleLoopAnimate(): void {
   }
 
   onPatternRepeatScaleChange(event: any): void {
-    const value = parseFloat(event?.target?.value ?? event ?? 1);
-    if (isNaN(value) || value <= 0) return;
+    const rawStr = `${event?.target?.value ?? event ?? ''}`;
+    if (!rawStr) {
+      this.patternRepeatScale = 1;
+      this.patternRepeatScaleInput = '';
+      this.patternRepeatEnabled = true;
+      this.applyPatternRepeatSettings();
+      this.cd.markForCheck();
+      return;
+    }
+
+    const parsed = parseFloat(rawStr);
+    const value = Number.isFinite(parsed) ? Math.max(1, parsed) : 1;
     this.patternRepeatScale = value;
+    this.patternRepeatScaleInput = `${value}`;
     this.patternRepeatEnabled = true;
     this.applyPatternRepeatSettings();
     this.cd.markForCheck();
   }
 
   setPatternRepeatScale(value: number): void {
-    if (value <= 0) return;
-    this.patternRepeatScale = value;
+    const next = !value || value <= 0 ? 1 : Math.max(1, value);
+    this.patternRepeatScale = next;
+    this.patternRepeatScaleInput = `${next}`;
     this.patternRepeatEnabled = true;
     this.applyPatternRepeatSettings();
     this.cd.markForCheck();
