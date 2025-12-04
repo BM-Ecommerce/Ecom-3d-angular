@@ -1725,6 +1725,7 @@ mat-button-toggle-group:disabled {
   backdrop-filter: blur(4px);
   z-index: 6;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  flex-direction: column
 }
 
 .pattern-repeat-floating .repeat-toggle {
