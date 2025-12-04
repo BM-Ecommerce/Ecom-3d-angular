@@ -2707,7 +2707,7 @@ public onToggleLoopAnimate(): void {
       visualizerImage = this.threeService.getCanvasDataURL(); // string already
     }
 
-    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid,Number(this.product_id), this.routeParams.site,
+    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid,Number(this.product_id), environment.site,
       this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname),
       this.pricedata,
       this.vatpercentage,

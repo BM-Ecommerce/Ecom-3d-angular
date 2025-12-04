@@ -165,37 +165,59 @@ export class ApiService {
     const key = this.cacheKey('fractionData', { passData, payload });
     return this.fromCacheOr(key, () => this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name));
   }
-  addToCart(formData: any, cart_productId: string, productId: number, apiUrl: string, cartproductName: string, priceData: any, vatpercentage: number, vatName: string, currenturl: string, productName: string, categoryId: number, visualizerImage?: string, action: string = "add_to_cart",colorid?: number,fabricid?: number ): Observable<ApiResponse> {
+  addToCart(
+    formData: any,
+    cart_productId: string,
+    productId: number,
+    apiUrl: string,
+    cartproductName: string,
+    priceData: any,
+    vatpercentage: number,
+    vatName: string,
+    currenturl: string,
+    productName: string,
+    categoryId: number,
+    visualizerImage?: string,
+    action: string = "add_to_cart",
+    colorid?: number,
+    fabricid?: number
+  ): Observable<ApiResponse> {
+
     let body = new HttpParams()
       .set('action', action)
       .set('cart_productid', cart_productId)
-      .set('product_id', productId)
+      .set('product_id', String(productId))
       .set('form_data', JSON.stringify(formData))
       .set('cart_product_name', cartproductName)
       .set('pricedata', JSON.stringify(priceData))
-      .set('vatpercentage', vatpercentage)
+      .set('vatpercentage', String(vatpercentage))
       .set('vatname', vatName)
       .set('currenturl', currenturl)
       .set('product_name', productName)
-      .set('category_id', categoryId);
+      .set('category_id', String(categoryId));
+
     if (visualizerImage) {
       body = body.set('visualizer_image', visualizerImage);
     }
-     if (colorid) {
-      body = body.set('color_id', colorid);
+    if (colorid !== undefined && colorid !== null) {
+      body = body.set('color_id', String(colorid));
     }
-     if (fabricid) {
-      body = body.set('fabric_id', fabricid);
+    if (fabricid !== undefined && fabricid !== null) {
+      body = body.set('fabric_id', String(fabricid));
     }
-    console.log(body);
-    const endpoint = '/wp-content/plugins/blindmatrix-v4-hub/api.php';
-    const requestUrl = `${apiUrl.replace(/\/+$/, '')}${endpoint}`;
+
+    const requestUrl = apiUrl.replace(/\/+$/, '') +
+      '/wp-admin/admin-ajax.php?action=blindmatrix_api';
+
     return this.http.post<ApiResponse>(requestUrl, body.toString(), {
-      headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' })
+      headers: new HttpHeaders({
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+      })
     }).pipe(
       catchError(this.handleError)
     );
   }
+
   calculateRules(
     params: ApiCommonParams,
     width: any = "",
