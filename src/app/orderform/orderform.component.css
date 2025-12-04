@@ -1679,6 +1679,10 @@ mat-button-toggle-group:disabled {
     gap: 10px;
     padding: 6px 10px;
     border-radius: 12px;
+    justify-content: center;
+    align-items: center;
+    left: 50%;
+    transform: translateX(-50%);
   }
   .product_preview:not(.fullscreen) .visualizer-controls button.mat-icon-button {
     width: 42px;

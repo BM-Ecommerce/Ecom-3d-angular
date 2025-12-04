@@ -518,15 +518,15 @@ public enableDimensions(on: boolean): void {
     switch (type) {
       case 'rollerblinds':
         return {
-          roughness: 0.45,
+          roughness: 0.55,
           metalness: 0.0,
-          emissiveIntensity: 0.03
+          emissiveIntensity: 0.05
         };
 
       case 'venetian':
         return {
-          roughness: 0.15, // more reflective
-          metalness: 0.4,
+          roughness: 0.55,
+          metalness: 0.8,
           emissiveIntensity: 0.05
         };
 
