@@ -225,6 +225,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly MAX_NESTING_LEVEL = 8;
   private resizeRaf: number | null = null;
   private mouseMoveRaf: number | null = null;
+  private wheelListener?: (event: WheelEvent) => void;
   private priceGroupField?: ProductField;
   private supplierField?: ProductField;
   private qtyField?: ProductField;
@@ -596,12 +597,23 @@ hasDescriptionContent = false;
       cancelAnimationFrame(this.mouseMoveRaf);
       this.mouseMoveRaf = null;
     }
+    if (this.wheelListener && this.containerRef?.nativeElement) {
+      this.containerRef.nativeElement.removeEventListener('wheel', this.wheelListener);
+    }
   }
 
   ngAfterViewInit(): void {
     // Initialization is handled by setupVisualizer() which is called after data fetch.
     // We also need to ensure the animation loop in three.service is started.
     // A better place for this might be after the first textures are loaded.
+    this.ngZone.runOutsideAngular(() => {
+      const el = this.containerRef?.nativeElement;
+      if (!el) return;
+      const handler = (event: WheelEvent) => this.onMouseWheel(event);
+      // Passive false so preventDefault stops outer page scroll when zooming in the hole
+      el.addEventListener('wheel', handler, { passive: false });
+      this.wheelListener = handler;
+    });
   }
   
   onAnimate() {
@@ -1103,6 +1115,23 @@ public onToggleLoopAnimate(): void {
         this.threeService.setZoom(x, y);
       })
     ) as any;
+  }
+
+  onMouseWheel(event: WheelEvent): void {
+    if (this.is3DOn) return;
+    const rect = this.containerRef.nativeElement.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    if (!this.threeService.isPointInZoomHole(x, y)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const direction = event.deltaY < 0 ? 1 : -1;
+    this.ngZone.runOutsideAngular(() => this.threeService.adjustZoomFactor(direction));
   }
 
   onMouseEnter(): void {

@@ -104,7 +104,9 @@ export class ThreeService implements OnDestroy {
   private mouseY = 0;
   private isZooming = false;
   private readonly lensRadius = 50;
-  private readonly zoomFactor = 12;
+  private zoomFactor = 30;
+  private readonly minZoomFactor = 10;
+  private readonly maxZoomFactor = 80;
 
   // Transparent-hole detection cache for frames (2D)
   private holeCache = new Map<
@@ -2094,6 +2096,15 @@ public enableDimensions(on: boolean): void {
 
   public enableZoom(enabled: boolean): void {
     this.isZooming = enabled;
+  }
+
+  public adjustZoomFactor(direction: number): void {
+    const step = 2;
+    const next = this.zoomFactor + direction * step;
+    const clamped = Math.min(this.maxZoomFactor, Math.max(this.minZoomFactor, next));
+    if (clamped === this.zoomFactor) return;
+    this.zoomFactor = clamped;
+    this.render();
   }
 
   public isPointInZoomHole(x: number, y: number): boolean {
