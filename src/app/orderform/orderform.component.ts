@@ -221,6 +221,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   mainframe!: string;
   background_color_image_url!: string;
   private destroy$ = new Subject<void>();
+  private patternRepeatChange$ = new Subject<void>();
   private readonly MAX_NESTING_LEVEL = 8;
   private resizeRaf: number | null = null;
   private mouseMoveRaf: number | null = null;
@@ -504,6 +505,19 @@ hasDescriptionContent = false;
     // Expose loader mode for template conditions
     this.loaderMode = environment.loaderMode;
     this.loaderEnabled = environment.loaderEnabled;
+    this.patternRepeatChange$
+      .pipe(debounceTime(200), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.threeService.setPatternRepeatEnabled(this.patternRepeatEnabled);
+        this.threeService.setPatternRepeatScale(this.patternRepeatScale);
+
+        if (this.is3DOn && this.background_color_image_url) {
+          this.threeService.updateTextures(this.background_color_image_url);
+        } else if (!this.is3DOn && this.mainframe) {
+          this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+        }
+        this.cd.markForCheck();
+      });
     const queryParams = this.route.snapshot.queryParams;
     // Check if running on localhost
     const isLocalhost = window.location.hostname === 'localhost';
@@ -573,6 +587,7 @@ hasDescriptionContent = false;
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.patternRepeatChange$.complete();
     if (this.resizeRaf !== null) {
       cancelAnimationFrame(this.resizeRaf);
       this.resizeRaf = null;
@@ -722,14 +737,7 @@ public onToggleLoopAnimate(): void {
   }
 
   private applyPatternRepeatSettings(): void {
-    this.threeService.setPatternRepeatEnabled(this.patternRepeatEnabled);
-    this.threeService.setPatternRepeatScale(this.patternRepeatScale);
-
-    if (this.is3DOn && this.background_color_image_url) {
-      this.threeService.updateTextures(this.background_color_image_url);
-    } else if (!this.is3DOn && this.mainframe) {
-      this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
-    }
+    this.patternRepeatChange$.next();
   }
   
   private isNativeFullscreen(): boolean {
