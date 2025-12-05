@@ -96,6 +96,8 @@ export class ThreeService implements OnDestroy {
   public offsetU = 0;
   public offsetV = 0;
   public flipV = false;
+  public patternRepeatEnabled = false;
+  public patternRepeatScale = 1;
 
   // Zoom lens for 2D mode
   private mouseX = 0;
@@ -1306,6 +1308,45 @@ public enableDimensions(on: boolean): void {
     return canvas.toDataURL('image/jpeg', quality);
   }
 
+  public setPatternRepeatEnabled(enabled: boolean): void {
+    this.patternRepeatEnabled = enabled;
+    this.applyPatternRepeatToTextures();
+  }
+
+  public setPatternRepeatScale(scale: number): void {
+    const safe = Number.isFinite(scale) && scale > 0 ? scale : 1;
+    this.patternRepeatScale = Math.max(0.1, safe);
+    this.applyPatternRepeatToTextures();
+  }
+
+  private applyPatternRepeatToTextures(): void {
+    const repeat = this.patternRepeatEnabled
+      ? Math.max(0.1, this.patternRepeatScale || 1)
+      : 1;
+
+    const updateTexture = (tex?: THREE.Texture) => {
+      if (!tex) return;
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(repeat, repeat);
+      tex.needsUpdate = true;
+    };
+
+    if (this.textureMaterial?.map) {
+      updateTexture(this.textureMaterial.map as THREE.Texture);
+    }
+
+    const bgMaterial = this.backgroundMesh?.material as
+      | THREE.MeshBasicMaterial
+      | undefined;
+
+    if (bgMaterial?.map) {
+      updateTexture(bgMaterial.map as THREE.Texture);
+    }
+
+    this.render();
+  }
+
   // ------------------------------------------------------
   // 2D initialization
   // ------------------------------------------------------
@@ -1491,6 +1532,15 @@ public enableDimensions(on: boolean): void {
       if (backgroundUrl) {
         texLoader.load(backgroundUrl, (bgTexture) => {
           bgTexture.colorSpace = THREE.SRGBColorSpace;
+          if (this.patternRepeatEnabled) {
+            bgTexture.wrapS = THREE.RepeatWrapping;
+            bgTexture.wrapT = THREE.RepeatWrapping;
+            const repeat = Math.max(0.1, this.patternRepeatScale);
+            bgTexture.repeat.set(repeat, repeat);
+            bgTexture.needsUpdate = true;
+          } else {
+            bgTexture.repeat.set(1, 1);
+          }
 
           if (this.backgroundMesh) {
             this.scene.remove(this.backgroundMesh);
@@ -1651,6 +1701,12 @@ public enableDimensions(on: boolean): void {
         texture.minFilter = THREE.LinearMipmapLinearFilter;
         texture.magFilter = THREE.LinearFilter;
         texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+        if (this.patternRepeatEnabled) {
+          const repeat = Math.max(0.1, this.patternRepeatScale);
+          texture.repeat.set(repeat, repeat);
+        } else {
+          texture.repeat.set(1, 1);
+        }
         texture.needsUpdate = true;
 
         // Pattern-based blind types
@@ -1678,11 +1734,20 @@ public enableDimensions(on: boolean): void {
             this.setRollerState(isRoller);
 
             setTimeout(
-              () => this.applyPatternToVenetian(texture, 1, isRoller),
+              () =>
+                this.applyPatternToVenetian(
+                  texture,
+                  this.patternRepeatEnabled ? this.patternRepeatScale : 1,
+                  isRoller
+                ),
               200
             );
           } else {
-            this.applyPatternToVenetian(texture, 1, isRoller);
+            this.applyPatternToVenetian(
+              texture,
+              this.patternRepeatEnabled ? this.patternRepeatScale : 1,
+              isRoller
+            );
           }
           return;
         }
@@ -1747,6 +1812,16 @@ public enableDimensions(on: boolean): void {
   ): void {
     if (!this.cube5Meshes.length) return;
 
+    if (this.patternRepeatEnabled) {
+      const repeatVal = Math.max(0.1, this.patternRepeatScale);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(repeatVal, repeatVal);
+    } else {
+      texture.repeat.set(1, 1);
+    }
+    texture.needsUpdate = true;
+
     // Wood: apply averaged color to wood parts (frame, valance, etc.)
     if (this.type === 'wood' && this.Wood.length > 0) {
       const baseColor = this.extractAverageColor(texture).convertSRGBToLinear();
@@ -1799,7 +1874,8 @@ public enableDimensions(on: boolean): void {
     const blindsAspect = totalWidth / totalHeight;
     const aspectRatio = imageAspect / blindsAspect;
 
-    const zoom = 1 / Math.max(1e-6, patternScale);
+    // When repeat is enabled, rely on texture repeat; avoid double-scaling UVs
+    const zoom = this.patternRepeatEnabled ? 1 : 1 / Math.max(1e-6, patternScale);
     let uScale = zoom;
     let vScale = zoom;
 

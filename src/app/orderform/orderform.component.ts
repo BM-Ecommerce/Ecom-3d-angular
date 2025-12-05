@@ -214,10 +214,14 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('mainImg', { static: false }) private mainImgRef!: ElementRef<HTMLElement>;
 
   public isLooping: boolean = false;
+  public patternRepeatEnabled = false;
+  public patternRepeatScale = 1;
+  public patternRepeatScaleInput = '1';
   isZooming = false;
   mainframe!: string;
   background_color_image_url!: string;
   private destroy$ = new Subject<void>();
+  private patternRepeatChange$ = new Subject<void>();
   private readonly MAX_NESTING_LEVEL = 8;
   private resizeRaf: number | null = null;
   private mouseMoveRaf: number | null = null;
@@ -501,6 +505,19 @@ hasDescriptionContent = false;
     // Expose loader mode for template conditions
     this.loaderMode = environment.loaderMode;
     this.loaderEnabled = environment.loaderEnabled;
+    this.patternRepeatChange$
+      .pipe(debounceTime(200), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.threeService.setPatternRepeatEnabled(this.patternRepeatEnabled);
+        this.threeService.setPatternRepeatScale(this.patternRepeatScale);
+
+        if (this.is3DOn && this.background_color_image_url) {
+          this.threeService.updateTextures(this.background_color_image_url);
+        } else if (!this.is3DOn && this.mainframe) {
+          this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+        }
+        this.cd.markForCheck();
+      });
     const queryParams = this.route.snapshot.queryParams;
     // Check if running on localhost
     const isLocalhost = window.location.hostname === 'localhost';
@@ -570,6 +587,7 @@ hasDescriptionContent = false;
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.patternRepeatChange$.complete();
     if (this.resizeRaf !== null) {
       cancelAnimationFrame(this.resizeRaf);
       this.resizeRaf = null;
@@ -618,6 +636,7 @@ public onToggleLoopAnimate(): void {
 
     if (this.is3DOn) {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
+      this.applyPatternRepeatSettings();
         if(productname.toLowerCase().includes('perfect fit roller')){
             this.threeService.loadGltfModel('assets/perfectfitroller.glb', 'rollerblinds');
         }else if (productname.toLowerCase().includes('roller blinds')) {
@@ -646,6 +665,7 @@ public onToggleLoopAnimate(): void {
 
     } else {
       this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
+      this.applyPatternRepeatSettings();
       if (this.mainframe) {
         this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
         this.update2DContainerHeightFromFrame();
@@ -679,6 +699,45 @@ public onToggleLoopAnimate(): void {
       this.update2DContainerHeightFromFrame();
     }
     setTimeout(() => this.onWindowResize(), 0);
+  }
+
+  onPatternRepeatToggle(): void {
+    this.patternRepeatEnabled = !this.patternRepeatEnabled;
+    this.applyPatternRepeatSettings();
+    this.cd.markForCheck();
+  }
+
+  onPatternRepeatScaleChange(event: any): void {
+    const rawStr = `${event?.target?.value ?? event ?? ''}`;
+    if (!rawStr) {
+      this.patternRepeatScale = 1;
+      this.patternRepeatScaleInput = '';
+      this.patternRepeatEnabled = true;
+      this.applyPatternRepeatSettings();
+      this.cd.markForCheck();
+      return;
+    }
+
+    const parsed = parseFloat(rawStr);
+    const value = Number.isFinite(parsed) ? Math.max(1, parsed) : 1;
+    this.patternRepeatScale = value;
+    this.patternRepeatScaleInput = `${value}`;
+    this.patternRepeatEnabled = true;
+    this.applyPatternRepeatSettings();
+    this.cd.markForCheck();
+  }
+
+  setPatternRepeatScale(value: number): void {
+    const next = !value || value <= 0 ? 1 : Math.max(1, value);
+    this.patternRepeatScale = next;
+    this.patternRepeatScaleInput = `${next}`;
+    this.patternRepeatEnabled = true;
+    this.applyPatternRepeatSettings();
+    this.cd.markForCheck();
+  }
+
+  private applyPatternRepeatSettings(): void {
+    this.patternRepeatChange$.next();
   }
   
   private isNativeFullscreen(): boolean {

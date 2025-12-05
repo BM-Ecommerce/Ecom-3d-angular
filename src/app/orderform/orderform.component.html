@@ -55,7 +55,7 @@
                   <button matTooltip="Zoom Out" [matTooltipDisabled]="isMobile" matTooltipPosition="right" *ngIf="is3DOn" type="button" mat-icon-button (click)="zoomOut()" aria-label="Zoom out">
                     <mat-icon>zoom_out</mat-icon>
                   </button>
-                      <button *ngIf="is3DOn && !hideAnimation"
+                  <button *ngIf="is3DOn && !hideAnimation"
                               type="button"
                               matTooltip="{{ isAnimateOpen ? 'Open' : 'Close' }}" [matTooltipDisabled]="isMobile"
                               matTooltipPosition="right"
@@ -131,6 +131,23 @@
                         <span>{{ option.optionname }}</span>
                       </button>
                     </div>
+                  </div>
+                </div>
+                <div class="pattern-repeat-floating">
+                  <label class="repeat-toggle">
+                    <input type="checkbox" [checked]="patternRepeatEnabled" (change)="onPatternRepeatToggle()" />
+                    Pattern repeat
+                  </label>
+                  <div class="repeat-scale" *ngIf="patternRepeatEnabled">
+                    <label for="repeat-scale-input">Scale</label>
+                    <input
+                      id="repeat-scale-input"
+                      type="number"
+                      min="1"
+                      step="0.1"
+                      [value]="patternRepeatScaleInput"
+                      (input)="onPatternRepeatScaleChange($event)"
+                    />
                   </div>
                 </div>
 

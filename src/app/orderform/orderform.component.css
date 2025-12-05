@@ -1710,3 +1710,58 @@ mat-button-toggle-group:disabled {
     bottom: auto;
   }
 }
+
+.pattern-repeat-floating {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+  z-index: 6;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  flex-direction: column
+}
+
+.pattern-repeat-floating .repeat-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  margin: 0;
+}
+
+.pattern-repeat-floating .repeat-scale {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.pattern-repeat-floating input[type='number'] {
+  width: 70px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #000 !important;
+}
+
+.pattern-repeat-floating label {
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .pattern-repeat-floating {
+    top: auto;
+    bottom: 12px;
+    left: 12px;
+    right: auto;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+}
