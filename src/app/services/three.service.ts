@@ -862,7 +862,11 @@ public enableDimensions(on: boolean): void {
   // ------------------------------------------------------
   // 3D: GLTF load + blind setup
   // ------------------------------------------------------
-  public loadGltfModel(gltfUrl: string, type: BlindType): void {
+  public loadGltfModel(
+    gltfUrl: string,
+    type: BlindType,
+    onError?: () => void
+  ): void {
     this.type = type;
     this.cube5Meshes = [];
     this.Wood = [];
@@ -1140,8 +1144,17 @@ public enableDimensions(on: boolean): void {
       };
 
     const cached = this.gltfCache.get(gltfUrl);
+    const handleError = (err: any) => {
+      console.error(err);
+      if (onError) {
+        try {
+          onError();
+        } catch { /* ignore */ }
+      }
+    };
+
     if (cached) {
-      cached.then((gltf) => apply(this.cloneGltf(gltf))).catch((err) => console.error(err));
+      cached.then((gltf) => apply(this.cloneGltf(gltf))).catch(handleError);
       return;
     }
     const loadPromise = new Promise<any>((resolve, reject) => {
@@ -1150,7 +1163,7 @@ public enableDimensions(on: boolean): void {
     this.gltfCache.set(gltfUrl, loadPromise);
     loadPromise
       .then((gltf) => apply(this.cloneGltf(gltf)))
-      .catch((err) => console.error(err));
+      .catch(handleError);
   }
 
   // ------------------------------------------------------

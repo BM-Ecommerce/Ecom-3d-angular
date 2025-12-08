@@ -446,6 +446,7 @@ hasDescriptionContent = false;
   unittype: number = 1;
   pricegroup: string = "";
   show_image_icons = false;
+  has3DModel = false;
   chosenAccessoriesFieldId:number = 0;
   chosenAccessoriesOptionId:string = "";
   public grossPrice: string | null = null;
@@ -647,28 +648,18 @@ public onToggleLoopAnimate(): void {
   private setupVisualizer(productname: string): void {
     if (!this.canvasRef || !this.containerRef) return;
 
-    if (this.is3DOn) {
+    const modelInfo = this.resolveModelInfo(productname);
+    this.has3DModel = !!modelInfo;
+    this.show_image_icons = this.has3DModel && this.category !== 2;
+
+    if (this.is3DOn && this.has3DModel && modelInfo) {
       this.threeService.initialize(this.canvasRef, this.containerRef.nativeElement);
       this.applyPatternRepeatSettings();
-        if(productname.toLowerCase().includes('perfect fit roller')){
-            this.threeService.loadGltfModel('assets/perfectfitroller.glb', 'rollerblinds');
-        }else if (productname.toLowerCase().includes('roller blinds')) {
-        this.threeService.loadGltfModel('assets/rollerblinds.glb', 'rollerblinds');
-      } else if (
-        productname.toLowerCase().includes('venetian') 
-      ) {
-        this.threeService.loadGltfModel('assets/venetianblinds.glb', 'venetian');
-      } else if(productname.toLowerCase().includes('vertical')) {
-          this.threeService.loadGltfModel('assets/verticalblinds.glb', 'vertical');
-      } else if(productname.toLowerCase().includes('wood')) {
-          this.threeService.loadGltfModel('assets/woodenblinds.glb', 'wood');
-      } else if(productname.toLowerCase().includes('day and night')) {
-          this.threeService.loadGltfModel('assets/daynight.glb', 'daynight');
-      }else if(productname.toLowerCase().includes('roman')) {
-          this.threeService.loadGltfModel('assets/romanblinds.glb', 'roman');
-      }else {
-        this.threeService.loadGltfModel('assets/rollerdoor.glb', 'generic');
-      }
+      this.threeService.loadGltfModel(
+        modelInfo.url,
+        modelInfo.type,
+        () => this.disable3DForMissingModel()
+      );
 
       // Seed dimension overlays and respect current toggle (no auto-on/off)
       this.threeService.setDimensions(this.width, this.drop);
@@ -676,17 +667,66 @@ public onToggleLoopAnimate(): void {
       this.updateShowDimensionsToggle();
       this.threeService.enableDimensions(this.dimensionMode === 'on');
 
+    } else if (this.has3DModel && modelInfo) {
+      this.setup2DVisualizer();
     } else {
-      this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
-      this.applyPatternRepeatSettings();
-      if (this.mainframe) {
-        this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
-        this.update2DContainerHeightFromFrame();
-      }
+      this.disable3DForMissingModel();
     }
     setTimeout(() => this.onWindowResize(), 0);
   }
+
+  private setup2DVisualizer(): void {
+    this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
+    this.applyPatternRepeatSettings();
+    if (this.mainframe) {
+      this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+      this.update2DContainerHeightFromFrame();
+    }
+  }
+
+  private disable3DForMissingModel(): void {
+    this.is3DOn = false;
+    this.has3DModel = false;
+    this.show_image_icons = false;
+    this.setup2DVisualizer();
+    this.cd.markForCheck();
+    setTimeout(() => this.onWindowResize(), 0);
+  }
+
+  private resolveModelInfo(productname: string): { url: string; type: 'rollerblinds' | 'venetian' | 'vertical' | 'wood' | 'daynight' | 'roman' | 'generic' } | null {
+    const name = (productname || '').toLowerCase();
+    if (name.includes('perfect fit roller')) {
+      return { url: 'assets/perfectfitroller.glb', type: 'rollerblinds' };
+    }
+    if (name.includes('roller blinds')) {
+      return { url: 'assets/rollerblinds.glb', type: 'rollerblinds' };
+    }
+    if (name.includes('venetian')) {
+      return { url: 'assets/venetianblinds.glb', type: 'venetian' };
+    }
+    if (name.includes('vertical')) {
+      return { url: 'assets/verticalblinds.glb', type: 'vertical' };
+    }
+    if (name.includes('wood')) {
+      return { url: 'assets/woodenblinds.glb', type: 'wood' };
+    }
+    if (name.includes('day and night')) {
+      return { url: 'assets/daynight.glb', type: 'daynight' };
+    }
+    if (name.includes('roman')) {
+      return { url: 'assets/romanblinds.glb', type: 'roman' };
+    }
+    if (name.includes('door')) {
+      return { url: 'assets/rollerdoor.glb', type: 'generic' };
+    }
+    return null;
+  }
+
   toggle3D() {
+    if (!this.has3DModel) {
+      this.is3DOn = false;
+      return;
+    }
     // In fullscreen, enforce 3D mode and ignore 2D toggle
     if (this.isFullscreen) {
       if (!this.is3DOn) {
