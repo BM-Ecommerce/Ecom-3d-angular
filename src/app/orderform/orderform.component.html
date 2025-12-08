@@ -133,23 +133,6 @@
                     </div>
                   </div>
                 </div>
-                <div class="pattern-repeat-floating">
-                  <label class="repeat-toggle">
-                    <input type="checkbox" [checked]="patternRepeatEnabled" (change)="onPatternRepeatToggle()" />
-                    Pattern repeat
-                  </label>
-                  <div class="repeat-scale" *ngIf="patternRepeatEnabled">
-                    <label for="repeat-scale-input">Scale</label>
-                    <input
-                      id="repeat-scale-input"
-                      type="number"
-                      min="1"
-                      step="1"
-                      [value]="patternRepeatScaleInput"
-                      (input)="onPatternRepeatScaleChange($event)"
-                    />
-                  </div>
-                </div>
 
                 <div class="visualizer-view-controls">
                     <mat-button-toggle-group name="viewMode" *ngIf="show_image_icons"  [value]="is3DOn ? '3d' : '2d'" (change)="toggle3D()"
