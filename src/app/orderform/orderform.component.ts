@@ -263,7 +263,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 hasDescriptionContent = false;
   relatedframeimage:string = ""
   netpricecomesfrom = "";
-  is3DOn = false;
+  is3DOn = true;
   recipeid: number = 0;
   category: number = 0;
   costpricecomesfrom = "";
@@ -421,7 +421,7 @@ hasDescriptionContent = false;
   v4_product_visualizer_page = '';
   fieldscategoryname = '';
   productslug = '';
-  iconname= "";
+  iconname= "roller-blinds";
   fabricid = 0;
   colorid = 0;
   matmapid = 0;
@@ -503,6 +503,7 @@ hasDescriptionContent = false;
 
   ngOnInit(): void {
     this.updateIsMobile();
+    this.registerProductIcon();
     // Expose loader mode for template conditions
     this.loaderMode = environment.loaderMode;
     this.loaderEnabled = environment.loaderEnabled;
@@ -1170,6 +1171,7 @@ public onToggleLoopAnimate(): void {
           }else{
             this.iconname ="roller-blinds";
           }
+          this.registerProductIcon();
             
           this.productdescription = data.pi_productdescription;
           this.pei_prospec = data.pei_prospec;
@@ -3307,6 +3309,9 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
     }
   }
   registerProductIcon() {
+    if (!this.iconname) {
+      return;
+    }
     ['up', 'down'].forEach(state => {
       const iconName = `${this.iconname}-${state}`;
       const path = `assets/icons/${iconName}.svg`;
