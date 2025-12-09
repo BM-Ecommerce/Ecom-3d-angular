@@ -1853,6 +1853,9 @@ public onToggleLoopAnimate(): void {
         this.cd.markForCheck();
       });
     }
+    if(2 == this.category && 'single_view' != this.routeParams?.fabric){
+      this.updateProductTitle();
+    }
   }
   buildVisualizerUrl(product: any) {
     const slug1 = product.productname.toLowerCase().replace(/ /g, '-');
