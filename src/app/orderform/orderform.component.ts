@@ -1773,7 +1773,7 @@ public onToggleLoopAnimate(): void {
         this.FrameLabelName = field.fieldname;
       }
       // Accessories Type.
-     if('single_view' != this.routeParams?.fabric && 2 == this.category){
+      if('single_view' != this.routeParams?.fabric && 2 == this.category){
             const selected_accessories_data = this.option_data[this.chosenAccessoriesFieldId];
             if(selected_accessories_data.length > 0){
                 var chosen_accessories_list:any = [];
@@ -1787,29 +1787,28 @@ public onToggleLoopAnimate(): void {
                 }
           }
       }
-      this.processSelectedOption(params, field, selectedOption).pipe(
-        takeUntil(this.destroy$)
-      ).subscribe(() => {
-        if ((field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 1)) {
+      const shouldUpdatePriceGroup = (field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 1);
+      let preSublist$ = of(null);
 
-          this.pricegroup = selectedOption.pricegroupid;
-          if (this.priceGroupField) {
-            const control = this.orderForm.get(`field_${this.priceGroupField.fieldid}`);
-            if (control) {
-              control.setValue(this.pricegroup, { emitEvent: false });
+      if (shouldUpdatePriceGroup) {
+        this.pricegroup = selectedOption.pricegroupid;
+        if (this.priceGroupField) {
+          const control = this.orderForm.get(`field_${this.priceGroupField.fieldid}`);
+          if (control) {
+            control.setValue(this.pricegroup, { emitEvent: false });
 
-              const selectedOption = this.priceGroupOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.pricegroup}`);
+            const selectedOption = this.priceGroupOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.pricegroup}`);
+            this.updateFieldValues(this.priceGroupField, selectedOption, 'pricegrouponColor');
+          } else {
+            if (this.priceGroupField.optionsvalue) {
+              const selectedOption = this.priceGroupField.optionsvalue.find(opt => `${opt.optionid}` === `${this.pricegroup}`)
               this.updateFieldValues(this.priceGroupField, selectedOption, 'pricegrouponColor');
-            } else {
-              if (this.priceGroupField.optionsvalue) {
-                const selectedOption = this.priceGroupField.optionsvalue.find(opt => `${opt.optionid}` === `${this.pricegroup}`)
-                this.updateFieldValues(this.priceGroupField, selectedOption, 'pricegrouponColor');
-              }
             }
           }
-          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid), this.pricegroup, this.colorid, this.fabricid, this.unittype, this.fabricFieldType)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((filterData: any) => {
+        }
+        preSublist$ = this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid), this.pricegroup, this.colorid, this.fabricid, this.unittype, this.fabricFieldType)
+          .pipe(
+            tap((filterData: any) => {
               this.supplier_id = filterData[0].data.selectsupplierid;
               if (this.supplierField) {
                 const control = this.orderForm.get(`field_${this.supplierField.fieldid}`);
@@ -1824,34 +1823,43 @@ public onToggleLoopAnimate(): void {
                   }
                 }
               }
-            });
-        } else {
-          this.updateFieldValues(field, selectedOption, 'restOption');
-        }
+            })
+          );
+      }
 
-        if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
-          this.fabricid = value;
-          this.fabricname = selectedOption.optionname;
-          this.updateMinMaxValidators(false);
-          this.updateFieldValues(field, selectedOption, 'updatefabric');
-        }
-        if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
-          this.colorid = value;
-          this.colorname = selectedOption.optionname;
-          this.updateFieldValues(field, selectedOption, 'updatecolor');
-          this.updateMinMaxValidators(true);
-        }
+      preSublist$
+        .pipe(
+          switchMap(() => this.processSelectedOption(params, field, selectedOption)),
+          takeUntil(this.destroy$)
+        )
+        .subscribe(() => {
+          if (!shouldUpdatePriceGroup) {
+            this.updateFieldValues(field, selectedOption, 'restOption');
+          }
 
-        this.freesample = { ...this.freesample, fabricid: this.fabricid, color_id: this.colorid };
-        if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
-           this.get_relatedproduct_data();
-        }
-        if(this.category == 5){
-           this.setShutterObject(field,selectedOption);
-           this.setShutterImage();
-        }
-        this.cd.markForCheck();
-      });
+          if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
+            this.fabricid = value;
+            this.fabricname = selectedOption.optionname;
+            this.updateMinMaxValidators(false);
+            this.updateFieldValues(field, selectedOption, 'updatefabric');
+          }
+          if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
+            this.colorid = value;
+            this.colorname = selectedOption.optionname;
+            this.updateFieldValues(field, selectedOption, 'updatecolor');
+            this.updateMinMaxValidators(true);
+          }
+
+          this.freesample = { ...this.freesample, fabricid: this.fabricid, color_id: this.colorid };
+          if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
+             this.get_relatedproduct_data();
+          }
+          if(this.category == 5){
+             this.setShutterObject(field,selectedOption);
+             this.setShutterImage();
+          }
+          this.cd.markForCheck();
+        });
     }
     if(2 == this.category && 'single_view' != this.routeParams?.fabric){
       this.updateProductTitle();
