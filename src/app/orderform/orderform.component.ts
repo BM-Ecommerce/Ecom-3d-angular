@@ -1790,42 +1790,7 @@ public onToggleLoopAnimate(): void {
       this.processSelectedOption(params, field, selectedOption).pipe(
         takeUntil(this.destroy$)
       ).subscribe(() => {
-        if ((field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 1)) {
-
-          this.pricegroup = selectedOption.pricegroupid;
-          if (this.priceGroupField) {
-            const control = this.orderForm.get(`field_${this.priceGroupField.fieldid}`);
-            if (control) {
-              control.setValue(this.pricegroup, { emitEvent: false });
-
-              const selectedOption = this.priceGroupOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.pricegroup}`);
-              this.updateFieldValues(this.priceGroupField, selectedOption, 'pricegrouponColor');
-            } else {
-              if (this.priceGroupField.optionsvalue) {
-                const selectedOption = this.priceGroupField.optionsvalue.find(opt => `${opt.optionid}` === `${this.pricegroup}`)
-                this.updateFieldValues(this.priceGroupField, selectedOption, 'pricegrouponColor');
-              }
-            }
-          }
-          this.apiService.filterbasedlist(params, '', String(field.fieldtypeid), String(field.fieldid), this.pricegroup, this.colorid, this.fabricid, this.unittype, this.fabricFieldType)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((filterData: any) => {
-              this.supplier_id = filterData[0].data.selectsupplierid;
-              if (this.supplierField) {
-                const control = this.orderForm.get(`field_${this.supplierField.fieldid}`);
-                if (control) {
-                  control.setValue(Number(this.supplier_id), { emitEvent: false });
-                  const selectedOption = this.supplierOption.find((opt: { optionid: any; }) => `${opt.optionid}` === `${this.supplier_id}`);
-                  this.updateFieldValues(this.supplierField, selectedOption, 'suppieronColor');
-                } else {
-                  if (this.supplierField.optionsvalue) {
-                    const selectedOption = this.supplierField.optionsvalue.find(opt => `${opt.optionid}` === `${this.supplier_id}`)
-                    this.updateFieldValues(this.supplierField, selectedOption, 'suppieronColor');
-                  }
-                }
-              }
-            });
-        } else {
+        if (field.fieldtypeid !== 5 && field.fieldtypeid !== 20 && field.fieldtypeid !== 21) {
           this.updateFieldValues(field, selectedOption, 'restOption');
         }
 
@@ -1996,45 +1961,139 @@ public onToggleLoopAnimate(): void {
   /**
    * If an option itself has subdata, fetch them (sublist) and add subfields.
    */
-  private processSelectedOption(params: any, parentField: ProductField, option: ProductOption): Observable<any> {
-    if (!option?.subdatacount || option.subdatacount <= 0) return of(null);
+  private processSelectedOption(
+  params: any,
+  parentField: ProductField,
+  option: ProductOption
+): Observable<any> {
 
-    const parentLevel = parentField.level || 1;
-    if (parentLevel >= this.MAX_NESTING_LEVEL) return of(null);
-
-    return this.apiService.sublist(
-      params,
-      parentLevel + 1,
-      parentField.fieldtypeid,
-      option.fieldoptionlinkid,
-      option.optionid,
-      parentField.masterparentfieldid,
-      this.supplier_id,
-      this.recipeid
-    ).pipe(
-      takeUntil(this.destroy$),
-      switchMap((subFieldResponse: any) => {
-        const sublist = subFieldResponse?.[0]?.data;
-        if (!Array.isArray(sublist)) return of(null);
-
-        // filter to only fields that we know how to handle
-        const relevant = sublist.filter((subfield: ProductField) =>
-          [3, 5, 20, 21, 18, 6].includes(subfield.fieldtypeid)
-        );
-
-        if (relevant.length === 0) return of(null);
-
-        return from(relevant).pipe(
-          mergeMap(subfield => this.processSubfield(params, subfield, parentField, parentLevel + 1)),
-          toArray()
-        );
-      }),
-      catchError(err => {
-        console.error('Error processing selected option:', err);
-        return of(null);
-      })
-    );
+  if (!option?.subdatacount || option.subdatacount <= 0) {
+    return of(null);
   }
+
+  if (
+    (parentField.fieldtypeid === 5 && parentField.level === 1) ||
+    (parentField.fieldtypeid === 21 && parentField.level === 1)
+  ) {
+    this.fabricid = Number(option.optionid);
+  }
+
+  const parentLevel = parentField.level || 1;
+  this.pricegroup = option.pricegroupid;
+
+  if (
+    (parentField.fieldtypeid === 5 && parentField.level === 1 && option.pricegroupid) ||
+    parentField.fieldtypeid === 20 ||
+    (parentField.fieldtypeid === 21 && parentField.level === 1)
+  ) {
+    if (this.priceGroupField) {
+      const control = this.orderForm.get(`field_${this.priceGroupField.fieldid}`);
+      let selectedPriceOption: ProductOption | null = null;
+
+      if (control) {
+        control.setValue(this.pricegroup, { emitEvent: false });
+        selectedPriceOption =
+          this.priceGroupOption?.find(
+            (opt: ProductOption) => `${opt.optionid}` === `${this.pricegroup}`
+          ) || null;
+      } else if (this.priceGroupField.optionsvalue) {
+        selectedPriceOption =
+          this.priceGroupField.optionsvalue.find(
+            (opt: ProductOption) => `${opt.optionid}` === `${this.pricegroup}`
+          ) || null;
+      }
+
+      if (selectedPriceOption) {
+        this.updateFieldValues(this.priceGroupField, selectedPriceOption, "pricegrouponColor");
+      }
+    }
+
+    return this.apiService
+      .filterbasedlist(
+        params,
+        "",
+        String(parentField.fieldtypeid),
+        String(parentField.fieldid),
+        this.pricegroup,
+        this.colorid,
+        this.fabricid,
+        this.unittype,
+        this.fabricFieldType
+      )
+      .pipe(
+        takeUntil(this.destroy$),
+
+        switchMap((filterData: any) => {
+          const data = filterData?.[0]?.data;
+          if (!data) return of(null);
+
+          this.supplier_id = data.selectsupplierid;
+
+          if (this.supplierField) {
+            const control = this.orderForm.get(`field_${this.supplierField.fieldid}`);
+            let selectedSupplier: ProductOption | null = null;
+
+            if (control) {
+              control.setValue(Number(this.supplier_id), { emitEvent: false });
+
+              selectedSupplier =
+                this.supplierOption?.find(
+                  (opt: ProductOption) => `${opt.optionid}` === `${this.supplier_id}`
+                ) || null;
+            } else if (this.supplierField.optionsvalue) {
+              selectedSupplier =
+                this.supplierField.optionsvalue.find(
+                  (opt: ProductOption) => `${opt.optionid}` === `${this.supplier_id}`
+                ) || null;
+            }
+
+            if (selectedSupplier) {
+              this.updateFieldValues(this.supplierField, selectedSupplier, "suppieronColor");
+            }
+          }
+
+          return this.apiService.sublist(
+            params,
+            parentLevel + 1,
+            parentField.fieldtypeid,
+            option.fieldoptionlinkid,
+            option.optionid,
+            parentField.masterparentfieldid,
+            this.supplier_id,
+            this.recipeid
+          );
+        }),
+
+        switchMap((subFieldResponse: any) => {
+          const sublist = subFieldResponse?.[0]?.data;
+          if (!Array.isArray(sublist)) return of(null);
+
+          const relevant = sublist.filter((subfield: ProductField) =>
+            [3, 5, 20, 21, 18, 6].includes(subfield.fieldtypeid)
+          );
+
+          if (relevant.length === 0) return of(null);
+
+          return from(relevant).pipe(
+            mergeMap((subfield: ProductField) =>
+              this.processSubfield(params, subfield, parentField, parentLevel + 1)
+            ),
+            toArray()
+          );
+        }),
+
+        catchError((err) => {
+          console.error("Error processing selected option:", err);
+          return of(null);
+        })
+      );
+  }
+
+  // No supplier or price group logic required
+  return of(null);
+}
+
+
 
   /**
    * Insert subfield into parameters_data (if not already present), add form control, and load its options.
