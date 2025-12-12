@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, SimpleChanges, HostListener, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { environment } from '../../environments/environment';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -443,7 +443,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     @Inject(LoadingService) public loading: LoadingService,
     private matIconRegistry: MatIconRegistry,
     private sanitizer: DomSanitizer,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
+    @Inject(DOCUMENT) private document: Document
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
     // initial minimal group; will be replaced in initializeFormControls
@@ -827,6 +828,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           } else {
             this.iconname = "roller-blinds";
           }
+          this.updateCanonicalUrl(params);
 
           this.productdescription = data.pi_productdescription;
           this.pei_prospec = data.pei_prospec;
@@ -1463,6 +1465,30 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       .toLowerCase().replace(/ /g, '-');
 
     return `${this.siteurl}/visualizer/${this.product_id}/${slug1}/${slug2}/${product.fd_id}/${product.cd_id}/${product.groupid}/${product.supplierid}/${this.routeParams.cart_productid}`;
+  }
+
+  updateCanonicalUrl(params: any) {
+    const siteBase = params?.site || this.siteurl;
+    const currentPath = this.router.url.split('#')[0].split('?')[0];
+
+    if (!siteBase || !currentPath) {
+      return;
+    }
+
+    const baseUrl = siteBase.endsWith('/') ? siteBase.slice(0, -1) : siteBase;
+    const normalizedPath = currentPath.startsWith('/') ? currentPath : `/${currentPath}`;
+    const canonicalUrl = `${baseUrl}/visualizer${normalizedPath}`;
+    const finalCanonicalUrl = canonicalUrl.endsWith('/') ? canonicalUrl : `${canonicalUrl}/`;
+
+    let link = this.document.querySelector("link[rel='canonical']") as HTMLLinkElement | null;
+
+    if (!link) {
+      link = this.document.createElement('link');
+      link.setAttribute('rel', 'canonical');
+      this.document.head.appendChild(link);
+    }
+
+    link.setAttribute('href', finalCanonicalUrl);
   }
   onImageError(event: Event) {
     const img = event.target as HTMLImageElement;
