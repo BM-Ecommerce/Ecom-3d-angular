@@ -9,6 +9,9 @@ RUN npm ci --legacy-peer-deps --cache /tmp/npm-cache --prefer-offline --no-progr
     && rm -rf /tmp/npm-cache
 
 COPY . .
+
+# Increase Node memory during Angular build to avoid OOM in constrained Docker environments
+ENV NODE_OPTIONS=--max_old_space_size=4096
 RUN npm run build -- --configuration production
 
 # Runtime stage: serve with nginx
