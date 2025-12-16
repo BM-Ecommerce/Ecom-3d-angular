@@ -1,10 +1,12 @@
-﻿# Build stage: install deps and compile Angular app
-FROM node:16-alpine AS build
+# Build stage: install deps and compile Angular app
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm ci --legacy-peer-deps --cache /tmp/npm-cache --prefer-offline --no-progress \
+    && npm cache clean --force \
+    && rm -rf /tmp/npm-cache
 
 COPY . .
 RUN npm run build -- --configuration production
