@@ -1677,6 +1677,7 @@ public onToggleLoopAnimate(): void {
         this.background_color_image_url = "";
         this.invalidateFrameThumbnails();
         this.setupVisualizer(this.productname);
+        this.syncBackgroundImageInCarousel();
       }
       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
         this.colorid = 0;
@@ -1684,6 +1685,7 @@ public onToggleLoopAnimate(): void {
         this.background_color_image_url = "";
         this.invalidateFrameThumbnails();
         this.setupVisualizer(this.productname);
+        this.syncBackgroundImageInCarousel();
       }
       if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
         this.get_relatedproduct_data();
@@ -1760,6 +1762,7 @@ public onToggleLoopAnimate(): void {
         }
         this.invalidateFrameThumbnails();
         this.prepareFrameThumbnails();
+        this.syncBackgroundImageInCarousel();
       }
 
       if (canUpdate && field.fieldtypeid === 3 && normalizedFieldName === this.curtainColorKey && selectedOption.optionimage) {
@@ -1999,6 +2002,35 @@ public onToggleLoopAnimate(): void {
           this.cd.markForCheck();
         });
     }
+  }
+
+  private syncBackgroundImageInCarousel(): void {
+    const existingIndex = this.product_img_array.findIndex(img => img?.is_background);
+
+    if (!this.background_color_image_url) {
+      if (existingIndex >= 0) {
+        const updated = [...this.product_img_array];
+        updated.splice(existingIndex, 1);
+        this.product_img_array = updated;
+        this.cd.markForCheck();
+      }
+      return;
+    }
+
+    const backgroundEntry = {
+      image_url: this.background_color_image_url,
+      is_default: false,
+      is_background: true
+    };
+
+    if (existingIndex >= 0) {
+      const updated = [...this.product_img_array];
+      updated[existingIndex] = { ...updated[existingIndex], ...backgroundEntry };
+      this.product_img_array = updated;
+    } else {
+      this.product_img_array = [...this.product_img_array, backgroundEntry];
+    }
+    this.cd.markForCheck();
   }
 
   /**
