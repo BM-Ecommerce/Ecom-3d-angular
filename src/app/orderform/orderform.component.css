@@ -546,7 +546,7 @@ canvas {
 /* Responsive visualizer container */
 .configuratorpreviewimage {
   position: relative;
-  height: 500px;
+  height: 500px!important;
 }
 .configuratorpreviewimage.view3d{
   height: 500px;
@@ -684,6 +684,9 @@ mat-button-toggle.mat-button-toggle-checked {
 }
 
 @media (max-width: 991px) {
+    .configuratorpreviewimage{
+      height: 310px!important;
+    }
     .slider-container{
       bottom: 10px;
     }
