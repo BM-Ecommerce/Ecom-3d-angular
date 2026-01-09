@@ -304,6 +304,7 @@ hasDescriptionContent = false;
   isFullscreenMobile: boolean = false;
   private isBackgroundSelectedInCarousel = false;
   private isBackgroundZoomEnabled = false;
+  public enableFrameThumbnails = true;
   public fullCanvasZoomFactor =1;
   private previousZoomFactor: number | null = null;
   
@@ -2062,6 +2063,7 @@ public onToggleLoopAnimate(): void {
   }
 
   private prepareFrameThumbnails(): void {
+    if (!this.enableFrameThumbnails) return;
     if (!this.background_color_image_url || !this.product_img_array?.length) return;
     const bg = this.background_color_image_url;
     for (const img of this.product_img_array) {
@@ -2083,6 +2085,7 @@ public onToggleLoopAnimate(): void {
   }
 
   private syncBackgroundImageInCarousel(): void {
+    if (!this.enableFrameThumbnails) return;
     const existingIndex = this.product_img_array.findIndex(img => img?.is_background);
 
     if (!this.background_color_image_url) {
