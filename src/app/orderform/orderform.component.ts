@@ -1741,6 +1741,17 @@ public onToggleLoopAnimate(): void {
       
       const canUpdate = !isInitial || (field.optiondefault && params.color_id);
       const normalizedFieldName = this.normalizeFieldName(field.fieldname);
+      const isMaterialField = (field.fieldtypeid === 5 || field.fieldtypeid === 21) && field.level == 1;
+
+      if (!isInitial && isMaterialField) {
+        this.colorid = 0;
+        this.colorname = '';
+        this.background_color_image_url = '';
+        this.invalidateFrameThumbnails();
+        this.resetFrameToDefault();
+        this.setupVisualizer(this.productname);
+        this.syncBackgroundImageInCarousel();
+      }
 
       if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
         this.fabricid = value;
@@ -2031,6 +2042,17 @@ public onToggleLoopAnimate(): void {
       this.product_img_array = [...this.product_img_array, backgroundEntry];
     }
     this.cd.markForCheck();
+  }
+
+  private resetFrameToDefault(): void {
+    const fallback = this.frame_default_url || this.product_img_array?.[0]?.image_url || '';
+    if (!fallback) return;
+
+    this.mainframe = fallback;
+    this.product_img_array = (this.product_img_array || []).map(img => ({
+      ...img,
+      is_default: img?.image_url === fallback
+    }));
   }
 
   /**
