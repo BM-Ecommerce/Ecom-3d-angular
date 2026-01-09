@@ -303,6 +303,7 @@ hasDescriptionContent = false;
   isFullscreen: boolean = false;
   isFullscreenMobile: boolean = false;
   private isBackgroundSelectedInCarousel = false;
+  private isBackgroundZoomEnabled = false;
   
   private prevIs3DOn: boolean = false;
 
@@ -1129,7 +1130,13 @@ public onToggleLoopAnimate(): void {
   }
 
   onMouseMove(event: MouseEvent): void {
-    if (this.is3DOn) return;
+    if (!this.canUse2DZoom()) {
+      if (this.isZooming) {
+        this.isZooming = false;
+        this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+      }
+      return;
+    }
     const rect = this.containerRef.nativeElement.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -1157,7 +1164,7 @@ public onToggleLoopAnimate(): void {
   }
 
   onMouseWheel(event: WheelEvent): void {
-    if (this.is3DOn) return;
+    if (!this.canUse2DZoom()) return;
     const rect = this.containerRef.nativeElement.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -1174,6 +1181,11 @@ public onToggleLoopAnimate(): void {
   }
 
   onMouseEnter(): void {
+    if (!this.canUse2DZoom()) {
+      this.isZooming = false;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+      return;
+    }
     if (!this.is3DOn) {
       this.isZooming = false;
       this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
@@ -1181,10 +1193,46 @@ public onToggleLoopAnimate(): void {
   }
 
   onMouseLeave(): void {
+    if (!this.canUse2DZoom()) {
+      this.isZooming = false;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+      return;
+    }
     if (!this.is3DOn) {
       this.isZooming = false;
       this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
     }
+  }
+
+  public get showBackgroundZoomPrompt(): boolean {
+    return !this.is3DOn && this.isBackgroundSelectedInCarousel && !this.isBackgroundZoomEnabled;
+  }
+
+  public get isBackgroundSelected(): boolean {
+    return this.isBackgroundSelectedInCarousel;
+  }
+
+  enableBackgroundZoom(event?: Event): void {
+    event?.stopPropagation();
+    if (this.is3DOn || !this.isBackgroundSelectedInCarousel) return;
+    this.isBackgroundZoomEnabled = true;
+    this.setFullCanvasZoomState(true);
+    this.cd.markForCheck();
+  }
+
+  onVisualizerClick(event: MouseEvent): void {
+    if (this.is3DOn || !this.isBackgroundSelectedInCarousel) return;
+    event.stopPropagation();
+    if (this.isBackgroundZoomEnabled) {
+      this.isBackgroundZoomEnabled = false;
+      this.isZooming = false;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+      this.setFullCanvasZoomState(false);
+    } else {
+      this.isBackgroundZoomEnabled = true;
+      this.setFullCanvasZoomState(true);
+    }
+    this.cd.markForCheck();
   }
   private fetchInitialData(params: any): void {
     this.isLoading = true;
@@ -1942,6 +1990,10 @@ public onToggleLoopAnimate(): void {
 
     if (selectedFrame?.is_background) {
       this.isBackgroundSelectedInCarousel = true;
+      this.isBackgroundZoomEnabled = false;
+      this.isZooming = false;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+      this.setFullCanvasZoomState(false);
       this.update2DTexturesForSelection();
       this.cd.markForCheck();
       return;
@@ -1951,6 +2003,10 @@ public onToggleLoopAnimate(): void {
     if (!newFrameUrl) return;
 
     this.isBackgroundSelectedInCarousel = false;
+    this.isBackgroundZoomEnabled = false;
+    this.isZooming = false;
+    this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+    this.setFullCanvasZoomState(false);
     this.mainframe = newFrameUrl;
 
     this.product_img_array.forEach(img => {
@@ -2029,6 +2085,8 @@ public onToggleLoopAnimate(): void {
 
     if (!this.background_color_image_url) {
       this.isBackgroundSelectedInCarousel = false;
+      this.isBackgroundZoomEnabled = false;
+      this.setFullCanvasZoomState(false);
       if (existingIndex >= 0) {
         const updated = [...this.product_img_array];
         updated.splice(existingIndex, 1);
@@ -2059,6 +2117,8 @@ public onToggleLoopAnimate(): void {
     if (!fallback) return;
 
     this.isBackgroundSelectedInCarousel = false;
+    this.isBackgroundZoomEnabled = false;
+    this.setFullCanvasZoomState(false);
     this.mainframe = fallback;
     this.product_img_array = (this.product_img_array || []).map(img => ({
       ...img,
@@ -2072,10 +2132,34 @@ public onToggleLoopAnimate(): void {
     const frameUrl = useBackgroundOnly ? this.background_color_image_url : this.mainframe;
     if (!frameUrl) return;
     const backgroundUrl = useBackgroundOnly ? '' : this.background_color_image_url;
+    this.threeService.setZoomHoleEnabled(!useBackgroundOnly);
+    this.threeService.setFullCanvasZoom(false);
     this.threeService.updateTextures2d(frameUrl, backgroundUrl || '');
     this.update2DContainerHeightFromFrame();
     // After container resizes based on frame, refit background into frame hole
     setTimeout(() => this.threeService.refit2d(), 0);
+  }
+
+  private canUse2DZoom(): boolean {
+    if (this.is3DOn) return false;
+    if (this.isBackgroundSelectedInCarousel) {
+      return this.isBackgroundZoomEnabled;
+    }
+    return true;
+  }
+
+  private setFullCanvasZoomState(enabled: boolean): void {
+    const container = this.containerRef?.nativeElement;
+    if (enabled && container) {
+      const rect = container.getBoundingClientRect();
+      this.threeService.setZoom(rect.width / 2, rect.height / 2);
+      this.isZooming = true;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(true));
+    } else {
+      this.isZooming = false;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+    }
+    this.threeService.setFullCanvasZoom(enabled);
   }
 
   /**

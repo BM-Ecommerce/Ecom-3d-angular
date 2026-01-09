@@ -39,9 +39,15 @@
             <app-configurator [shutterdata]="shutterdata" *ngIf="this.category == 5"></app-configurator>
             <div class="product_preview" [class.fullscreen]="isFullscreen" [class.fullscreen-mobile]="isFullscreenMobile" [class.zooming]="isZooming" #visualizerContainer (mousemove)="onMouseMove($event)"
                 (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()" *ngIf="this.category != 5">
-              <div id="main-img"  #mainImg [ngClass]="{ 'view3d': is3DOn }" class="configuratorpreviewimage">
+              <div id="main-img"  #mainImg [ngClass]="{ 'view3d': is3DOn }" class="configuratorpreviewimage" (click)="onVisualizerClick($event)">
                 <canvas #visualizerCanvas></canvas>
-                <div #zoomLens class="zoom-lens" [hidden]="!isZooming"></div>
+                <div #zoomLens class="zoom-lens" [hidden]="!isZooming || isBackgroundSelected"></div>
+                <div *ngIf="showBackgroundZoomPrompt" class="zoom-overlay">
+                  <button type="button" class="zoom-overlay__button" (click)="enableBackgroundZoom($event)" aria-label="Click to zoom">
+                    <span>Click to zoom.</span>
+                    <mat-icon>zoom_in</mat-icon>
+                  </button>
+                </div>
                 <div *ngIf="is3DOn" class="visualizer-controls">
                   <button *ngIf="is3DOn && !isMobile" type="button" mat-icon-button (click)="toggleFullscreen()" aria-label="Toggle fullscreen" matTooltip="{{ isFullscreen ? 'Exit Fullscreen' : 'Fullscreen' }}" matTooltipPosition="right">
                     <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>

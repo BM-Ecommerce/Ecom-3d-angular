@@ -122,6 +122,8 @@ export class ThreeService implements OnDestroy {
     }
   >();
   private zoomHoleRect: { x: number; y: number; width: number; height: number } | null = null;
+  private zoomHoleEnabled = true;
+  private fullCanvasZoom = false;
 
   // RAF id
   private animationFrameId?: number;
@@ -2121,9 +2123,21 @@ public enableDimensions(on: boolean): void {
   }
 
   public isPointInZoomHole(x: number, y: number): boolean {
+    if (!this.zoomHoleEnabled) return true;
     if (!this.zoomHoleRect) return true;
     const { x: hx, y: hy, width, height } = this.zoomHoleRect;
     return x >= hx && x <= hx + width && y >= hy && y <= hy + height;
+  }
+
+  public setZoomHoleEnabled(enabled: boolean): void {
+    this.zoomHoleEnabled = enabled;
+    if (!enabled) {
+      this.zoomHoleRect = null;
+    }
+  }
+
+  public setFullCanvasZoom(enabled: boolean): void {
+    this.fullCanvasZoom = enabled;
   }
 
   private render(): void {
@@ -2170,24 +2184,31 @@ public enableDimensions(on: boolean): void {
         this.zoomCamera.bottom = worldY - zoomSize / 2;
         this.zoomCamera.updateProjectionMatrix();
 
-        const viewportX = lensX - lensRadius;
-        const viewportY = height - lensY - lensRadius;
+        if (this.fullCanvasZoom) {
+          this.renderer.setViewport(0, 0, width, height);
+          this.renderer.setScissor(0, 0, width, height);
+          this.renderer.setScissorTest(true);
+          this.renderer.render(this.scene, this.zoomCamera);
+        } else {
+          const viewportX = lensX - lensRadius;
+          const viewportY = height - lensY - lensRadius;
 
-        this.renderer.setViewport(
-          viewportX,
-          viewportY,
-          lensRadius * 2,
-          lensRadius * 2
-        );
-        this.renderer.setScissor(
-          viewportX,
-          viewportY,
-          lensRadius * 2,
-          lensRadius * 2
-        );
-        this.renderer.setScissorTest(true);
+          this.renderer.setViewport(
+            viewportX,
+            viewportY,
+            lensRadius * 2,
+            lensRadius * 2
+          );
+          this.renderer.setScissor(
+            viewportX,
+            viewportY,
+            lensRadius * 2,
+            lensRadius * 2
+          );
+          this.renderer.setScissorTest(true);
 
-        this.renderer.render(this.scene, this.zoomCamera);
+          this.renderer.render(this.scene, this.zoomCamera);
+        }
       }
 
       this.renderer.setScissorTest(false);
@@ -2341,6 +2362,10 @@ public enableDimensions(on: boolean): void {
     viewHeight: number,
     frameTexture: THREE.Texture
   ): void {
+    if (!this.zoomHoleEnabled) {
+      this.zoomHoleRect = null;
+      return;
+    }
     if (!this.renderer) {
       this.zoomHoleRect = null;
       return;
