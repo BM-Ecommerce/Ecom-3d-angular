@@ -2109,6 +2109,17 @@ public enableDimensions(on: boolean): void {
     this.mouseY = y;
   }
 
+  public getZoomFactor(): number {
+    return this.zoomFactor;
+  }
+
+  public setZoomFactor(value: number): void {
+    const clamped = Math.min(this.maxZoomFactor, Math.max(this.minZoomFactor, value));
+    if (clamped === this.zoomFactor) return;
+    this.zoomFactor = clamped;
+    this.render();
+  }
+
   public enableZoom(enabled: boolean): void {
     this.isZooming = enabled;
   }

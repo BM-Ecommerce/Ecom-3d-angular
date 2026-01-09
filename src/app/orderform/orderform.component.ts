@@ -304,6 +304,8 @@ hasDescriptionContent = false;
   isFullscreenMobile: boolean = false;
   private isBackgroundSelectedInCarousel = false;
   private isBackgroundZoomEnabled = false;
+  public fullCanvasZoomFactor =1;
+  private previousZoomFactor: number | null = null;
   
   private prevIs3DOn: boolean = false;
 
@@ -2151,11 +2153,19 @@ public onToggleLoopAnimate(): void {
   private setFullCanvasZoomState(enabled: boolean): void {
     const container = this.containerRef?.nativeElement;
     if (enabled && container) {
+      if (this.previousZoomFactor === null) {
+        this.previousZoomFactor = this.threeService.getZoomFactor();
+      }
+      this.threeService.setZoomFactor(this.fullCanvasZoomFactor);
       const rect = container.getBoundingClientRect();
       this.threeService.setZoom(rect.width / 2, rect.height / 2);
       this.isZooming = true;
       this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(true));
     } else {
+      if (this.previousZoomFactor !== null) {
+        this.threeService.setZoomFactor(this.previousZoomFactor);
+        this.previousZoomFactor = null;
+      }
       this.isZooming = false;
       this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
     }
