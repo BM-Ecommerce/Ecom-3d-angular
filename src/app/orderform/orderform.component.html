@@ -174,7 +174,7 @@
                     class="frame-card" 
                     [class.selected]="isSelectedFrame(product_img)" 
                     [class.hide_section]="hideFrameImage()"
-                    (click)="onFrameChange(getRawFrameUrl(product_img))">
+                    (click)="onFrameChange(product_img)">
                     
                     <img 
                       [src]="getFrameImageUrl(product_img)" 

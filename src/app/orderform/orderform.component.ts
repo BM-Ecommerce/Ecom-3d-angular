@@ -302,6 +302,7 @@ hasDescriptionContent = false;
   dimensionMode: 'on' | 'off' = 'on'; 
   isFullscreen: boolean = false;
   isFullscreenMobile: boolean = false;
+  private isBackgroundSelectedInCarousel = false;
   
   private prevIs3DOn: boolean = false;
 
@@ -516,8 +517,8 @@ hasDescriptionContent = false;
 
         if (this.is3DOn && this.background_color_image_url) {
           this.threeService.updateTextures(this.background_color_image_url);
-        } else if (!this.is3DOn && this.mainframe) {
-          this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+        } else if (!this.is3DOn) {
+          this.update2DTexturesForSelection();
         }
         this.cd.markForCheck();
       });
@@ -678,10 +679,7 @@ public onToggleLoopAnimate(): void {
   private setup2DVisualizer(): void {
     this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
     this.applyPatternRepeatSettings();
-    if (this.mainframe) {
-      this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
-      this.update2DContainerHeightFromFrame();
-    }
+    this.update2DTexturesForSelection();
   }
 
   private disable3DForMissingModel(): void {
@@ -1769,7 +1767,7 @@ public onToggleLoopAnimate(): void {
         if (this.is3DOn) {
           this.threeService.updateTextures(this.background_color_image_url);
         } else {
-          this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+          this.update2DTexturesForSelection();
         }
         this.invalidateFrameThumbnails();
         this.prepareFrameThumbnails();
@@ -1939,19 +1937,27 @@ public onToggleLoopAnimate(): void {
         }
       });
   }
-  onFrameChange(newFrameUrl: string): void {
+  onFrameChange(selectedFrame: any): void {
+    if (!selectedFrame) return;
+
+    if (selectedFrame?.is_background) {
+      this.isBackgroundSelectedInCarousel = true;
+      this.update2DTexturesForSelection();
+      this.cd.markForCheck();
+      return;
+    }
+
+    const newFrameUrl = selectedFrame?.image_url;
+    if (!newFrameUrl) return;
+
+    this.isBackgroundSelectedInCarousel = false;
     this.mainframe = newFrameUrl;
 
     this.product_img_array.forEach(img => {
       img.is_default = (img.image_url === newFrameUrl);
     });
 
-    if (this.threeService) {
-      this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
-      this.update2DContainerHeightFromFrame();
-      // After container resizes based on new frame, refit background into frame hole
-      setTimeout(() => this.threeService.refit2d(), 0);
-    }
+    this.update2DTexturesForSelection();
   }
   public getFrameImageUrl(product_img: any): string {
     const frameUrl = product_img?.image_url || '';
@@ -1982,6 +1988,9 @@ public onToggleLoopAnimate(): void {
     return product_img?.image_url || '';
   }
   public isSelectedFrame(product_img: any): boolean {
+    if (this.isBackgroundSelectedInCarousel) {
+      return !!product_img?.is_background;
+    }
     return product_img?.is_default || false;
   }
 
@@ -2019,6 +2028,7 @@ public onToggleLoopAnimate(): void {
     const existingIndex = this.product_img_array.findIndex(img => img?.is_background);
 
     if (!this.background_color_image_url) {
+      this.isBackgroundSelectedInCarousel = false;
       if (existingIndex >= 0) {
         const updated = [...this.product_img_array];
         updated.splice(existingIndex, 1);
@@ -2048,11 +2058,24 @@ public onToggleLoopAnimate(): void {
     const fallback = this.frame_default_url || this.product_img_array?.[0]?.image_url || '';
     if (!fallback) return;
 
+    this.isBackgroundSelectedInCarousel = false;
     this.mainframe = fallback;
     this.product_img_array = (this.product_img_array || []).map(img => ({
       ...img,
       is_default: img?.image_url === fallback
     }));
+  }
+
+  private update2DTexturesForSelection(): void {
+    if (!this.threeService) return;
+    const useBackgroundOnly = this.isBackgroundSelectedInCarousel;
+    const frameUrl = useBackgroundOnly ? this.background_color_image_url : this.mainframe;
+    if (!frameUrl) return;
+    const backgroundUrl = useBackgroundOnly ? '' : this.background_color_image_url;
+    this.threeService.updateTextures2d(frameUrl, backgroundUrl || '');
+    this.update2DContainerHeightFromFrame();
+    // After container resizes based on frame, refit background into frame hole
+    setTimeout(() => this.threeService.refit2d(), 0);
   }
 
   /**
