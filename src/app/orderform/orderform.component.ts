@@ -1998,6 +1998,7 @@ public onToggleLoopAnimate(): void {
       this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
       this.setFullCanvasZoomState(false);
       this.update2DTexturesForSelection();
+      this.syncBackgroundImageInCarousel();
       this.cd.markForCheck();
       return;
     }
@@ -2017,14 +2018,19 @@ public onToggleLoopAnimate(): void {
     });
 
     this.update2DTexturesForSelection();
+    this.syncBackgroundImageInCarousel();
   }
 
   private getFrameItems(): any[] {
-    return (this.product_img_array || []).filter(img => !img?.is_background);
+    return [...(this.product_img_array || [])];
   }
 
   private getCurrentFrameIndex(frames: any[]): number {
     if (!frames.length) return -1;
+    if (this.isBackgroundSelectedInCarousel) {
+      const backgroundIndex = frames.findIndex(frame => frame?.is_background);
+      if (backgroundIndex >= 0) return backgroundIndex;
+    }
     if (this.mainframe) {
       const index = frames.findIndex(frame => frame?.image_url === this.mainframe);
       if (index >= 0) return index;
