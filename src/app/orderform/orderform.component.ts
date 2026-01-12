@@ -302,6 +302,11 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   dimensionMode: 'on' | 'off' = 'on';
   isFullscreen: boolean = false;
   isFullscreenMobile: boolean = false;
+  private isBackgroundSelectedInCarousel = false;
+  private isBackgroundZoomEnabled = false;
+  public enableFrameThumbnails = true;
+  public fullCanvasZoomFactor = 1;
+  private previousZoomFactor: number | null = null;
 
   private prevIs3DOn: boolean = false;
 
@@ -516,8 +521,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
         if (this.is3DOn && this.background_color_image_url) {
           this.threeService.updateTextures(this.background_color_image_url);
-        } else if (!this.is3DOn && this.mainframe) {
-          this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+        } else if (!this.is3DOn) {
+          this.update2DTexturesForSelection();
         }
         this.cd.markForCheck();
       });
@@ -695,10 +700,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   private setup2DVisualizer(): void {
     this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
     this.applyPatternRepeatSettings();
-    if (this.mainframe) {
-      this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
-      this.update2DContainerHeightFromFrame();
-    }
+    this.update2DTexturesForSelection();
   }
 
   private disable3DForMissingModel(): void {
@@ -1148,7 +1150,13 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onMouseMove(event: MouseEvent): void {
-    if (this.is3DOn) return;
+    if (!this.canUse2DZoom()) {
+      if (this.isZooming) {
+        this.isZooming = false;
+        this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+      }
+      return;
+    }
     const rect = this.containerRef.nativeElement.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -1176,7 +1184,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onMouseWheel(event: WheelEvent): void {
-    if (this.is3DOn) return;
+    if (!this.canUse2DZoom()) return;
     const rect = this.containerRef.nativeElement.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -1193,6 +1201,11 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onMouseEnter(): void {
+    if (!this.canUse2DZoom()) {
+      this.isZooming = false;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+      return;
+    }
     if (!this.is3DOn) {
       this.isZooming = false;
       this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
@@ -1200,10 +1213,46 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onMouseLeave(): void {
+    if (!this.canUse2DZoom()) {
+      this.isZooming = false;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+      return;
+    }
     if (!this.is3DOn) {
       this.isZooming = false;
       this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
     }
+  }
+
+  public get showBackgroundZoomPrompt(): boolean {
+    return !this.is3DOn && this.isBackgroundSelectedInCarousel && !this.isBackgroundZoomEnabled;
+  }
+
+  public get isBackgroundSelected(): boolean {
+    return this.isBackgroundSelectedInCarousel;
+  }
+
+  enableBackgroundZoom(event?: Event): void {
+    event?.stopPropagation();
+    if (this.is3DOn || !this.isBackgroundSelectedInCarousel) return;
+    this.isBackgroundZoomEnabled = true;
+    this.setFullCanvasZoomState(true);
+    this.cd.markForCheck();
+  }
+
+  onVisualizerClick(event: MouseEvent): void {
+    if (this.is3DOn || !this.isBackgroundSelectedInCarousel) return;
+    event.stopPropagation();
+    if (this.isBackgroundZoomEnabled) {
+      this.isBackgroundZoomEnabled = false;
+      this.isZooming = false;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+      this.setFullCanvasZoomState(false);
+    } else {
+      this.isBackgroundZoomEnabled = true;
+      this.setFullCanvasZoomState(true);
+    }
+    this.cd.markForCheck();
   }
   private fetchInitialData(params: any): void {
     this.isLoading = true;
@@ -1694,6 +1743,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         this.background_color_image_url = "";
         this.invalidateFrameThumbnails();
         this.setupVisualizer(this.productname);
+        this.syncBackgroundImageInCarousel();
       }
       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
         this.colorid = 0;
@@ -1701,6 +1751,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         this.background_color_image_url = "";
         this.invalidateFrameThumbnails();
         this.setupVisualizer(this.productname);
+        this.syncBackgroundImageInCarousel();
       }
       if (field.fieldtypeid === 5 || field.fieldtypeid === 20) {
         this.get_relatedproduct_data();
@@ -1756,6 +1807,17 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
       const canUpdate = !isInitial || (field.optiondefault && params.color_id);
       const normalizedFieldName = this.normalizeFieldName(field.fieldname);
+      const isMaterialField = (field.fieldtypeid === 5 || field.fieldtypeid === 21) && field.level == 1;
+
+      if (!isInitial && isMaterialField) {
+        this.colorid = 0;
+        this.colorname = '';
+        this.background_color_image_url = '';
+        this.invalidateFrameThumbnails();
+        this.resetFrameToDefault();
+        this.setupVisualizer(this.productname);
+        this.syncBackgroundImageInCarousel();
+      }
 
       if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
         this.fabricid = value;
@@ -1773,10 +1835,11 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         if (this.is3DOn) {
           this.threeService.updateTextures(this.background_color_image_url);
         } else {
-          this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
+          this.update2DTexturesForSelection();
         }
         this.invalidateFrameThumbnails();
         this.prepareFrameThumbnails();
+        this.syncBackgroundImageInCarousel();
       }
 
       if (canUpdate && field.fieldtypeid === 3 && normalizedFieldName === this.curtainColorKey && selectedOption.optionimage) {
@@ -1942,19 +2005,74 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       });
   }
-  onFrameChange(newFrameUrl: string): void {
+  onFrameChange(selectedFrame: any): void {
+    if (!selectedFrame) return;
+
+    if (selectedFrame?.is_background) {
+      this.isBackgroundSelectedInCarousel = true;
+      this.isBackgroundZoomEnabled = false;
+      this.isZooming = false;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+      this.setFullCanvasZoomState(false);
+      this.update2DTexturesForSelection();
+      this.syncBackgroundImageInCarousel();
+      this.cd.markForCheck();
+      return;
+    }
+
+    const newFrameUrl = selectedFrame?.image_url;
+    if (!newFrameUrl) return;
+
+    this.isBackgroundSelectedInCarousel = false;
+    this.isBackgroundZoomEnabled = false;
+    this.isZooming = false;
+    this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+    this.setFullCanvasZoomState(false);
     this.mainframe = newFrameUrl;
 
     this.product_img_array.forEach(img => {
       img.is_default = (img.image_url === newFrameUrl);
     });
 
-    if (this.threeService) {
-      this.threeService.updateTextures2d(this.mainframe, this.background_color_image_url);
-      this.update2DContainerHeightFromFrame();
-      // After container resizes based on new frame, refit background into frame hole
-      setTimeout(() => this.threeService.refit2d(), 0);
+    this.update2DTexturesForSelection();
+    this.syncBackgroundImageInCarousel();
+  }
+
+  private getFrameItems(): any[] {
+    return [...(this.product_img_array || [])];
+  }
+
+  private getCurrentFrameIndex(frames: any[]): number {
+    if (!frames.length) return -1;
+    if (this.isBackgroundSelectedInCarousel) {
+      const backgroundIndex = frames.findIndex(frame => frame?.is_background);
+      if (backgroundIndex >= 0) return backgroundIndex;
     }
+    if (this.mainframe) {
+      const index = frames.findIndex(frame => frame?.image_url === this.mainframe);
+      if (index >= 0) return index;
+    }
+    const defaultIndex = frames.findIndex(frame => frame?.is_default);
+    return defaultIndex >= 0 ? defaultIndex : 0;
+  }
+
+  private switchFrameByStep(step: number): void {
+    const frames = this.getFrameItems();
+    if (frames.length < 2) return;
+    const currentIndex = this.getCurrentFrameIndex(frames);
+    const startIndex = currentIndex >= 0 ? currentIndex : 0;
+    const nextIndex = (startIndex + step + frames.length) % frames.length;
+    this.onFrameChange(frames[nextIndex]);
+  }
+
+  onPrevFrameClick(event?: MouseEvent): void {
+    event?.stopPropagation();
+    this.switchFrameByStep(-1);
+  }
+
+  onNextFrameClick(event?: MouseEvent): void {
+    event?.stopPropagation();
+    this.switchFrameByStep(1);
   }
   public getFrameImageUrl(product_img: any): string {
     const frameUrl = product_img?.image_url || '';
@@ -1985,6 +2103,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     return product_img?.image_url || '';
   }
   public isSelectedFrame(product_img: any): boolean {
+    if (this.isBackgroundSelectedInCarousel) {
+      return !!product_img?.is_background;
+    }
     return product_img?.is_default || false;
   }
 
@@ -1998,6 +2119,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private prepareFrameThumbnails(): void {
+    if (!this.enableFrameThumbnails) return;
     if (!this.background_color_image_url || !this.product_img_array?.length) return;
     const bg = this.background_color_image_url;
     for (const img of this.product_img_array) {
@@ -2016,6 +2138,97 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
           this.cd.markForCheck();
         });
     }
+  }
+
+  private syncBackgroundImageInCarousel(): void {
+    if (!this.enableFrameThumbnails) return;
+    const existingIndex = this.product_img_array.findIndex(img => img?.is_background);
+
+    if (!this.background_color_image_url) {
+      this.isBackgroundSelectedInCarousel = false;
+      this.isBackgroundZoomEnabled = false;
+      this.setFullCanvasZoomState(false);
+      if (existingIndex >= 0) {
+        const updated = [...this.product_img_array];
+        updated.splice(existingIndex, 1);
+        this.product_img_array = updated;
+        this.cd.markForCheck();
+      }
+      return;
+    }
+
+    const backgroundEntry = {
+      image_url: this.background_color_image_url,
+      is_default: false,
+      is_background: true
+    };
+
+    if (existingIndex >= 0) {
+      const updated = [...this.product_img_array];
+      updated[existingIndex] = { ...updated[existingIndex], ...backgroundEntry };
+      this.product_img_array = updated;
+    } else {
+      this.product_img_array = [...this.product_img_array, backgroundEntry];
+    }
+    this.cd.markForCheck();
+  }
+
+  private resetFrameToDefault(): void {
+    const fallback = this.frame_default_url || this.product_img_array?.[0]?.image_url || '';
+    if (!fallback) return;
+
+    this.isBackgroundSelectedInCarousel = false;
+    this.isBackgroundZoomEnabled = false;
+    this.setFullCanvasZoomState(false);
+    this.mainframe = fallback;
+    this.product_img_array = (this.product_img_array || []).map(img => ({
+      ...img,
+      is_default: img?.image_url === fallback
+    }));
+  }
+
+  private update2DTexturesForSelection(): void {
+    if (!this.threeService) return;
+    const useBackgroundOnly = this.isBackgroundSelectedInCarousel;
+    const frameUrl = useBackgroundOnly ? this.background_color_image_url : this.mainframe;
+    if (!frameUrl) return;
+    const backgroundUrl = useBackgroundOnly ? '' : this.background_color_image_url;
+    this.threeService.setZoomHoleEnabled(!useBackgroundOnly);
+    this.threeService.setFullCanvasZoom(false);
+    this.threeService.updateTextures2d(frameUrl, backgroundUrl || '');
+    this.update2DContainerHeightFromFrame();
+    // After container resizes based on frame, refit background into frame hole
+    setTimeout(() => this.threeService.refit2d(), 0);
+  }
+
+  private canUse2DZoom(): boolean {
+    if (this.is3DOn) return false;
+    if (this.isBackgroundSelectedInCarousel) {
+      return this.isBackgroundZoomEnabled;
+    }
+    return true;
+  }
+
+  private setFullCanvasZoomState(enabled: boolean): void {
+    const container = this.containerRef?.nativeElement;
+    if (enabled && container) {
+      if (this.previousZoomFactor === null) {
+        this.previousZoomFactor = this.threeService.getZoomFactor();
+      }
+      this.threeService.setZoomFactor(this.fullCanvasZoomFactor);
+      const rect = container.getBoundingClientRect();
+      this.threeService.setZoom(rect.width / 2, rect.height / 2);
+      this.isZooming = true;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(true));
+    } else {
+      if (this.previousZoomFactor !== null) {
+        this.threeService.setZoomFactor(this.previousZoomFactor);
+        this.previousZoomFactor = null;
+      }
+      this.isZooming = false;
+      this.ngZone.runOutsideAngular(() => this.threeService.enableZoom(false));
+    }
+    this.threeService.setFullCanvasZoom(enabled);
   }
 
   /**

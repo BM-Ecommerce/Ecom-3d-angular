@@ -11,9 +11,7 @@ export const environment = {
   apiKey: '0d5b2abe-d707-4eb3-a7cb-3f05a5e5d3fb',
   apiName: 'ECOMMERCE',
   site: 'https://blindssoftware.com',
-  // loaderMode: 'overlay' uses full-screen overlay; 'topbar' uses thin top progress
   loaderMode: 'topbar' as 'overlay' | 'topbar',
-  // Toggle to completely disable loader UI and tracking
   loaderEnabled: true
 };
 
