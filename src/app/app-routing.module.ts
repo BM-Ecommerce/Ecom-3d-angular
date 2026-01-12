@@ -8,11 +8,12 @@ const routes: Routes = [
   { path: ':product_id/:product/:fabric/:fabric_id/:color_id/:pricing_group/:supplier/:cart_productid', component: OrderformComponent },
   { path: ':product_id/:fabric_id/:cart_productid', component: OrderformComponent },
   { path: '404', component: NotFoundComponent },
-  { path: '**', redirectTo: '404' }
+  // For WooCommerce SEO URLs - load OrderformComponent and use window.blindmatrixConfig
+  { path: '**', component: OrderformComponent }
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes)],
+  imports: [RouterModule.forRoot(routes, { initialNavigation: 'disabled' })],
   exports: [RouterModule]
 })
-export class AppRoutingModule {}
+export class AppRoutingModule { }

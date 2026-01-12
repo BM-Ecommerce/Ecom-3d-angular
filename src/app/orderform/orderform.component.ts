@@ -156,8 +156,8 @@ interface ProductOption {
   pricegroupid: string;
   optioncode?: string;
   optionquantity?: any;
-  unitcost?:any;
-  hasprice?:any;
+  unitcost?: any;
+  hasprice?: any;
   forchildfieldoptionlinkid?: string;
 }
 interface SelectProductOption {
@@ -244,7 +244,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   showFractions = false;
   product_details_arr: Record<string, string> = {};
   product_specs = '';
-  shutter_product_details :any;
+  shutter_product_details: any;
   ecomproductname = '';
   product_description = '';
   unit_type_data: any[] = [];
@@ -260,8 +260,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   isScrolled = false;
   unittypename = "";
   hasProspecContent = false;
-hasDescriptionContent = false;
-  relatedframeimage:string = ""
+  hasDescriptionContent = false;
+  relatedframeimage: string = ""
   netpricecomesfrom = "";
   is3DOn = true;
   recipeid: number = 0;
@@ -273,36 +273,36 @@ hasDescriptionContent = false;
   freesameple_status!: number | boolean;
   product_id!: number | string;
   freesample_price!: number | string;
-  shutterdata:any;
-  colorurl: string="";
-  shutter_type_name:string="";
-  hinge_colorurl :  string ="";
-  midrails: string="";
-  no_of_panels: string="";
-  slatsize : string="";
-  tiltrod : string="";
+  shutterdata: any;
+  colorurl: string = "";
+  shutter_type_name: string = "";
+  hinge_colorurl: string = "";
+  midrails: string = "";
+  no_of_panels: string = "";
+  slatsize: string = "";
+  tiltrod: string = "";
   siteurl = environment.site;
   readonly frameColorKey = 'framecolour';
   readonly curtainColorKey = 'curtaincolour';
-  selected_img_option:number = 0;
-  selected_frame_option:number = 0;
-  selected_curtain_option:number = 0;
+  selected_img_option: number = 0;
+  selected_frame_option: number = 0;
+  selected_curtain_option: number = 0;
   selected_color_option: any = null;
   selected_framecolor_option: any = null;
   selected_curtaincolor_option: any = null;
-  selected_list_data:any = {};
-  shutter_selected_img_options:any={};
-  list_value:string = "list";
-  shutter_color_list_value:string="list";
-  shutter_hinge_color_list_value:string="list";
-  hinge_color_field_names:any[] = ['hingecolors','hingecolour','hingecolours'];
-  color_field_names:any[] = ['colours','colour','color'];
+  selected_list_data: any = {};
+  shutter_selected_img_options: any = {};
+  list_value: string = "list";
+  shutter_color_list_value: string = "list";
+  shutter_hinge_color_list_value: string = "list";
+  hinge_color_field_names: any[] = ['hingecolors', 'hingecolour', 'hingecolours'];
+  color_field_names: any[] = ['colours', 'colour', 'color'];
   enableSelectSearch: boolean = true;
   showDimensionsToggle: boolean = false;
-  dimensionMode: 'on' | 'off' = 'on'; 
+  dimensionMode: 'on' | 'off' = 'on';
   isFullscreen: boolean = false;
   isFullscreenMobile: boolean = false;
-  
+
   private prevIs3DOn: boolean = false;
 
   private updateShowDimensionsToggle(): void {
@@ -337,15 +337,15 @@ hasDescriptionContent = false;
   }
   get_relatedproduct_data() {
     this.relatedproducts = {
-      fabricid: this.fabricid,            
-      colorid: this.colorid || 0,         
-      routeParams: this.routeParams,      
-      fabricFieldType: this.fabricFieldType,  
+      fabricid: this.fabricid,
+      colorid: this.colorid || 0,
+      routeParams: this.routeParams,
+      fabricFieldType: this.fabricFieldType,
       siteurl: this.siteurl,
-      relatedframeimage:this.relatedframeimage,
-      currencySymbol:this.currencySymbol,         
+      relatedframeimage: this.relatedframeimage,
+      currencySymbol: this.currencySymbol,
       product_id: this.product_id,
-      ecomproductname:this.ecomproductname        
+      ecomproductname: this.ecomproductname
     };
   }
   inchfraction_array: FractionOption[] = [
@@ -421,7 +421,7 @@ hasDescriptionContent = false;
   v4_product_visualizer_page = '';
   fieldscategoryname = '';
   productslug = '';
-  iconname= "roller-blinds";
+  iconname = "roller-blinds";
   fabricid = 0;
   colorid = 0;
   matmapid = 0;
@@ -436,8 +436,8 @@ hasDescriptionContent = false;
   previousFormValue: any;
   apiUrl = '';
   img_file_path_url = '';
-  imgpath = environment.apiUrl+'/api/public/storage/attachments/'+environment.apiName+'/material/colour/';
-  frame_path = environment.apiUrl +'/api/public/storage/';
+  imgpath = environment.apiUrl + '/api/public/storage/attachments/' + environment.apiName + '/material/colour/';
+  frame_path = environment.apiUrl + '/api/public/storage/';
   parameters_data: ProductField[] = [];
   option_data: Record<number, ProductOption[]> = {};
   selected_option_data: SelectProductOption[] = [];
@@ -447,8 +447,8 @@ hasDescriptionContent = false;
   pricegroup: string = "";
   show_image_icons = false;
   has3DModel = false;
-  chosenAccessoriesFieldId:number = 0;
-  chosenAccessoriesOptionId:string = "";
+  chosenAccessoriesFieldId: number = 0;
+  chosenAccessoriesOptionId: string = "";
   public grossPrice: string | null = null;
   public isCalculatingPrice = true;
   grossPricenum: number = 0;
@@ -456,24 +456,24 @@ hasDescriptionContent = false;
   private rulesorderitem: any[] = [];
   public showFramesInMobile = false;
   customOptions: any = {
-      loop: false,
-      mouseDrag: true,
-      touchDrag: true,
-      autoWidth: false,
-      pullDrag: true,
-      dots: false,
-      navSpeed: 700,
-      navText: ['<', '>'],
-      nav: false,
-      // Explicit sizing so Owl doesn't split stage into 3 equal widths that look like autoWidth
-      items: 5,
-      responsive: {
-        0: { items: 2 },
-        480: { items: 3 },
-        768: { items: 4 },
-        1024: { items: 5 }
-      }
-    };
+    loop: false,
+    mouseDrag: true,
+    touchDrag: true,
+    autoWidth: false,
+    pullDrag: true,
+    dots: false,
+    navSpeed: 700,
+    navText: ['<', '>'],
+    nav: false,
+    // Explicit sizing so Owl doesn't split stage into 3 equal widths that look like autoWidth
+    items: 5,
+    responsive: {
+      0: { items: 2 },
+      480: { items: 3 },
+      768: { items: 4 },
+      1024: { items: 5 }
+    }
+  };
   constructor(
     private apiService: ApiService,
     private fb: FormBuilder,
@@ -541,6 +541,23 @@ hasDescriptionContent = false;
         };
         this.fetchInitialData(params);
       });
+    } else if ((window as any).blindmatrixConfig) {
+      // WooCommerce SEO integration - read from injected config
+      this.img_file_path_url = environment.apiUrl + '/api/public/';
+      const config = (window as any).blindmatrixConfig;
+      const params = {
+        product_id: config.productId,
+        fabric_id: config.fabricId,
+        color_id: config.colorId,
+        pricing_group: config.groupId || config.pricingGroup || 0,
+        supplier: config.supplierId || 0,
+        cart_productid: config.cartProductId || 0,
+        api_url: environment.apiUrl,
+        api_key: environment.apiKey,
+        api_name: environment.apiName,
+        site: config.siteUrl || environment.site
+      };
+      this.fetchInitialData(params);
     } else if (isLocalhost) {
       this.img_file_path_url = environment.apiUrl + '/api/public/';
       this.route.queryParams.pipe(
@@ -617,7 +634,7 @@ hasDescriptionContent = false;
       this.wheelListener = handler;
     });
   }
-  
+
   onAnimate() {
     this.threeService.toggleAnimate();
     this.registerProductIcon();
@@ -625,26 +642,26 @@ hasDescriptionContent = false;
   get isAnimateOpen(): boolean {
     return this.threeService.isAnimateOpen;
   }
-  get hideAnimation(): boolean{
+  get hideAnimation(): boolean {
     return this.threeService.hideAnimation;
   }
   onStopAnimate(): void {
     this.threeService.stopAll();
   }
   onLoopAnimate(): void {
-   this.threeService.loopAnimate();
-  }
-  
-public onToggleLoopAnimate(): void {
-
-  if (this.isLooping) {
-    this.threeService.stopAll();
-    this.isLooping = false;
-  } else {
     this.threeService.loopAnimate();
-    this.isLooping = true;
   }
-}
+
+  public onToggleLoopAnimate(): void {
+
+    if (this.isLooping) {
+      this.threeService.stopAll();
+      this.isLooping = false;
+    } else {
+      this.threeService.loopAnimate();
+      this.isLooping = true;
+    }
+  }
   private setupVisualizer(productname: string): void {
     if (!this.canvasRef || !this.containerRef) return;
 
@@ -743,7 +760,7 @@ public onToggleLoopAnimate(): void {
     if (this.is3DOn && this.background_color_image_url) {
       this.threeService.updateTextures(this.background_color_image_url);
     }
-     this.registerProductIcon();
+    this.registerProductIcon();
     if (this.is3DOn) {
       if (this.mainImgRef?.nativeElement) {
         this.mainImgRef.nativeElement.style.removeProperty('height');
@@ -792,7 +809,7 @@ public onToggleLoopAnimate(): void {
   private applyPatternRepeatSettings(): void {
     this.patternRepeatChange$.next();
   }
-  
+
   private isNativeFullscreen(): boolean {
     const d: any = document as any;
     return !!(document.fullscreenElement || d.webkitFullscreenElement || d.msFullscreenElement);
@@ -985,7 +1002,7 @@ public onToggleLoopAnimate(): void {
     try {
       if (!this.mainframe || this.is3DOn) return;
       // Only apply on mobile/tablet
-    
+
       const hostEl = this.mainImgRef?.nativeElement;
       if (!hostEl) return;
       const img = new Image();
@@ -1202,17 +1219,17 @@ public onToggleLoopAnimate(): void {
           this.productname = data.label;
           this.productslug = this.productname.toLowerCase().replace(/ /g, '-');
           this.updateProductTitle();
-          if(this.productslug.toLowerCase().includes('roller')){
-            this.iconname ="roller-blinds";
-          }else if(this.productslug.toLowerCase().includes('vertical')){
-            this.iconname ="vertical-blinds";
-          }else if(this.productslug.toLowerCase().includes('venetian') || this.productslug.toLowerCase().includes('fauxwood')){
-            this.iconname ="venetian-blinds";
-          }else{
-            this.iconname ="roller-blinds";
+          if (this.productslug.toLowerCase().includes('roller')) {
+            this.iconname = "roller-blinds";
+          } else if (this.productslug.toLowerCase().includes('vertical')) {
+            this.iconname = "vertical-blinds";
+          } else if (this.productslug.toLowerCase().includes('venetian') || this.productslug.toLowerCase().includes('fauxwood')) {
+            this.iconname = "venetian-blinds";
+          } else {
+            this.iconname = "roller-blinds";
           }
           this.registerProductIcon();
-            
+
           this.productdescription = data.pi_productdescription;
           this.pei_prospec = data.pei_prospec;
           this.hasProspecContent = this.hasContent(this.pei_prospec);
@@ -1228,10 +1245,10 @@ public onToggleLoopAnimate(): void {
           this.recipeid = data.recipeid;
           this.freesameple_status = data?.pei_ecomFreeSample ?? 0;
           this.product_id = params?.product_id ?? this.route.snapshot.params['product_id'],
-          this.freesample_price = data?.pei_ecomsampleprice ?? 0;
+            this.freesample_price = data?.pei_ecomsampleprice ?? 0;
           this.get_freesample();
-          this.relatedframeimage =  data?.pi_frameimage ?? "";
-         
+          this.relatedframeimage = data?.pi_frameimage ?? "";
+
           let productBgImages: string[] = [];
           try {
             productBgImages = JSON.parse(data.pi_backgroundimage || '[]');
@@ -1312,8 +1329,8 @@ public onToggleLoopAnimate(): void {
           this.markDerivedDirty();
           this.apiUrl = params.api_url;
           this.routeParams = params;
-        this.chosenAccessoriesFieldId = this.routeParams.fabric_id;
-        this.chosenAccessoriesOptionId = this.routeParams.pricing_group;
+          this.chosenAccessoriesFieldId = this.routeParams.fabric_id;
+          this.chosenAccessoriesOptionId = this.routeParams.pricing_group;
           this.netpricecomesfrom = response.netpricecomesfrom;
           this.costpricecomesfrom = response.costpricecomesfrom;
           this.initializeFormControls();
@@ -1324,9 +1341,9 @@ public onToggleLoopAnimate(): void {
           this.dropField = this.parameters_data.find(f => [9, 10, 12, 32].includes(f.fieldtypeid));
           this.unitField = this.parameters_data.find(f => f.fieldtypeid === 34);
           this.get_freesample();
-		      this.show_image_icons = true;
-          if(2 == this.category){
-                this.show_image_icons = false;
+          this.show_image_icons = true;
+          if (2 == this.category) {
+            this.show_image_icons = false;
           }
           return forkJoin({
             optionData: this.loadOptionData(params),
@@ -1619,8 +1636,8 @@ public onToggleLoopAnimate(): void {
           if (control) {
             let valueToSet: any;
             // Set option default in Accessories type on page load.
-            if('single_view' != this.routeParams?.fabric && 2 == this.category && this.chosenAccessoriesFieldId == field.fieldid){
-                field.optiondefault = this.chosenAccessoriesOptionId;
+            if ('single_view' != this.routeParams?.fabric && 2 == this.category && this.chosenAccessoriesFieldId == field.fieldid) {
+              field.optiondefault = this.chosenAccessoriesOptionId;
             }
             if (field.fieldtypeid === 3 && field.selection == 1) {
               valueToSet = field.optiondefault
@@ -1685,14 +1702,14 @@ public onToggleLoopAnimate(): void {
         this.invalidateFrameThumbnails();
         this.setupVisualizer(this.productname);
       }
-      if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
+      if (field.fieldtypeid === 5 || field.fieldtypeid === 20) {
         this.get_relatedproduct_data();
       }
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       this.get_freesample();
-      this.setShutterObject(field,null);
-   
+      this.setShutterObject(field, null);
+
       return;
     }
 
@@ -1711,23 +1728,23 @@ public onToggleLoopAnimate(): void {
         takeUntil(this.destroy$)
       ).subscribe(() => {
         // Accessories Type.
-        if('single_view' != this.routeParams?.fabric && 2 == this.category){
-            const selected_accessories_data = this.option_data[this.chosenAccessoriesFieldId];
-            if(selected_accessories_data.length > 0){
-                var chosen_accessories_list:any = [];
-                if(selected_accessories_data){
-                  chosen_accessories_list = selected_accessories_data.filter(opt => opt.optionid == this.chosenAccessoriesOptionId);
-                }
-                if(chosen_accessories_list[0].optionimage){
-                  this.threeService.updateTextures2d(this.apiUrl + '/api/public' + chosen_accessories_list[0].optionimage, ""); 
-                }else{
-                  this.threeService.updateTextures2d("assets/no-image.jpg", "");
-                }
+        if ('single_view' != this.routeParams?.fabric && 2 == this.category) {
+          const selected_accessories_data = this.option_data[this.chosenAccessoriesFieldId];
+          if (selected_accessories_data.length > 0) {
+            var chosen_accessories_list: any = [];
+            if (selected_accessories_data) {
+              chosen_accessories_list = selected_accessories_data.filter(opt => opt.optionid == this.chosenAccessoriesOptionId);
+            }
+            if (chosen_accessories_list[0].optionimage) {
+              this.threeService.updateTextures2d(this.apiUrl + '/api/public' + chosen_accessories_list[0].optionimage, "");
+            } else {
+              this.threeService.updateTextures2d("assets/no-image.jpg", "");
+            }
           }
-      }
-        if(this.category == 5){
+        }
+        if (this.category == 5) {
           const chosenOptions = selectedOptions.length ? selectedOptions[selectedOptions.length - 1] : null;
-          this.setShutterObject(field,chosenOptions);
+          this.setShutterObject(field, chosenOptions);
         }
         this.updateFieldValues(field, selectedOptions, 'Array.isArrayOptions');
         this.cd.markForCheck();
@@ -1736,7 +1753,7 @@ public onToggleLoopAnimate(): void {
     } else {
       const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
       if (!selectedOption) return;
-      
+
       const canUpdate = !isInitial || (field.optiondefault && params.color_id);
       const normalizedFieldName = this.normalizeFieldName(field.fieldname);
 
@@ -1773,19 +1790,19 @@ public onToggleLoopAnimate(): void {
         this.FrameLabelName = field.fieldname;
       }
       // Accessories Type.
-      if('single_view' != this.routeParams?.fabric && 2 == this.category){
-            const selected_accessories_data = this.option_data[this.chosenAccessoriesFieldId];
-            if(selected_accessories_data.length > 0){
-                var chosen_accessories_list:any = [];
-                if(selected_accessories_data){
-                  chosen_accessories_list = selected_accessories_data.filter(opt => opt.optionid == this.chosenAccessoriesOptionId);
-                }
-                if(chosen_accessories_list[0].optionimage){
-                  this.threeService.updateTextures2d(this.apiUrl + '/api/public' + chosen_accessories_list[0].optionimage, ""); 
-                }else{
-                  this.threeService.updateTextures2d("assets/no-image.jpg", "");
-                }
+      if ('single_view' != this.routeParams?.fabric && 2 == this.category) {
+        const selected_accessories_data = this.option_data[this.chosenAccessoriesFieldId];
+        if (selected_accessories_data.length > 0) {
+          var chosen_accessories_list: any = [];
+          if (selected_accessories_data) {
+            chosen_accessories_list = selected_accessories_data.filter(opt => opt.optionid == this.chosenAccessoriesOptionId);
           }
+          if (chosen_accessories_list[0].optionimage) {
+            this.threeService.updateTextures2d(this.apiUrl + '/api/public' + chosen_accessories_list[0].optionimage, "");
+          } else {
+            this.threeService.updateTextures2d("assets/no-image.jpg", "");
+          }
+        }
       }
       const shouldUpdatePriceGroup = (field.fieldtypeid === 5 && field.level == 1 && selectedOption.pricegroupid) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 1);
       let preSublist$ = of(null);
@@ -1851,24 +1868,24 @@ public onToggleLoopAnimate(): void {
           }
 
           this.freesample = { ...this.freesample, fabricid: this.fabricid, color_id: this.colorid };
-          if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
-             this.get_relatedproduct_data();
+          if (field.fieldtypeid === 5 || field.fieldtypeid === 20) {
+            this.get_relatedproduct_data();
           }
-          if(this.category == 5){
-             this.setShutterObject(field,selectedOption);
-             this.setShutterImage();
+          if (this.category == 5) {
+            this.setShutterObject(field, selectedOption);
+            this.setShutterImage();
           }
           this.cd.markForCheck();
         });
     }
-    if(2 == this.category && 'single_view' != this.routeParams?.fabric){
+    if (2 == this.category && 'single_view' != this.routeParams?.fabric) {
       this.updateProductTitle();
     }
   }
   buildVisualizerUrl(product: any) {
     const slug1 = product.productname.toLowerCase().replace(/ /g, '-');
     const slug2 = (product.fabricname + '-' + product.colorname)
-                    .toLowerCase().replace(/ /g, '-');
+      .toLowerCase().replace(/ /g, '-');
 
     return `${this.siteurl}/visualizer/${this.product_id}/${slug1}/${slug2}/${product.fd_id}/${product.cd_id}/${product.groupid}/${product.supplierid}/${this.routeParams.cart_productid}`;
   }
@@ -2155,7 +2172,7 @@ public onToggleLoopAnimate(): void {
                 this.removeFieldSafely(subfield.fieldid);
                 return null;
               }
-              
+
               this.option_data[subfield.fieldid] = filteredOptions;
               this.markDerivedDirty();
               // Preserve existing search control when reloading same subfield; otherwise create
@@ -2384,7 +2401,7 @@ public onToggleLoopAnimate(): void {
     const fieldInState = this.parameters_data.find(
       f => f.fieldid === field.fieldid && f.allparentFieldId === field.allparentFieldId
     );
- 
+
     const targetField = fieldInState || field;
     const control = this.orderForm.get(`field_${targetField.fieldid}`);
     const currentValue = control ? control.value : null;
@@ -2446,7 +2463,7 @@ public onToggleLoopAnimate(): void {
     }
     if (currentValue === null || currentValue === undefined || currentValue === '' ||
       (Array.isArray(currentValue) && currentValue.length === 0)) {
-  
+
       if (field.fieldtypeid == 34 || field.fieldtypeid == 17 || field.fieldtypeid == 13) {
         targetField.labelname = targetField.fieldname ?? '';
         targetField.valueid = selectedOption?.fieldoptionlinkid ? String(selectedOption.fieldoptionlinkid) : '';
@@ -2492,7 +2509,7 @@ public onToggleLoopAnimate(): void {
         targetField.valueid = selectedOption?.fieldoptionlinkid ? String(selectedOption.fieldoptionlinkid) : '';
 
         targetField.optionid = String(selectedOption.optionid);
-        if ([17, 13,34].includes(field.fieldtypeid)) {
+        if ([17, 13, 34].includes(field.fieldtypeid)) {
           targetField.value = String(selectedOption.optionid);
           targetField.valuename = String(selectedOption.optionname);
         } else {
@@ -2559,38 +2576,38 @@ public onToggleLoopAnimate(): void {
       this.selected_color_option = pickedOption || null;
     }
 
-    if(field.fieldtypeid == 3){
+    if (field.fieldtypeid == 3) {
       // Shutter
-      if(this.category == 5){
-          const chosen_field_name = this.normalizeFieldName(field.fieldname);
-          if(this.hinge_color_field_names.includes(chosen_field_name)){
-            this.shutter_selected_img_options.hingecolour = Number(targetField.optionid) || 0;
-          }
-          if(this.color_field_names.includes(chosen_field_name)){
-            this.shutter_selected_img_options.color = Number(targetField.optionid) || 0;
-          }
-     }else{
-       const chosen_field_name = this.normalizeFieldName(field.fieldname);
-        if(chosen_field_name === this.frameColorKey){
-          this.selected_frame_option = Number(targetField.optionid) || 0;
-           const pickedOption = Array.isArray(selectedOption)
-          ? selectedOption[selectedOption.length - 1]
-          : selectedOption;
-         this.selected_framecolor_option = pickedOption || null;
+      if (this.category == 5) {
+        const chosen_field_name = this.normalizeFieldName(field.fieldname);
+        if (this.hinge_color_field_names.includes(chosen_field_name)) {
+          this.shutter_selected_img_options.hingecolour = Number(targetField.optionid) || 0;
         }
-        if(chosen_field_name === this.curtainColorKey){
+        if (this.color_field_names.includes(chosen_field_name)) {
+          this.shutter_selected_img_options.color = Number(targetField.optionid) || 0;
+        }
+      } else {
+        const chosen_field_name = this.normalizeFieldName(field.fieldname);
+        if (chosen_field_name === this.frameColorKey) {
+          this.selected_frame_option = Number(targetField.optionid) || 0;
+          const pickedOption = Array.isArray(selectedOption)
+            ? selectedOption[selectedOption.length - 1]
+            : selectedOption;
+          this.selected_framecolor_option = pickedOption || null;
+        }
+        if (chosen_field_name === this.curtainColorKey) {
           this.selected_curtain_option = Number(targetField.optionid) || 0;
-            const pickedOption = Array.isArray(selectedOption)
-          ? selectedOption[selectedOption.length - 1]
-          : selectedOption;
+          const pickedOption = Array.isArray(selectedOption)
+            ? selectedOption[selectedOption.length - 1]
+            : selectedOption;
           this.selected_curtaincolor_option = pickedOption || null;
         }
-     }
+      }
     }
-     // Accessories
-     if(field.fieldtypeid == 3 && this.category == 2){
-        this.selected_list_data[field.fieldid] = this.accessoriesImageSelectedData(field,targetField);
-     }
+    // Accessories
+    if (field.fieldtypeid == 3 && this.category == 2) {
+      this.selected_list_data[field.fieldid] = this.accessoriesImageSelectedData(field, targetField);
+    }
     this.get_freesample()
   }
 
@@ -2627,7 +2644,7 @@ public onToggleLoopAnimate(): void {
       if (values[key] !== this.previousFormValue[key]) {
         const fieldId = parseInt(key.replace('field_', ''), 10);
         const field = this.parameters_data.find(f => f.fieldid === fieldId);
-   
+
         if (field && [3, 5, 20, 21].includes(field.fieldtypeid)) {
           // Trigger selection change handler
           this.handleOptionSelectionChange(params, field, values[key], false);
@@ -2830,9 +2847,9 @@ public onToggleLoopAnimate(): void {
     }
     this.jsondata = this.orderitemdata(false);
     //console.log(this.jsondata);
-   
 
-    if (!this.routeParams || !this.routeParams.site || !this.routeParams.cart_productid) {
+
+    if (!this.routeParams || !this.routeParams.site || this.routeParams.cart_productid === undefined || this.routeParams.cart_productid === null) {
       this.errorMessage = 'Missing required route parameters for cart submission.';
       this.isSubmitting = false;
       this.cd.markForCheck();
@@ -2848,7 +2865,7 @@ public onToggleLoopAnimate(): void {
       visualizerImage = this.threeService.getCanvasDataURL(); // string already
     }
 
-    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid,Number(this.product_id), environment.site,
+    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid, Number(this.product_id), this.routeParams.site,
       this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname),
       this.pricedata,
       this.vatpercentage,
@@ -2881,7 +2898,7 @@ public onToggleLoopAnimate(): void {
               popup: 'small-toast'
             }
           }).then(() => {
-            window.location.href = environment.site + '/cart';
+            window.location.href = this.routeParams.site + '/cart';
           });
 
         } else {
@@ -2908,7 +2925,7 @@ public onToggleLoopAnimate(): void {
     } else if (colorname) {
       extras = colorname;
     }
-    if(2 == this.category && 'single_view' != this.routeParams?.fabric){
+    if (2 == this.category && 'single_view' != this.routeParams?.fabric) {
       extras = this.routeParams?.fabric.replace(/-/g, ' ');
     }
     return extras ? `${ecomproductname} - ${extras}` : ecomproductname;
@@ -3271,77 +3288,77 @@ public onToggleLoopAnimate(): void {
       i.subchild = this.cleanSubchild(i.subchild);
       return i;
     });
-  }	 
-getClassNameAccessories(field: any,list_field:boolean = false): string {
-    if('single_view' != this.routeParams?.fabric && list_field && 2 == this.category && field.fieldid == this.chosenAccessoriesFieldId){
-       return 'hide_section';
-    } 
-    if('single_view' != this.routeParams?.fabric && 2 == this.category && field.masterparentfieldid != this.chosenAccessoriesFieldId){
+  }
+  getClassNameAccessories(field: any, list_field: boolean = false): string {
+    if ('single_view' != this.routeParams?.fabric && list_field && 2 == this.category && field.fieldid == this.chosenAccessoriesFieldId) {
+      return 'hide_section';
+    }
+    if ('single_view' != this.routeParams?.fabric && 2 == this.category && field.masterparentfieldid != this.chosenAccessoriesFieldId) {
       return 'hide_section';
     }
     return '';
   }
-  hideFrameImage():boolean{
-    if('single_view' != this.routeParams?.fabric && 2 == this.category){
+  hideFrameImage(): boolean {
+    if ('single_view' != this.routeParams?.fabric && 2 == this.category) {
       return true;
     }
     return false;
   }
 
-  private setShutterObject(field:any,selectedOption:any): any {
-    if(21 == field.fieldtypeid){
+  private setShutterObject(field: any, selectedOption: any): any {
+    if (21 == field.fieldtypeid) {
       if (Array.isArray(this.shutter_product_details)) {
-          const shutter_type = this.shutter_product_details.find(
-            d => String(d.shuttertypeid) === String(field.optionid)
-          );
-          if(shutter_type?.shuttertypes && shutter_type?.shuttertypename){
-              this.shutter_type_name = shutter_type.shuttertypename;
-          }
+        const shutter_type = this.shutter_product_details.find(
+          d => String(d.shuttertypeid) === String(field.optionid)
+        );
+        if (shutter_type?.shuttertypes && shutter_type?.shuttertypename) {
+          this.shutter_type_name = shutter_type.shuttertypename;
+        }
       }
     }
     const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
     // Color URL
-    if(this.color_field_names.includes(chosen_field_name)){
-        this.colorurl = selectedOption ? this.apiUrl + '/api/public' + selectedOption?.optionimage:'assets/default-shutter-img.png';
+    if (this.color_field_names.includes(chosen_field_name)) {
+      this.colorurl = selectedOption ? this.apiUrl + '/api/public' + selectedOption?.optionimage : 'assets/default-shutter-img.png';
     }
-   // Hinge Color URL
-    if(this.hinge_color_field_names.includes(chosen_field_name)){
-          this.hinge_colorurl = selectedOption ? this.apiUrl + '/api/public' + selectedOption?.optionimage:'';
+    // Hinge Color URL
+    if (this.hinge_color_field_names.includes(chosen_field_name)) {
+      this.hinge_colorurl = selectedOption ? this.apiUrl + '/api/public' + selectedOption?.optionimage : '';
     }
     // Midrails
-    if('midrails' == chosen_field_name){
-       this.midrails = field.value;
+    if ('midrails' == chosen_field_name) {
+      this.midrails = field.value;
     }
     // Number of panels
-    if('noofpanel' == chosen_field_name){
-       this.no_of_panels = field.value;
+    if ('noofpanel' == chosen_field_name) {
+      this.no_of_panels = field.value;
     }
     // Slat size
-    if('slatsize' == chosen_field_name){
-       this.slatsize = field.value;
+    if ('slatsize' == chosen_field_name) {
+      this.slatsize = field.value;
     }
     // Tilt rod
-    if('tiltrod' == chosen_field_name){
-       this.tiltrod = field.value;
+    if ('tiltrod' == chosen_field_name) {
+      this.tiltrod = field.value;
     }
-    
+
     this.shutterdata = {
-      "colorurl"             : this.colorurl,
-      "shutter_type_name"    : this.shutter_type_name,
-      "hinge_colorurl"       : this.hinge_colorurl,
-      "no_of_panels"         : this.no_of_panels,
-      "midrails"             : this.midrails,
-      "slatsize"             : this.slatsize,
-      "tiltrod"              : this.tiltrod,
+      "colorurl": this.colorurl,
+      "shutter_type_name": this.shutter_type_name,
+      "hinge_colorurl": this.hinge_colorurl,
+      "no_of_panels": this.no_of_panels,
+      "midrails": this.midrails,
+      "slatsize": this.slatsize,
+      "tiltrod": this.tiltrod,
     };
   }
   onImageClick(option: any, field: any) {
     // Accessories type
-    if(this.category == 2){
-        // Set list data before image selection.
-        this.selected_list_data[field.fieldid] = this.accessoriesImageSelectedData(field,option);
-        this.accessoriesImageSelectedData(field,option,true);
-    }else{
+    if (this.category == 2) {
+      // Set list data before image selection.
+      this.selected_list_data[field.fieldid] = this.accessoriesImageSelectedData(field, option);
+      this.accessoriesImageSelectedData(field, option, true);
+    } else {
       // Except Accessories type
       if (field.selection === 1) {
         // Multi-select → array always
@@ -3349,11 +3366,11 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
         this.orderForm.get(`field_${field.fieldid}`)?.setValue([...currentValue, option.optionid]);
       } else {
         const control = this.orderForm.get(`field_${field.fieldid}`);
-        if (control){
+        if (control) {
           if (control.value === option.optionid) {
-              control.setValue(null);
+            control.setValue(null);
           } else {
-              control.setValue(option.optionid);
+            control.setValue(option.optionid);
           }
         }
       }
@@ -3372,49 +3389,49 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
       );
     });
   }
-  accessoriesImageSelectedData(field:any,option:any,set_value = false){
+  accessoriesImageSelectedData(field: any, option: any, set_value = false) {
     const control = this.orderForm.get(`field_${field.fieldid}`);
-        if (!control) return [];
-        // Initialize the changed value
-        let changed_val: any[] = [];
-        if (field.selection === 1) {
-          // Multi-select → toggle option in array
-          const currentValue: any[] = control.value || [];
-          const newValue = [...currentValue]; // copy array
-          const index = newValue.indexOf(option.optionid);
-          if (index === -1) {
-            // Add if not present
-            newValue.push(option.optionid);
-          } else {
-            // Remove if already present
-            newValue.splice(index, 1);
-          }
-          if(set_value){
-            control.setValue(newValue);
-          }
-          changed_val = newValue;
-        } else {
-          // Single-select → toggle value
-          if (control.value === option.optionid) {
-            // Deselect if clicked again
-            if(set_value){
-              control.setValue(null);
-            }
-            changed_val = [];
-          } else {
-            if(set_value){
-              control.setValue(option.optionid);
-            }
-            changed_val = [option.optionid]; // store as array for consistency
-          }
+    if (!control) return [];
+    // Initialize the changed value
+    let changed_val: any[] = [];
+    if (field.selection === 1) {
+      // Multi-select → toggle option in array
+      const currentValue: any[] = control.value || [];
+      const newValue = [...currentValue]; // copy array
+      const index = newValue.indexOf(option.optionid);
+      if (index === -1) {
+        // Add if not present
+        newValue.push(option.optionid);
+      } else {
+        // Remove if already present
+        newValue.splice(index, 1);
+      }
+      if (set_value) {
+        control.setValue(newValue);
+      }
+      changed_val = newValue;
+    } else {
+      // Single-select → toggle value
+      if (control.value === option.optionid) {
+        // Deselect if clicked again
+        if (set_value) {
+          control.setValue(null);
         }
-        return changed_val;
-  }
-  isColorSection(field:any,is_color_list_toggle = false):boolean{
-    if('list' == this.list_value && !is_color_list_toggle){
-        return false;        
+        changed_val = [];
+      } else {
+        if (set_value) {
+          control.setValue(option.optionid);
+        }
+        changed_val = [option.optionid]; // store as array for consistency
+      }
     }
-    if(field.fieldtypeid == 5 && field.fieldlevel == 2){
+    return changed_val;
+  }
+  isColorSection(field: any, is_color_list_toggle = false): boolean {
+    if ('list' == this.list_value && !is_color_list_toggle) {
+      return false;
+    }
+    if (field.fieldtypeid == 5 && field.fieldlevel == 2) {
       return true;
     }
     if (field.fieldtypeid === 20 && field.fieldlevel == 1) {
@@ -3422,83 +3439,83 @@ getClassNameAccessories(field: any,list_field:boolean = false): string {
     }
     return false;
   }
-  toggle_list_view(event: MatButtonToggleChange){
+  toggle_list_view(event: MatButtonToggleChange) {
     this.list_value = 'image' == event.value ? 'image' : 'list';
   }
-  isShutterColorSection(field:any,is_list_toggle = false):boolean{
-    if(this.category != 5){
+  isShutterColorSection(field: any, is_list_toggle = false): boolean {
+    if (this.category != 5) {
       return false;
     }
     const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
-    if (this.color_field_names.includes(chosen_field_name)){
-      if(this.shutter_color_list_value && 'list' == this.shutter_color_list_value && !is_list_toggle){
-          return false;
+    if (this.color_field_names.includes(chosen_field_name)) {
+      if (this.shutter_color_list_value && 'list' == this.shutter_color_list_value && !is_list_toggle) {
+        return false;
       }
       return true;
     }
-    if(this.hinge_color_field_names.includes(chosen_field_name)){
-      if(this.shutter_hinge_color_list_value && 'list' == this.shutter_hinge_color_list_value && !is_list_toggle){
-          return false;
+    if (this.hinge_color_field_names.includes(chosen_field_name)) {
+      if (this.shutter_hinge_color_list_value && 'list' == this.shutter_hinge_color_list_value && !is_list_toggle) {
+        return false;
       }
       return true;
     }
     return false;
   }
-  toggle_shutter_color_list_view(field:any,event: MatButtonToggleChange){
+  toggle_shutter_color_list_view(field: any, event: MatButtonToggleChange) {
     const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
-    if (this.color_field_names.includes(chosen_field_name)){
+    if (this.color_field_names.includes(chosen_field_name)) {
       this.shutter_color_list_value = 'image' == event.value ? 'image' : 'list';
     }
-    if (this.hinge_color_field_names.includes(chosen_field_name)){
+    if (this.hinge_color_field_names.includes(chosen_field_name)) {
       this.shutter_hinge_color_list_value = 'image' == event.value ? 'image' : 'list';
     }
   }
-  shutter_color_list_view(field:any):string{
+  shutter_color_list_view(field: any): string {
     const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
-    if(this.shutter_color_list_value && this.color_field_names.includes(chosen_field_name)){
+    if (this.shutter_color_list_value && this.color_field_names.includes(chosen_field_name)) {
       return this.shutter_color_list_value;
     }
 
-    if(this.shutter_hinge_color_list_value && this.hinge_color_field_names.includes(chosen_field_name)){
+    if (this.shutter_hinge_color_list_value && this.hinge_color_field_names.includes(chosen_field_name)) {
       return this.shutter_hinge_color_list_value;
     }
     return 'list';
   }
-  is_shutter_color_list_view(field:any,option:any):boolean{
-    if(this.category != 5){
+  is_shutter_color_list_view(field: any, option: any): boolean {
+    if (this.category != 5) {
       return false;
     }
 
     const chosen_field_name = field.fieldname.replace(/\s+/g, '').toLowerCase();
-    if(this.shutter_selected_img_options.hingecolour && this.hinge_color_field_names.includes(chosen_field_name)){
+    if (this.shutter_selected_img_options.hingecolour && this.hinge_color_field_names.includes(chosen_field_name)) {
       return this.shutter_selected_img_options.hingecolour == option.optionid;
     }
-    if(this.shutter_selected_img_options.color && this.color_field_names.includes(chosen_field_name)){
+    if (this.shutter_selected_img_options.color && this.color_field_names.includes(chosen_field_name)) {
       return this.shutter_selected_img_options.color == option.optionid;
     }
     return false;
   }
-  is_accessories_list_view(field:any,option:any):boolean{
+  is_accessories_list_view(field: any, option: any): boolean {
     if (this.category !== 2) return false;
     const value = this.selected_list_data[field.fieldid];
     // If no value, return false
     if (!value) return false;
 
     if (Array.isArray(value)) {
-        // Ensure all elements are defined before calling toString
-        return value.some(v => v != null && v.toString() === option.optionid.toString());
-      } else {
-        return value != null && value.toString() === option.optionid.toString();
-      }
+      // Ensure all elements are defined before calling toString
+      return value.some(v => v != null && v.toString() === option.optionid.toString());
+    } else {
+      return value != null && value.toString() === option.optionid.toString();
+    }
   }
-  isAccessoriesListSection(field:any):boolean{
-    if(2 != this.category){
+  isAccessoriesListSection(field: any): boolean {
+    if (2 != this.category) {
       return false;
     }
     return 'image' == this.list_value;
   }
-  showListViewButton():boolean{  
-    if(2 == this.category){
+  showListViewButton(): boolean {
+    if (2 == this.category) {
       return true;
     }
     return false;

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject, OnInit } from '@angular/core';
 import { environment } from '../environments/environment';
 import { LoadingService } from './services/loading.service';
 
@@ -18,15 +18,27 @@ import { LoadingService } from './services/loading.service';
         </div>
       </ng-container>
     </ng-container>
-    <router-outlet></router-outlet>
+    <!-- Skip router when embedded in WooCommerce (window.blindmatrixConfig exists) -->
+    <ng-container *ngIf="isWooCommerceEmbed; else useRouter">
+      <app-orderform></app-orderform>
+    </ng-container>
+    <ng-template #useRouter>
+      <router-outlet></router-outlet>
+    </ng-template>
   `,
   styleUrls: ['./app.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'visualization';
   loaderMode: 'overlay' | 'topbar' = environment.loaderMode;
   loaderEnabled = environment.loaderEnabled;
+  isWooCommerceEmbed = false;
 
-  constructor(@Inject(LoadingService) public loading: LoadingService) {}
+  constructor(@Inject(LoadingService) public loading: LoadingService) { }
+
+  ngOnInit(): void {
+    // Check if embedded in WooCommerce (config injected by PHP)
+    this.isWooCommerceEmbed = !!(window as any).blindmatrixConfig;
+  }
 }
