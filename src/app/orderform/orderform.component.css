@@ -140,12 +140,15 @@ textarea {
     left: 50%;
     top: unset;
     transform: translateX(-50%);
-    width: 54%;
+    width: 41%;
     background: rgba(255, 255, 255, 0.8);
     border-radius: 10px;
     padding: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     text-align: center;
+}
+.slider-container.has-bg {
+    width: 54%;
 }
 .slider-container .owl-carousel .owl-stage {
     display: flex;

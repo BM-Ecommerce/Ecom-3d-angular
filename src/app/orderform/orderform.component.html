@@ -181,7 +181,7 @@
                -->
               </div>
             </div>
-           <div *ngIf="!is3DOn && category != 5 && product_img_array.length > 1" class="slider-container">
+            <div *ngIf="!is3DOn && category != 5 && product_img_array.length > 1" class="slider-container" [class.has-bg]="background_color_image_url">
               <owl-carousel-o [options]="customOptions">
                 <ng-template carouselSlide *ngFor="let product_img of product_img_array; trackBy: trackByProductImage">
                   <div 
