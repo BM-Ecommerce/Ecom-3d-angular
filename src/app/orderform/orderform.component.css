@@ -187,6 +187,44 @@ textarea {
 .next {
     right: 0;
 }
+.frame-nav {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+  z-index: 6;
+}
+.frame-nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.85);
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+.frame-nav-button.left {
+  left: 10px;
+}
+.frame-nav-button.right {
+  right: 10px;
+}
+.frame-nav-button:hover {
+  background: #ffffff;
+}
+.frame-nav-button mat-icon {
+  font-size: 28px;
+  height: 28px;
+  width: 28px;
+}
 .mat-primary{
     color:black;
 }

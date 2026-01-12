@@ -2018,6 +2018,39 @@ public onToggleLoopAnimate(): void {
 
     this.update2DTexturesForSelection();
   }
+
+  private getFrameItems(): any[] {
+    return (this.product_img_array || []).filter(img => !img?.is_background);
+  }
+
+  private getCurrentFrameIndex(frames: any[]): number {
+    if (!frames.length) return -1;
+    if (this.mainframe) {
+      const index = frames.findIndex(frame => frame?.image_url === this.mainframe);
+      if (index >= 0) return index;
+    }
+    const defaultIndex = frames.findIndex(frame => frame?.is_default);
+    return defaultIndex >= 0 ? defaultIndex : 0;
+  }
+
+  private switchFrameByStep(step: number): void {
+    const frames = this.getFrameItems();
+    if (frames.length < 2) return;
+    const currentIndex = this.getCurrentFrameIndex(frames);
+    const startIndex = currentIndex >= 0 ? currentIndex : 0;
+    const nextIndex = (startIndex + step + frames.length) % frames.length;
+    this.onFrameChange(frames[nextIndex]);
+  }
+
+  onPrevFrameClick(event?: MouseEvent): void {
+    event?.stopPropagation();
+    this.switchFrameByStep(-1);
+  }
+
+  onNextFrameClick(event?: MouseEvent): void {
+    event?.stopPropagation();
+    this.switchFrameByStep(1);
+  }
   public getFrameImageUrl(product_img: any): string {
     const frameUrl = product_img?.image_url || '';
     if (!frameUrl) return '';
