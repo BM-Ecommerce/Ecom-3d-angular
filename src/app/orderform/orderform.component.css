@@ -1170,6 +1170,7 @@ mat-button-toggle-group:disabled {
     flex-direction: column;
     justify-content: space-evenly;
     align-items: center;
+    position: relative;
 }
 .color-image-field-wrapper .color-grid,
 .list-image-field-wrapper .color-grid{
@@ -1239,6 +1240,84 @@ mat-button-toggle-group:disabled {
   width:100%;
   text-align: right;
   display:block;
+}
+
+.favorites-block {
+  margin-bottom: 12px;
+}
+
+.favorites-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #54606f;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.favorites-grid {
+  max-height: 160px;
+  padding-right: 4px;
+}
+
+.favorite-item {
+  border-color: #f2c94c;
+}
+
+.favorite-toggle {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.favorite-toggle mat-icon {
+  font-size: 16px;
+  height: 16px;
+  width: 16px;
+  color: #f2c94c;
+}
+
+.favorite-toggle:hover {
+  transform: scale(1.05);
+}
+
+.option-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.option-label {
+  flex: 1 1 auto;
+}
+
+.favorite-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: 2px;
+  width: 18px;
+  height: 18px;
+  background-repeat: no-repeat;
+  background-size: 18px 18px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23f2c94c' stroke-width='1.6' viewBox='0 0 24 24'><path d='M12 3.3l2.8 5.7 6.3.9-4.6 4.5 1.1 6.4L12 17.8 6.4 20.8l1.1-6.4L2.9 9.9l6.3-.9L12 3.3z'/></svg>");
+}
+
+.favorite-inline.is-favorite {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23f2c94c' viewBox='0 0 24 24'><path d='M12 3.3l2.8 5.7 6.3.9-4.6 4.5 1.1 6.4L12 17.8 6.4 20.8l1.1-6.4L2.9 9.9l6.3-.9L12 3.3z'/></svg>");
 }
 ::ng-deep .color_list_view_wrapper .mat-button-toggle-label-content,
 ::ng-deep .list_view_wrapper .mat-button-toggle-label-content{

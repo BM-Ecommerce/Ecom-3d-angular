@@ -290,6 +290,8 @@ hasDescriptionContent = false;
   selected_color_option: any = null;
   selected_framecolor_option: any = null;
   selected_curtaincolor_option: any = null;
+  private readonly favoritesStorageKey = 'orderform_favorites_v1';
+  favoriteOptions: Record<number, number[]> = {};
   selected_list_data:any = {};
   shutter_selected_img_options:any={};
   list_value:string = "list";
@@ -510,6 +512,7 @@ hasDescriptionContent = false;
   ngOnInit(): void {
     this.updateIsMobile();
     this.registerProductIcon();
+    this.loadFavorites();
     // Expose loader mode for template conditions
     this.loaderMode = environment.loaderMode;
     this.loaderEnabled = environment.loaderEnabled;
@@ -3340,6 +3343,95 @@ public onToggleLoopAnimate(): void {
 
   trackByFraction(index: number, frac: FractionOption): any {
     return frac?.id ?? frac?.decimalvalue ?? index;
+  }
+
+  private loadFavorites(): void {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+      }
+      const raw = localStorage.getItem(this.favoritesStorageKey);
+      if (!raw) {
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') {
+        return;
+      }
+      const normalized: Record<number, number[]> = {};
+      Object.keys(parsed).forEach((key) => {
+        const list = Array.isArray(parsed[key]) ? parsed[key] : [];
+        const ids = list.map((item: any) => Number(item)).filter((item: number) => !Number.isNaN(item));
+        if (ids.length) {
+          normalized[Number(key)] = Array.from(new Set(ids));
+        }
+      });
+      this.favoriteOptions = normalized;
+    } catch {
+      this.favoriteOptions = {};
+    }
+  }
+
+  private persistFavorites(): void {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+      }
+      localStorage.setItem(this.favoritesStorageKey, JSON.stringify(this.favoriteOptions));
+    } catch {
+      // ignore storage issues
+    }
+  }
+
+  isFavorite(field: ProductField, option: ProductOption): boolean {
+    const list = this.favoriteOptions[field.fieldid] || [];
+    const optionId = Number(option.optionid);
+    return list.includes(optionId);
+  }
+
+  toggleFavorite(option: ProductOption, field: ProductField, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    const fieldId = field.fieldid;
+    const optionId = Number(option.optionid);
+    if (!fieldId || Number.isNaN(optionId)) {
+      return;
+    }
+    const current = this.favoriteOptions[fieldId] ? [...this.favoriteOptions[fieldId]] : [];
+    const index = current.indexOf(optionId);
+    if (index >= 0) {
+      current.splice(index, 1);
+    } else {
+      current.unshift(optionId);
+    }
+    if (current.length) {
+      this.favoriteOptions[fieldId] = Array.from(new Set(current));
+    } else {
+      delete this.favoriteOptions[fieldId];
+    }
+    this.persistFavorites();
+    this.cd.markForCheck();
+  }
+
+  favoritesForField(field: ProductField): ProductOption[] {
+    const options = this.option_data[field.fieldid] || field.optionsvalue || [];
+    const favorites = new Set((this.favoriteOptions[field.fieldid] || []).map((id) => Number(id)));
+    return options.filter((option: any) => favorites.has(Number(option.optionid)));
+  }
+
+  hasFavoritesForField(field: ProductField): boolean {
+    return this.favoritesForField(field).length > 0;
+  }
+
+  listOptionsForField(field: ProductField): ProductOption[] {
+    return (this.filteredOptions[field.fieldid] || this.option_data[field.fieldid] || field.optionsvalue || []) as ProductOption[];
+  }
+
+  nonFavoriteOptionsForField(field: ProductField): ProductOption[] {
+    const favorites = new Set((this.favoriteOptions[field.fieldid] || []).map((id) => Number(id)));
+    return this.listOptionsForField(field).filter((option) => !favorites.has(Number(option.optionid)));
   }
 
   // Public API: toggle search globally

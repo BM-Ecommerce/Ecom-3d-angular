@@ -302,18 +302,67 @@
                         [multiple]="field.selection == 1" [attr.aria-label]="field.fieldname">
                         <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
                       
-                        <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue; trackBy: trackByOptionId"
-                          [value]="option.optionid">
-                          <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                            <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
-                              alt="{{ option.optionname }}" width="24" height="24"
-                              style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
-                          </ng-container>
-                          {{ option.optionname }}
-                            <span *ngIf="option.unitcost > 0">
-                                — {{currencySymbol}}{{ option.unitcost }}
+                        <ng-container *ngIf="hasFavoritesForField(field); else listAllOptions">
+                          <mat-optgroup label="Favorites">
+                            <mat-option *ngFor="let option of favoritesForField(field); trackBy: trackByOptionId"
+                              [value]="option.optionid">
+                              <span class="option-row">
+                                <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                                  <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
+                                    alt="{{ option.optionname }}" width="24" height="24"
+                                    style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                                </ng-container>
+                                <span class="option-label">
+                                  {{ option.optionname }}
+                                  <span *ngIf="option.unitcost > 0">
+                                      — {{currencySymbol}}{{ option.unitcost }}
+                                  </span>
+                                </span>
+                                <span class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
                               </span>
-                        </mat-option>
+                            </mat-option>
+                          </mat-optgroup>
+
+                          <mat-optgroup label="All options">
+                            <mat-option *ngFor="let option of nonFavoriteOptionsForField(field); trackBy: trackByOptionId"
+                              [value]="option.optionid">
+                              <span class="option-row">
+                                <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                                  <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
+                                    alt="{{ option.optionname }}" width="24" height="24"
+                                    style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                                </ng-container>
+                                <span class="option-label">
+                                  {{ option.optionname }}
+                                  <span *ngIf="option.unitcost > 0">
+                                      — {{currencySymbol}}{{ option.unitcost }}
+                                  </span>
+                                </span>
+                                <span class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
+                              </span>
+                            </mat-option>
+                          </mat-optgroup>
+                        </ng-container>
+
+                        <ng-template #listAllOptions>
+                          <mat-option *ngFor="let option of option_data[field.fieldid] || field.optionsvalue; trackBy: trackByOptionId"
+                            [value]="option.optionid">
+                            <span class="option-row">
+                              <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                                <img (error)="onImageError($event)" [src]="apiUrl + '/api/public' + option.optionimage"
+                                  alt="{{ option.optionname }}" width="24" height="24"
+                                  style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                              </ng-container>
+                              <span class="option-label">
+                                {{ option.optionname }}
+                                  <span *ngIf="option.unitcost > 0">
+                                      — {{currencySymbol}}{{ option.unitcost }}
+                                  </span>
+                              </span>
+                              <span class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
+                            </span>
+                          </mat-option>
+                        </ng-template>
                       </mat-select>
                     </mat-form-field>
                   </div>
@@ -384,19 +433,63 @@
                         Select Option
                       </mat-option>
 
-                      <mat-option
-                          *ngFor="let option of (filteredOptions[field.fieldid] || option_data[field.fieldid]); trackBy: trackByOptionId"
-                          [value]="option.optionid">
+                      <ng-container *ngIf="hasFavoritesForField(field); else listAllOptionsMaterials">
+                        <mat-optgroup label="Favorites">
+                          <mat-option *ngFor="let option of favoritesForField(field); trackBy: trackByOptionId" [value]="option.optionid">
+                            <span class="option-row">
+                              <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                                <img (error)="onImageError($event)"
+                                    [src]="apiUrl + '/api/public' + option.optionimage"
+                                    width="24" height="24"
+                                    style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                              </ng-container>
+                              <span class="option-label">
+                                {{ option.optionname }}
+                              </span>
+                              <span class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
+                            </span>
+                          </mat-option>
+                        </mat-optgroup>
 
-                          <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
-                              <img (error)="onImageError($event)"
-                                  [src]="apiUrl + '/api/public' + option.optionimage"
-                                  width="24" height="24"
-                                  style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
-                          </ng-container>
+                        <mat-optgroup label="All options">
+                          <mat-option
+                              *ngFor="let option of nonFavoriteOptionsForField(field); trackBy: trackByOptionId"
+                              [value]="option.optionid">
+                            <span class="option-row">
+                              <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                                  <img (error)="onImageError($event)"
+                                      [src]="apiUrl + '/api/public' + option.optionimage"
+                                      width="24" height="24"
+                                      style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                              </ng-container>
+                              <span class="option-label">
+                                {{ option.optionname }}
+                              </span>
+                              <span class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
+                            </span>
+                          </mat-option>
+                        </mat-optgroup>
+                      </ng-container>
 
-                          {{ option.optionname }}
-                      </mat-option>
+                      <ng-template #listAllOptionsMaterials>
+                        <mat-option
+                            *ngFor="let option of (filteredOptions[field.fieldid] || option_data[field.fieldid]); trackBy: trackByOptionId"
+                            [value]="option.optionid">
+                            <span class="option-row">
+                              <ng-container *ngIf="option.optionimage && option.optionimage.trim() !== ''">
+                                  <img (error)="onImageError($event)"
+                                      [src]="apiUrl + '/api/public' + option.optionimage"
+                                      width="24" height="24"
+                                      style="vertical-align: middle; margin-right: 8px; border-radius: 3px;">
+                              </ng-container>
+
+                              <span class="option-label">
+                                {{ option.optionname }}
+                              </span>
+                              <span class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
+                            </span>
+                        </mat-option>
+                      </ng-template>
 
                   </mat-select>
                     </mat-form-field>
@@ -417,8 +510,26 @@
                       </mat-icon>
                     </span>
                   </label>
+                  <div *ngIf="hasFavoritesForField(field)" class="favorites-block">
+                    <div class="favorites-title">Favorites</div>
+                    <div class="color-grid favorites-grid">
+                      <div *ngFor="let option of favoritesForField(field); trackBy: trackByOptionId" class="color-item favorite-item" [class.color_selected]="this.selected_img_option == option.optionid" (click)="onImageClick(option,field)">
+                        <button type="button" class="favorite-toggle" (click)="toggleFavorite(option, field, $event)" [attr.aria-pressed]="isFavorite(field, option)">
+                          <mat-icon>{{ isFavorite(field, option) ? 'star' : 'star_border' }}</mat-icon>
+                        </button>
+                        <div>
+                          <img [src]="apiUrl + '/api/public' + option.optionimage"  (error)="onImageError($event)" [title]="option.optionname" [alt]="option.optionname" />
+                          <div class="circle-check" *ngIf="this.selected_img_option == option.optionid">✓</div>
+                        </div>
+                        <div><b>{{option.optionname}}</b></div>
+                      </div>
+                    </div>
+                  </div>
                   <div class="color-grid">
                     <div *ngFor="let option of option_data[field.fieldid]; trackBy: trackByOptionId" class="color-item" [class.color_selected]="this.selected_img_option == option.optionid" (click)="onImageClick(option,field)">
+                      <button type="button" class="favorite-toggle" (click)="toggleFavorite(option, field, $event)" [attr.aria-pressed]="isFavorite(field, option)">
+                        <mat-icon>{{ isFavorite(field, option) ? 'star' : 'star_border' }}</mat-icon>
+                      </button>
                       <div>
                         <img [src]="apiUrl + '/api/public' + option.optionimage"  (error)="onImageError($event)" [title]="option.optionname" [alt]="option.optionname" />
                         <div class="circle-check" *ngIf="this.selected_img_option == option.optionid">✓</div>
