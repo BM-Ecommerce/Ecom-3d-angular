@@ -1389,6 +1389,15 @@ mat-button-toggle-group:disabled {
   align-items: stretch;
   pointer-events: none;
 }
+@media (max-width: 991px) {
+  .skeleton-overlay {
+    flex-direction: column;
+  }
+  .skeleton-overlay .visualizer-main,
+  .skeleton-overlay .product-wrapper {
+    width: 100%;
+  }
+}
 
 
 /* Skeleton loaders for visualizer + fields */
@@ -1396,6 +1405,12 @@ mat-button-toggle-group:disabled {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.skeleton-card .skeleton {
+  margin: 0;
 }
 
 .skeleton {
@@ -1408,17 +1423,14 @@ mat-button-toggle-group:disabled {
 .skeleton-title {
   height: 26px;
   width: 65%;
-  margin: 16px 16px 0;
 }
 
 .skeleton-canvas {
   height: 500px;
-  margin: 0 16px;
 }
 
 .skeleton-thumb {
   height: 64px;
-  margin: 0 16px 16px;
 }
 
 .skeleton-heading {
@@ -1453,6 +1465,9 @@ mat-button-toggle-group:disabled {
 }
 
 @media (max-width: 991px) {
+  .skeleton-card {
+    padding: 12px;
+  }
   .skeleton-canvas {
     height: 310px;
   }
