@@ -302,7 +302,7 @@
                         [multiple]="field.selection == 1" [attr.aria-label]="field.fieldname">
                         <mat-option *ngIf="field.selection != 1" value="">Select Option</mat-option>
                       
-                        <ng-container *ngIf="hasFavoritesForField(field); else listAllOptions">
+                        <ng-container *ngIf="showFavorites() && hasFavoritesForField(field); else listAllOptions">
                           <mat-optgroup label="Favorites">
                             <mat-option *ngFor="let option of favoritesForField(field); trackBy: trackByOptionId"
                               [value]="option.optionid">
@@ -359,7 +359,7 @@
                                       — {{currencySymbol}}{{ option.unitcost }}
                                   </span>
                               </span>
-                              <span class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
+                              <span *ngIf="showFavorites()" class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
                             </span>
                           </mat-option>
                         </ng-template>
@@ -433,7 +433,7 @@
                         Select Option
                       </mat-option>
 
-                      <ng-container *ngIf="hasFavoritesForField(field); else listAllOptionsMaterials">
+                      <ng-container *ngIf="showFavorites() && hasFavoritesForField(field); else listAllOptionsMaterials">
                         <mat-optgroup label="Favorites">
                           <mat-option *ngFor="let option of favoritesForField(field); trackBy: trackByOptionId" [value]="option.optionid">
                             <span class="option-row">
@@ -446,7 +446,7 @@
                               <span class="option-label">
                                 {{ option.optionname }}
                               </span>
-                              <span class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
+                              <span *ngIf="showFavorites()" class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
                             </span>
                           </mat-option>
                         </mat-optgroup>
@@ -465,7 +465,7 @@
                               <span class="option-label">
                                 {{ option.optionname }}
                               </span>
-                              <span class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
+                              <span *ngIf="showFavorites()" class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
                             </span>
                           </mat-option>
                         </mat-optgroup>
@@ -486,7 +486,7 @@
                               <span class="option-label">
                                 {{ option.optionname }}
                               </span>
-                              <span class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
+                              <span *ngIf="showFavorites()" class="favorite-inline" [class.is-favorite]="isFavorite(field, option)" (click)="toggleFavorite(option, field, $event)" aria-hidden="true"></span>
                             </span>
                         </mat-option>
                       </ng-template>
@@ -510,11 +510,11 @@
                       </mat-icon>
                     </span>
                   </label>
-                  <div *ngIf="hasFavoritesForField(field)" class="favorites-block">
+                  <div *ngIf="showFavorites() && hasFavoritesForField(field)" class="favorites-block">
                     <div class="favorites-title">Favorites</div>
                     <div class="color-grid favorites-grid">
                       <div *ngFor="let option of favoritesForField(field); trackBy: trackByOptionId" class="color-item favorite-item" [class.color_selected]="this.selected_img_option == option.optionid" (click)="onImageClick(option,field)">
-                        <button type="button" class="favorite-toggle" (click)="toggleFavorite(option, field, $event)" [attr.aria-pressed]="isFavorite(field, option)">
+                        <button type="button" class="favorite-toggle" *ngIf="showFavorites()" (click)="toggleFavorite(option, field, $event)" [attr.aria-pressed]="isFavorite(field, option)">
                           <mat-icon>{{ isFavorite(field, option) ? 'star' : 'star_border' }}</mat-icon>
                         </button>
                         <div>
@@ -527,7 +527,7 @@
                   </div>
                   <div class="color-grid">
                     <div *ngFor="let option of option_data[field.fieldid]; trackBy: trackByOptionId" class="color-item" [class.color_selected]="this.selected_img_option == option.optionid" (click)="onImageClick(option,field)">
-                      <button type="button" class="favorite-toggle" (click)="toggleFavorite(option, field, $event)" [attr.aria-pressed]="isFavorite(field, option)">
+                      <button type="button" class="favorite-toggle" *ngIf="showFavorites()" (click)="toggleFavorite(option, field, $event)" [attr.aria-pressed]="isFavorite(field, option)">
                         <mat-icon>{{ isFavorite(field, option) ? 'star' : 'star_border' }}</mat-icon>
                       </button>
                       <div>

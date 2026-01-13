@@ -3394,6 +3394,9 @@ public onToggleLoopAnimate(): void {
       event.stopPropagation();
       event.preventDefault();
     }
+    if (!this.showFavorites()) {
+      return;
+    }
     const fieldId = field.fieldid;
     const optionId = Number(option.optionid);
     if (!fieldId || Number.isNaN(optionId)) {
@@ -3432,6 +3435,10 @@ public onToggleLoopAnimate(): void {
   nonFavoriteOptionsForField(field: ProductField): ProductOption[] {
     const favorites = new Set((this.favoriteOptions[field.fieldid] || []).map((id) => Number(id)));
     return this.listOptionsForField(field).filter((option) => !favorites.has(Number(option.optionid)));
+  }
+
+  showFavorites(): boolean {
+    return this.category === 3 || this.category === 4;
   }
 
   // Public API: toggle search globally
