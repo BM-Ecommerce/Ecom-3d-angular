@@ -293,7 +293,7 @@ relatedProducts(
     colorid: colorid,
     productid: product_id,
   };
-    const passData = `fabriclistview/${category_id}/${product_id}/?page=1&perpage=150`;
+    const passData = `fabriclistview/${category_id}/${product_id}/?page=1&perpage=2000`;
 
     return this.callApi('POST', passData, payload, false, false, api_url, api_key, api_name);
 }
@@ -322,7 +322,7 @@ relatedProducts(
 
 
 
-    const passData = `products/get/fabric/options/list/${recipeId}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}/?page=1&perpage=150`;
+    const passData = `products/get/fabric/options/list/${recipeId}/${level}/0/${fieldtype}/${fabriccolor}/${fieldid}/?page=1&perpage=2000`;
 
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
