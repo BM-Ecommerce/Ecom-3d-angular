@@ -1,6 +1,6 @@
 <form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="tooltip-container blindmatrix-v4-parameters-form cart angularbody">
   <div class="blinds container">
-    <div *ngIf="loaderEnabled && loaderMode === 'overlay' && (isLoading || (loading.isLoading$ | async))" class="loading-overlay" role="dialog" aria-live="polite" aria-busy="true">
+    <div *ngIf="loaderEnabled && loaderMode === 'overlay' && (loading.isLoading$ | async) && !isLoading" class="loading-overlay" role="dialog" aria-live="polite" aria-busy="true">
       <div class="loading-card">
         <div class="loading-spinner" aria-hidden="true"></div>
         <div class="loading-text">Preparing your product…</div>
@@ -19,7 +19,7 @@
 
     <div id="configurator-root" class="product_visualizer_wrapper" [class.fullscreen]="isFullscreen">
 
-      <div class="visualizer-container">
+      <div class="visualizer-container" [class.is-loading]="showSkeleton">
 
         <div class="visualizer-main">
 
@@ -615,7 +615,20 @@
             </div>
           </div>
         </div>
-      </div>
+        <div class="skeleton-overlay" *ngIf="showSkeleton" aria-hidden="true">
+          <div class="visualizer-main skeleton-card">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-canvas"></div>
+            <div class="skeleton skeleton-thumb"></div>
+          </div>
+          <div class="product-wrapper skeleton-card">
+            <div class="skeleton skeleton-heading"></div>
+            <div class="skeleton skeleton-field" *ngFor="let row of skeletonRows; trackBy: trackByIndex"></div>
+            <div class="skeleton skeleton-price"></div>
+            <div class="skeleton skeleton-button"></div>
+          </div>
+        </div>
+    </div>
     </div>
   <mat-tab-group dynamicHeight>
 
