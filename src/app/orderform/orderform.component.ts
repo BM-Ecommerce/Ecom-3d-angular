@@ -309,6 +309,12 @@ hasDescriptionContent = false;
   private previousZoomFactor: number | null = null;
   
   private prevIs3DOn: boolean = false;
+  private readonly shareConfigKey = 'cfg';
+  private pendingShareConfig: string | null = null;
+  private shareConfigValues: Record<string, any> | null = null;
+  private shareConfigApplied = false;
+  private applyingShareConfig = false;
+  private lastShareConfigEncoded: string | null = null;
 
   private updateShowDimensionsToggle(): void {
     try {
@@ -458,6 +464,7 @@ hasDescriptionContent = false;
   public isCalculatingPrice = true;
   grossPricenum: number = 0;
   private priceUpdate = new Subject<void>();
+  private shareLinkUpdate$ = new Subject<void>();
   private rulesorderitem: any[] = [];
   public showFramesInMobile = false;
   customOptions: any = {
@@ -510,6 +517,14 @@ hasDescriptionContent = false;
   ngOnInit(): void {
     this.updateIsMobile();
     this.registerProductIcon();
+    this.pendingShareConfig = this.route.snapshot.queryParams?.[this.shareConfigKey] || null;
+    if (this.pendingShareConfig) {
+      this.lastShareConfigEncoded = this.pendingShareConfig;
+      const decoded = this.decodeShareConfig(this.pendingShareConfig);
+      if (decoded) {
+        this.shareConfigValues = decoded;
+      }
+    }
     // Expose loader mode for template conditions
     this.loaderMode = environment.loaderMode;
     this.loaderEnabled = environment.loaderEnabled;
@@ -589,6 +604,9 @@ hasDescriptionContent = false;
       }
       this.cd.markForCheck();
     });
+    this.shareLinkUpdate$
+      .pipe(debounceTime(300), takeUntil(this.destroy$))
+      .subscribe(() => this.updateShareableLink());
     this.get_freesample();
   }
 
@@ -596,6 +614,7 @@ hasDescriptionContent = false;
     this.destroy$.next();
     this.destroy$.complete();
     this.patternRepeatChange$.complete();
+    this.shareLinkUpdate$.complete();
     if (this.resizeRaf !== null) {
       cancelAnimationFrame(this.resizeRaf);
       this.resizeRaf = null;
@@ -1434,6 +1453,7 @@ public onToggleLoopAnimate(): void {
               this.updateFieldValues(this.unitField, selectedunitOption, 'updateunittype');
             }
           }
+          this.applyShareConfigFromUrl();
         }
       }),
       catchError(err => {
@@ -1667,6 +1687,21 @@ public onToggleLoopAnimate(): void {
 
           if (control) {
             let valueToSet: any;
+            const shareKey = `field_${field.fieldid}`;
+            const shareValue = this.shareConfigValues?.[shareKey];
+            if (shareValue !== undefined) {
+              if (field.fieldtypeid === 3 && field.selection == 1) {
+                if (Array.isArray(shareValue)) {
+                  valueToSet = shareValue.map((val: any) => Number(val));
+                } else if (typeof shareValue === 'string') {
+                  valueToSet = shareValue.split(',').filter((val: string) => val !== '').map((val: string) => Number(val));
+                } else {
+                  valueToSet = [Number(shareValue)];
+                }
+              } else {
+                valueToSet = shareValue;
+              }
+            } else {
             // Set option default in Accessories type on page load.
             if('single_view' != this.routeParams?.fabric && 2 == this.category && this.chosenAccessoriesFieldId == field.fieldid){
                 field.optiondefault = this.chosenAccessoriesOptionId;
@@ -1683,6 +1718,7 @@ public onToggleLoopAnimate(): void {
               valueToSet = (field.optiondefault !== undefined && field.optiondefault !== null && field.optiondefault !== '')
                 ? Number(field.optiondefault)
                 : '';
+            }
             }
             control.setValue(valueToSet, { emitEvent: false });
             if (valueToSet !== null && valueToSet !== '' && valueToSet !== undefined) {
@@ -1788,7 +1824,8 @@ public onToggleLoopAnimate(): void {
       const selectedOption = options.find(opt => `${opt.optionid}` === `${value}`);
       if (!selectedOption) return;
       
-      const canUpdate = !isInitial || (field.optiondefault && params.color_id);
+      const shareValue = this.shareConfigValues?.[`field_${field.fieldid}`];
+      const canUpdate = !isInitial || shareValue !== undefined || (field.optiondefault && params.color_id);
       const normalizedFieldName = this.normalizeFieldName(field.fieldname);
       const isMaterialField = (field.fieldtypeid === 5 || field.fieldtypeid === 21) && field.level == 1;
 
@@ -2406,16 +2443,32 @@ public onToggleLoopAnimate(): void {
               const control = this.orderForm.get(`field_${subfield.fieldid}`);
               if (control) {
                 let valueToSet: any;
-                if (subfield.fieldtypeid === 3 && subfield.selection == 1) {
-                  valueToSet = subfield.optiondefault
-                    ? subfield.optiondefault.toString().split(',').filter((val: string) => val !== '').map(Number)
-                    : [];
-                } else if (subfield.fieldtypeid === 5 && subfield.level == 2) {
-                  valueToSet = +params.color_id || '';
+                const shareKey = `field_${subfield.fieldid}`;
+                const shareValue = this.shareConfigValues?.[shareKey];
+                if (shareValue !== undefined) {
+                  if (subfield.fieldtypeid === 3 && subfield.selection == 1) {
+                    if (Array.isArray(shareValue)) {
+                      valueToSet = shareValue.map((val: any) => Number(val));
+                    } else if (typeof shareValue === 'string') {
+                      valueToSet = shareValue.split(',').filter((val: string) => val !== '').map((val: string) => Number(val));
+                    } else {
+                      valueToSet = [Number(shareValue)];
+                    }
+                  } else {
+                    valueToSet = shareValue;
+                  }
                 } else {
-                  valueToSet = (subfield.optiondefault !== undefined && subfield.optiondefault !== null && subfield.optiondefault !== '')
-                    ? Number(subfield.optiondefault)
-                    : '';
+                  if (subfield.fieldtypeid === 3 && subfield.selection == 1) {
+                    valueToSet = subfield.optiondefault
+                      ? subfield.optiondefault.toString().split(',').filter((val: string) => val !== '').map(Number)
+                      : [];
+                  } else if (subfield.fieldtypeid === 5 && subfield.level == 2) {
+                    valueToSet = +params.color_id || '';
+                  } else {
+                    valueToSet = (subfield.optiondefault !== undefined && subfield.optiondefault !== null && subfield.optiondefault !== '')
+                      ? Number(subfield.optiondefault)
+                      : '';
+                  }
                 }
 
                 control.setValue(valueToSet, { emitEvent: false });
@@ -2463,6 +2516,10 @@ public onToggleLoopAnimate(): void {
     );
 
     this.orderForm.addControl(controlName, formControl);
+    const shareValue = this.shareConfigValues?.[controlName];
+    if (shareValue !== undefined) {
+      formControl.setValue(shareValue);
+    }
   }
   @HostListener('window:scroll', [])
   onWindowScroll() {
@@ -2862,6 +2919,7 @@ public onToggleLoopAnimate(): void {
     this.previousFormValue = { ...values };
     this.priceUpdate.next();
     this.updateAccordionData();
+    this.shareLinkUpdate$.next();
   }
   private removeSelectedOptionData(fields: ProductField[]): void {
     const allLinkIdsToRemove = new Set<number>();
@@ -3431,6 +3489,86 @@ public onToggleLoopAnimate(): void {
       }
     });
     this.cd.markForCheck();
+  }
+
+  private compactShareConfig(values: any): Record<string, any> {
+    const compact: Record<string, any> = {};
+    if (!values || typeof values !== 'object') return compact;
+    Object.keys(values).forEach(key => {
+      const value = values[key];
+      if (value === null || value === undefined || value === '') return;
+      if (Array.isArray(value) && value.length === 0) return;
+      compact[key] = value;
+    });
+    return compact;
+  }
+
+  private encodeShareConfig(values: Record<string, any>): string {
+    const json = JSON.stringify(values);
+    const utf8 = encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, hex) =>
+      String.fromCharCode(parseInt(hex, 16))
+    );
+    return btoa(utf8).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  private decodeShareConfig(raw: string): Record<string, any> | null {
+    try {
+      const normalized = raw.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized + '==='.slice((normalized.length + 3) % 4);
+      const utf8 = atob(padded);
+      const json = decodeURIComponent(
+        Array.from(utf8)
+          .map(char => `%${('00' + char.charCodeAt(0).toString(16)).slice(-2)}`)
+          .join('')
+      );
+      const parsed = JSON.parse(json);
+      if (!parsed || typeof parsed !== 'object') return null;
+      return parsed as Record<string, any>;
+    } catch {
+      return null;
+    }
+  }
+
+  private applyShareConfigFromUrl(): void {
+    if (this.shareConfigApplied || !this.pendingShareConfig) return;
+    const decoded = this.shareConfigValues || this.decodeShareConfig(this.pendingShareConfig);
+    this.shareConfigApplied = true;
+    if (!decoded) return;
+
+    this.shareConfigValues = decoded;
+    const patchValues: Record<string, any> = {};
+    Object.keys(decoded).forEach(key => {
+      if (this.orderForm.get(key)) {
+        patchValues[key] = decoded[key];
+      }
+    });
+    if (Object.keys(patchValues).length === 0) return;
+
+    const previous = { ...this.orderForm.value };
+    this.applyingShareConfig = true;
+    this.orderForm.patchValue(patchValues, { emitEvent: false });
+    this.previousFormValue = previous;
+    this.onFormChanges(this.orderForm.value, this.routeParams);
+    this.applyingShareConfig = false;
+  }
+
+  private updateShareableLink(): void {
+    if (this.applyingShareConfig || !this.orderForm) return;
+    const compact = this.compactShareConfig(this.orderForm.getRawValue());
+    if (Object.keys(compact).length === 0) return;
+    const encoded = this.encodeShareConfig(compact);
+    if (encoded === this.lastShareConfigEncoded) return;
+
+    this.lastShareConfigEncoded = encoded;
+    try {
+      this.router.navigate([], {
+        queryParams: { [this.shareConfigKey]: encoded },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+    } catch {
+      // ignore url update errors
+    }
   }
   private orderitemdata(isForRulesCalculation: boolean = false, freesample: boolean = false): any[] {
     return this.parameters_data.map(t => {
