@@ -236,6 +236,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   isLoading = false;
   public showSkeleton = false;
   private isCanvasReady = false;
+  private optionsLoaded = false;
   isSubmitting = false;
   errorMessage: string | null = null;
   jsondata: JsonDataItem[] = [];
@@ -321,7 +322,7 @@ hasDescriptionContent = false;
   }
 
   private updateSkeletonState(): void {
-    this.showSkeleton = this.isLoading && !this.isCanvasReady;
+    this.showSkeleton = !this.optionsLoaded;
     this.cd.markForCheck();
   }
 
@@ -1268,6 +1269,7 @@ public onToggleLoopAnimate(): void {
   private fetchInitialData(params: any): void {
     this.isLoading = true;
     this.isCanvasReady = false;
+    this.optionsLoaded = false;
     this.updateSkeletonState();
     this.errorMessage = null;
 
@@ -1426,6 +1428,8 @@ public onToggleLoopAnimate(): void {
       }),
       tap((results: any) => {
         if (results) {
+          this.optionsLoaded = true;
+          this.updateSkeletonState();
           this.parameters_data.forEach(field => {
             const control = this.orderForm.get(`field_${field.fieldid}`);
             if (control && field.ruleoverride === 0) {
@@ -1468,6 +1472,8 @@ public onToggleLoopAnimate(): void {
       }),
       catchError(err => {
         console.error('Error fetching product data:', err);
+        this.optionsLoaded = true;
+        this.updateSkeletonState();
         // Navigate to 404 page on product data load failure
         try {
           this.router.navigate(['/', '404']);
@@ -1479,6 +1485,7 @@ public onToggleLoopAnimate(): void {
       }),
       finalize(() => {
         this.isLoading = false;
+        this.optionsLoaded = true;
         this.updateSkeletonState();
       })
     ).subscribe();
