@@ -234,6 +234,9 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   public productTitle: string = '';
   public related_products: any[] = [];
   isLoading = false;
+  public showSkeleton = false;
+  private isCanvasReady = false;
+  private optionsLoaded = false;
   isSubmitting = false;
   errorMessage: string | null = null;
   jsondata: JsonDataItem[] = [];
@@ -316,6 +319,17 @@ hasDescriptionContent = false;
       this.showDimensionsToggle = (this.dimensionMode === 'on') || (this.width > 0 || this.drop > 0);
       this.cd.markForCheck();
     } catch { /* ignore */ }
+  }
+
+  private updateSkeletonState(): void {
+    this.showSkeleton = !this.optionsLoaded;
+    this.cd.markForCheck();
+  }
+
+  private markCanvasReady(): void {
+    if (this.isCanvasReady) return;
+    this.isCanvasReady = true;
+    this.updateSkeletonState();
   }
 
   get_freesample() {
@@ -436,6 +450,7 @@ hasDescriptionContent = false;
   supplier_id: number | null = null;
   currencySymbol: string = '£';
   public isMobile = false;
+  public skeletonRows = Array.from({ length: 6 }, (_, i) => i);
   // Form controls
   orderForm: FormGroup;
   previousFormValue: any;
@@ -677,6 +692,13 @@ public onToggleLoopAnimate(): void {
     } else {
       this.disable3DForMissingModel();
     }
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this.ngZone.run(() => this.markCanvasReady());
+        });
+      });
+    });
     setTimeout(() => this.onWindowResize(), 0);
   }
 
@@ -684,6 +706,13 @@ public onToggleLoopAnimate(): void {
     this.threeService.initialize2d(this.canvasRef, this.containerRef.nativeElement);
     this.applyPatternRepeatSettings();
     this.update2DTexturesForSelection();
+    this.ngZone.runOutsideAngular(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this.ngZone.run(() => this.markCanvasReady());
+        });
+      });
+    });
   }
 
   private disable3DForMissingModel(): void {
@@ -1239,6 +1268,9 @@ public onToggleLoopAnimate(): void {
   }
   private fetchInitialData(params: any): void {
     this.isLoading = true;
+    this.isCanvasReady = false;
+    this.optionsLoaded = false;
+    this.updateSkeletonState();
     this.errorMessage = null;
 
     this.apiService.getProductData(params).pipe(
@@ -1396,6 +1428,8 @@ public onToggleLoopAnimate(): void {
       }),
       tap((results: any) => {
         if (results) {
+          this.optionsLoaded = true;
+          this.updateSkeletonState();
           this.parameters_data.forEach(field => {
             const control = this.orderForm.get(`field_${field.fieldid}`);
             if (control && field.ruleoverride === 0) {
@@ -1438,6 +1472,8 @@ public onToggleLoopAnimate(): void {
       }),
       catchError(err => {
         console.error('Error fetching product data:', err);
+        this.optionsLoaded = true;
+        this.updateSkeletonState();
         // Navigate to 404 page on product data load failure
         try {
           this.router.navigate(['/', '404']);
@@ -1449,7 +1485,8 @@ public onToggleLoopAnimate(): void {
       }),
       finalize(() => {
         this.isLoading = false;
-        this.cd.markForCheck();
+        this.optionsLoaded = true;
+        this.updateSkeletonState();
       })
     ).subscribe();
   }
@@ -3340,6 +3377,10 @@ public onToggleLoopAnimate(): void {
 
   trackByFraction(index: number, frac: FractionOption): any {
     return frac?.id ?? frac?.decimalvalue ?? index;
+  }
+
+  trackByIndex(index: number): number {
+    return index;
   }
 
   // Public API: toggle search globally
