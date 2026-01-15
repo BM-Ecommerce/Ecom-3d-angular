@@ -137,10 +137,21 @@ export class RelatedproductComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   buildVisualizerUrl(product: any): string {
-    const slug1 = product.productname.toLowerCase().replace(/ /g, '-');
-    const slug2 = `${product.fabricname}-${product.colorname}`.toLowerCase().replace(/ /g, '-');
+    const slug1 = (product.productname || '')
+      .toLowerCase()
+      .replace(/ /g, '-');
 
-    return `${this.relatedproducts.siteurl}/visualizer/${this.relatedproducts.product_id}/${slug1}/${slug2}/${product.fd_id}/${product.cd_id}/${product.groupid}/${product.supplierid}/${this.relatedproducts.routeParams.cart_productid}`;
+    const slug2 = (
+      product.fabricname
+        ? `${product.fabricname}-${product.colorname}`
+        : product.colorname
+    )
+      .toLowerCase()
+      .replace(/ /g, '-');
+
+    const fdId = product.fd_id ?? 0;
+
+    return `${this.relatedproducts.siteurl}/visualizer/${this.relatedproducts.product_id}/${slug1}/${slug2}/${fdId}/${product.cd_id}/${product.groupid}/${product.supplierid}/${this.relatedproducts.routeParams.cart_productid}`;
   }
 
   // Thumbnail composition helpers
