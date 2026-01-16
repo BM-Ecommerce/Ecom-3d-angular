@@ -441,8 +441,8 @@ hasDescriptionContent = false;
   fieldscategoryname = '';
   productslug = '';
   iconname= "roller-blinds";
-  fabricid = 0;
-  colorid = 0;
+  fabricid:any = 0;
+  colorid:any = 0;
   matmapid = 0;
   rulescount = 0;
   formulacount = 0;
@@ -3173,6 +3173,12 @@ public onToggleLoopAnimate(): void {
     );
   }
   private getPrice(): Observable<any> {
+    // Accessories type
+    if(2 == this.category){
+       this.fabricid = "";
+       this.colorid = "";
+    }
+
     return this.getVat().pipe(
       switchMap(vatResponse => {
         const vatPercentage = vatResponse?.data ?? '';
