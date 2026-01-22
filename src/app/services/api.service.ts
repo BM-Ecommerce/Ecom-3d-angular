@@ -16,6 +16,7 @@ interface ApiResponse {
   success: boolean;
   data: any;
   message?: string;
+  fullpriceobject?: any;
 }
 
 @Injectable({
@@ -65,7 +66,7 @@ export class ApiService {
     } else {
       url = this.constructUrl(`${api_url}/api/public/api`, passData);
     }
-    
+
     const headers = this.getHeaders(api_name, api_key);
 
     switch (method.toUpperCase()) {
@@ -114,6 +115,13 @@ export class ApiService {
     const { api_url, api_key, api_name, product_id, ...payload } = params;
     const passData = `getproductsdetails/${product_id}`;
     const key = this.cacheKey('productData', { passData, payload });
+    return this.fromCacheOr(key, () => this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name));
+  }
+
+  getAllProductData(params: ApiCommonParams): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, product_id, ...payload } = params;
+    const passData = `getproductsdetails`;
+    const key = this.cacheKey('productDataAll', { passData, payload });
     return this.fromCacheOr(key, () => this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name));
   }
 
@@ -277,26 +285,26 @@ export class ApiService {
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
 
-relatedProducts(
-  params: ApiCommonParams,
-  category_id: number,
-  related_fabric: number = 0,
-  colorid: number = 0
-): Observable<ApiResponse> {
+  relatedProducts(
+    params: ApiCommonParams,
+    category_id: number,
+    related_fabric: number = 0,
+    colorid: number = 0
+  ): Observable<ApiResponse> {
 
- const { api_url, api_key, api_name, product_id, ...rest } = params;
+    const { api_url, api_key, api_name, product_id, ...rest } = params;
 
-  let fabric_id = related_fabric || colorid;
+    let fabric_id = related_fabric || colorid;
 
-  const payload = {
-    related_fabric: fabric_id,
-    colorid: colorid,
-    productid: product_id,
-  };
+    const payload = {
+      related_fabric: fabric_id,
+      colorid: colorid,
+      productid: product_id,
+    };
     const passData = `fabriclistview/${category_id}/${product_id}/?page=1&perpage=2000`;
 
     return this.callApi('POST', passData, payload, false, false, api_url, api_key, api_name);
-}
+  }
 
   getOptionlist(
     params: ApiCommonParams,
@@ -475,5 +483,12 @@ relatedProducts(
     const passData = `orderitems/calculate/option/price`;
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
-  
+
+
+  searchProducts(params: ApiCommonParams, query: string): Observable<ApiResponse> {
+    const { api_url, api_key, api_name } = params;
+    const safeQuery = encodeURIComponent(query.trim());
+    const passData = `products/search/${safeQuery}`;
+    return this.callApi('GET', passData, null, true, false, api_url, api_key, api_name);
+  }
 }

@@ -4,6 +4,7 @@ import { NotFoundComponent } from './not-found/not-found.component';
 import { OrderformComponent } from './orderform/orderform.component';
 
 const routes: Routes = [
+  { path: 'chat', loadComponent: () => import('./components/ai-chat/ai-chat.component').then(m => m.AiChatComponent) },
   { path: '', component: OrderformComponent },
   { path: ':product_id/:product/:fabric/:fabric_id/:color_id/:pricing_group/:supplier/:cart_productid', component: OrderformComponent },
   { path: ':product_id/:fabric_id/:cart_productid', component: OrderformComponent },
@@ -15,4 +16,4 @@ const routes: Routes = [
   imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]
 })
-export class AppRoutingModule {}
+export class AppRoutingModule { }

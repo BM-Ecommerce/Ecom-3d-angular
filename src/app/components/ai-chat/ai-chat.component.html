@@ -1,0 +1,84 @@
+<div class="chat-shell">
+    <div class="chat-card">
+        <div class="chat-header">
+            <div class="title">
+                <span class="status-dot" aria-hidden="true"></span>
+                <div>
+                    <h3>AI Pricing Assistant</h3>
+                    <p>Search products, set options, get prices fast</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span class="badge">Beta</span>
+            </div>
+        </div>
+
+        <div class="chat-messages" #messagesContainer>
+            <div *ngFor="let msg of messages" class="message" [ngClass]="msg.sender">
+                <div class="message-meta">
+                    <span class="sender-label">{{ msg.sender === 'ai' ? 'AI' : msg.sender === 'system' ? 'System' : 'You' }}</span>
+                </div>
+                <div class="message-text">{{ msg.text }}</div>
+                <div *ngIf="msg.sender === 'ai' && msg.data?.suggestions?.length" class="message-suggestions">
+                    <button type="button" *ngFor="let s of msg.data.suggestions"
+                        [disabled]="msg.data?.disabled || modalOpen"
+                        (click)="selectSuggestion(s.value)">
+                        {{ s.label }}
+                    </button>
+                    <button *ngIf="msg.data?.showAll" type="button" class="show-all"
+                        [disabled]="modalOpen || msg.data?.disabled"
+                        (click)="openOptionModal(guidedFields[guidedIndex], option_data[guidedFields[guidedIndex]?.fieldid] || guidedFields[guidedIndex]?.optionsvalue || [])">
+                        Show all
+                    </button>
+                </div>
+            </div>
+
+            <div *ngIf="isLoading" class="loading-indicator">
+                <div class="dots" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <span class="thinking">Thinking...</span>
+            </div>
+        </div>
+
+        <div class="chat-suggestions">
+            <button type="button" (click)="sendQuick('list products')">List products</button>
+            <button type="button" (click)="sendQuick('details 10')">Product details</button>
+            <button type="button" (click)="sendQuick('ask pricegroup')">Ask about product</button>
+            <button type="button" (click)="sendQuick('roller blinds')">Try "roller blinds"</button>
+            <button type="button" (click)="sendQuick('load 1435')">Load by ID</button>
+            <button type="button" (click)="sendQuick('price')">Get price</button>
+        </div>
+
+        <div class="chat-input">
+            <div class="input-wrap">
+                <input [(ngModel)]="userInput" (keyup.enter)="sendMessage()" type="text"
+                    placeholder="Type a command like 'load 1435', 'price', or 'select Red'..." />
+                <button (click)="sendMessage()" [disabled]="!userInput.trim()">Send</button>
+            </div>
+            <div class="input-help">Examples: load 1435, select red, 1000x1200, price</div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="modalOpen">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div>
+                <h4>{{ modalField?.fieldname || 'Options' }}</h4>
+                <p>Select an option</p>
+            </div>
+            <button type="button" class="icon-btn" (click)="closeOptionModal()">✕</button>
+        </div>
+        <div class="modal-search">
+            <input [(ngModel)]="modalSearch" type="text" placeholder="Search options..." />
+        </div>
+        <div class="modal-list">
+            <button type="button" *ngFor="let opt of filteredModalOptions" (click)="selectModalOption(opt)">
+                {{ opt.optionname }}
+            </button>
+        </div>
+    </div>
+</div>
