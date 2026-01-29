@@ -266,7 +266,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 hasDescriptionContent = false;
   relatedframeimage:string = ""
   netpricecomesfrom = "";
-  is3DOn = true;
+  is3DOn = false;
   recipeid: number = 0;
   category: number = 0;
   costpricecomesfrom = "";

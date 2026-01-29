@@ -148,7 +148,7 @@
                   </div>
                 </div>
 
-                <div class="visualizer-view-controls">
+                <div class="visualizer-view-controls" style="display:none;">
                     <mat-button-toggle-group name="viewMode" *ngIf="show_image_icons"  [value]="is3DOn ? '3d' : '2d'" (change)="toggle3D()"
                       appearance="standard">
                       <mat-button-toggle value="2d" aria-label="2D View">
@@ -243,11 +243,12 @@
 
                     <mat-button-toggle-group [formControlName]="'field_' + field.fieldid"
                       aria-labelledby="example-toggle-group-label" appearance="standard">
-
-                      <mat-button-toggle *ngFor="let option of option_data[field.fieldid] || field.optionsvalue; trackBy: trackByOptionId"
-                        [value]="option.optionid" [id]="'unittype_'+option.optionid">
-                        {{ option.optionname }}
-                      </mat-button-toggle>
+                        <ng-container *ngFor="let option of option_data[field.fieldid] || field.optionsvalue; trackBy: trackByOptionId">
+                          <mat-button-toggle *ngIf="option.optionid == 4"
+                            [value]="option.optionid" [id]="'unittype_'+option.optionid">
+                            {{ option.optionname }}
+                          </mat-button-toggle>
+                      </ng-container>
                     </mat-button-toggle-group>
                   </div>
                 </div>
