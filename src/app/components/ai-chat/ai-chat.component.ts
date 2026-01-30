@@ -790,13 +790,62 @@ export class AiChatComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         this.guidedFields = this.parameters_data.filter(f => {
             if (f.hidden) return false;
-            if (f.showfieldecomonjob !== undefined && f.showfieldecomonjob !== 1) return false;
+            const isWidthDrop = this.isWidthField(f) || this.isDropField(f);
+            if (!isWidthDrop && f.showfieldecomonjob !== undefined && f.showfieldecomonjob !== 1) return false;
             const opts = this.option_data[f.fieldid] || f.optionsvalue;
             if (Array.isArray(opts) && opts.length > 0) return true;
             return [7, 8, 11, 31, 9, 10, 12, 32, 14, 6, 18, 29].includes(f.fieldtypeid);
         });
+        this.guidedFields = this.reorderGuidedFields(this.guidedFields);
         this.guidedIndex = 0;
         this.askNextOption();
+    }
+
+    private reorderGuidedFields(fields: any[]): any[] {
+        const materialOrSub = (f: any) =>
+            (f.fieldtypeid === 5 || f.fieldtypeid === 21) ||
+            f.fieldtypeid === 20;
+        const isWidthDrop = (f: any) => this.isWidthField(f) || this.isDropField(f);
+        const hasMaterialOrSub = fields.some(materialOrSub);
+        const hasWidthDrop = fields.some(isWidthDrop);
+        if (!hasMaterialOrSub || !hasWidthDrop) return fields;
+
+        const ordered: any[] = [];
+        let inserted = false;
+        const widthDropFields = fields.filter(isWidthDrop);
+        fields.forEach((f: any) => {
+            if (isWidthDrop(f)) return;
+            ordered.push(f);
+            if (!inserted && materialOrSub(f)) {
+                ordered.push(...widthDropFields);
+                inserted = true;
+            }
+        });
+        return inserted ? ordered : [...ordered, ...widthDropFields];
+    }
+
+    private isWidthField(field: any): boolean {
+        return !!(this.widthField && field.fieldid === this.widthField.fieldid);
+    }
+
+    private isDropField(field: any): boolean {
+        return !!(this.dropField && field.fieldid === this.dropField.fieldid);
+    }
+
+    private getMinMaxHint(field: any): string {
+        if (this.isWidthField(field)) {
+            const parts = [];
+            if (this.min_width != null) parts.push(`min ${this.min_width}`);
+            if (this.max_width != null) parts.push(`max ${this.max_width}`);
+            return parts.length ? ` (${parts.join(', ')})` : '';
+        }
+        if (this.isDropField(field)) {
+            const parts = [];
+            if (this.min_drop != null) parts.push(`min ${this.min_drop}`);
+            if (this.max_drop != null) parts.push(`max ${this.max_drop}`);
+            return parts.length ? ` (${parts.join(', ')})` : '';
+        }
+        return '';
     }
 
     askNextOption() {
@@ -818,7 +867,8 @@ export class AiChatComponent implements OnInit, OnDestroy, AfterViewInit {
         const isText = [18, 29].includes(field.fieldtypeid);
         if (isNumeric && opts.length === 0) {
             const label = field.fieldname || (field.fieldtypeid === this.widthField?.fieldtypeid ? 'Width' : 'Drop');
-            this.addMessage('ai', `Enter ${label} (number).`);
+            const hint = this.getMinMaxHint(field);
+            this.addMessage('ai', `Enter ${label} (number)${hint}.`);
             return;
         }
         if (isText && opts.length === 0) {
@@ -862,7 +912,8 @@ export class AiChatComponent implements OnInit, OnDestroy, AfterViewInit {
                         control.setValue(val);
                         control.updateValueAndValidity();
                         if (control.invalid) {
-                            this.addMessage('ai', 'That number is out of range. Please enter a valid value.');
+                            const hint = this.getMinMaxHint(field);
+                            this.addMessage('ai', `That number is out of range. Please enter a valid value${hint}.`);
                             return;
                         }
                     }
