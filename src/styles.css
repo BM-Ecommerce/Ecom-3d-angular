@@ -1,9 +1,9 @@
 /* You can add global styles to this file, and also import other style files */
 
 html, body { height: 100%; }
-body { margin: 0; font-family: 'Poppins', sans-serif!important; }
+body { margin: 0; font-family: 'Inter', sans-serif!important; }
 .mat-h1, .mat-headline, .mat-typography h1,.mat-expansion-panel-header,.show-order-details-contents{
-    font-family: 'Poppins', sans-serif!important; 
+    font-family: 'Inter', sans-serif!important; 
 }
 .mat-input-element {
     caret-color: var(--primary-color) !important;
@@ -37,6 +37,12 @@ body { margin: 0; font-family: 'Poppins', sans-serif!important; }
     justify-content: center;
     align-items: center;
  }
+
+ button.mat-focus-indicator.fs-cta.mat-raised-button.mat-button-base.mat-primary {
+    border-radius: 12px;
+    padding: 5px 24px;
+}
+
  .fs-cta span.mat-button-wrapper .mat-icon {
     width: 20px;
     height: 20px;
