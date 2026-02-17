@@ -57,6 +57,7 @@
             <div class="rp-info">
               <p class="rp-name">
                 {{ relatedproducts.ecomproductname }}
+                </p><p class="rp-content">
                 <span class="rp-fabric" *ngIf="product.fabricname">
                       {{ product.fabricname }}
                     </span>
@@ -89,7 +90,7 @@
             <div class="rp-info">
               <p class="rp-name">
                     {{ relatedproducts.ecomproductname }}
-
+                </p><p class="rp-content">
                     <span class="rp-fabric" *ngIf="product.fabricname">
                       {{ product.fabricname }}
                     </span>
@@ -100,7 +101,7 @@
                   </p>
 
               <p class="rp-price" *ngIf="product.minprice">
-                From: {{ currencySymbol }}{{ product.minprice }}
+                <span>From:</span> {{ currencySymbol }}{{ product.minprice }}
               </p>
             </div>
           </a>

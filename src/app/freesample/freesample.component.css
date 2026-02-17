@@ -119,7 +119,7 @@
   padding: 4px 8px;
   border-radius: 999px;
   background: #e9f5ff;
-  color: #0369a1;
+  color: var(--primary-color);
   margin-bottom: 6px;
 }
 
@@ -127,11 +127,11 @@
   margin: 0;
   font-size: 18px;
   line-height: 1.4;
-  color: #0f172a;
+  color: var(--dark-gray);
 }
 
 .fs-subtitle {
-  color: #475569;
+  color: var(--text-color);
   font-size: 13px;
 }
 
@@ -142,15 +142,15 @@
   gap: 16px;
 }
 
-.fs-price-label { color: #6b7280; font-size: 12px; margin-right: 6px; }
+.fs-price-label { color: var(--text-color); font-size: 12px; margin-right: 6px; }
 .fs-price-value {
   font-weight: 700;
-  color: #111827;
+  color: var(--primary-color);
 }
 
 .fs-desc {
   margin: 8px 0 12px;
-  color: #374151;
+  color:  var(--text-color);
   font-size: 13px;
 }
 

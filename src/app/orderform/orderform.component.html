@@ -630,7 +630,7 @@
         </div>
     </div>
     </div>
-  <mat-tab-group dynamicHeight>
+  <mat-tab-group dynamicHeight [selectedIndex]="activeTabIndex">
 
     <mat-tab *ngIf="hasProspecContent" label="Product Specification">
       <div class="tabsproduct" [innerHTML]="pei_prospec"></div>
@@ -648,3 +648,4 @@
 ></app-relatedproduct>
   </div>
 </form>
+

@@ -263,7 +263,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   isScrolled = false;
   unittypename = "";
   hasProspecContent = false;
-hasDescriptionContent = false;
+  hasDescriptionContent = false;
+  activeTabIndex = -1;
   relatedframeimage:string = ""
   netpricecomesfrom = "";
   is3DOn = true;
@@ -1298,6 +1299,7 @@ public onToggleLoopAnimate(): void {
           this.pei_prospec = data.pei_prospec;
           this.hasProspecContent = this.hasContent(this.pei_prospec);
           this.hasDescriptionContent = this.hasContent(this.productdescription);
+          this.activeTabIndex = (this.hasProspecContent || this.hasDescriptionContent) ? 0 : -1;
           this.category = Number(data.pi_category);
           if (this.category == 5) {
             this.fabricFieldType = 21
