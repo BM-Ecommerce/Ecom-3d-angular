@@ -1,9 +1,20 @@
 /* You can add global styles to this file, and also import other style files */
 
 html, body { height: 100%; }
-body { margin: 0; font-family: 'Inter', sans-serif!important; }
-.mat-h1, .mat-headline, .mat-typography h1,.mat-expansion-panel-header,.show-order-details-contents{
-    font-family: 'Inter', sans-serif!important; 
+body { margin: 0; font-family: 'Inter', sans-serif !important; }
+/* 1. Update the global variable (standard components) */
+:root {
+  --mat-typography-font-family: 'Inter', sans-serif !important;
+}
+
+/* 2. Target all .mat- classes EXCEPT mat-icon and its variants */
+[class*="mat-"]:not(.mat-icon):not([class*="mat-icon"]),
+.mat-h1, .mat-h2, .mat-h3, 
+.mat-typography h1, 
+.mat-typography h2, 
+.mat-typography h3, 
+.mat-typography p {
+    font-family: 'Inter', sans-serif !important;
 }
 .mat-input-element {
     caret-color: var(--primary-color) !important;
@@ -17,14 +28,14 @@ body { margin: 0; font-family: 'Inter', sans-serif!important; }
     font-size: 14px;
     font-weight: 600;
     color: var(--dark-gray);
-    font-family: 'Inter', sans-serif!important;
+    font-family: 'Inter', sans-serif !important;
 }
 
 .mat-form-field-required-marker {
     color: red !important;
 }
 .tooltip-container-sub a{
-    color: blue!important;
+    color: blue !important;
     text-decoration: none;
 }
 
@@ -43,10 +54,12 @@ body { margin: 0; font-family: 'Inter', sans-serif!important; }
 .mat-form-field mat-hint {
   font-size: 11px !important;
 }
- .fs-cta span.mat-button-wrapper{
+ .fs-cta span.mat-button-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
+    font-size: 14px;
+    font-weight: 600;
  }
 
  button.mat-focus-indicator.fs-cta.mat-raised-button.mat-button-base.mat-primary {
@@ -76,6 +89,7 @@ body { margin: 0; font-family: 'Inter', sans-serif!important; }
 /* Tablet breakpoint */
 @media (max-width: 1023.98px) {
   :root { --app-action-icon-size: var(--app-action-icon-size-tablet); }
+   body { padding: 30px; }
 }
 
 /* Mobile breakpoint */
@@ -111,3 +125,4 @@ body { margin: 0; font-family: 'Inter', sans-serif!important; }
     font-size: 14px;
     font-weight: 600 !important;
 }
+

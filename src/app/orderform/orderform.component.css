@@ -230,7 +230,7 @@ textarea {
   width: 28px;
 }
 .mat-primary{
-    color:black;
+    color:var(--dark-gray);
 }
 .product-wrapper {
     flex: 1 1 45%;
@@ -669,7 +669,8 @@ canvas {
 
 .price-label {
   font-weight: 500;
-  color: #555;
+  color: var(--text-color);
+
 }
 
 .price {
@@ -968,7 +969,8 @@ button.mat-raised-button:hover {
   padding: 5px 24px;
   border-color: var(--primary-color);
   border: 2px solid;
-
+  font-weight: 600;
+  font-size: 14px;
 }
 h1.product-title {
     display: flex;
@@ -1151,7 +1153,7 @@ mat-button-toggle-group:disabled {
   margin-bottom: 20px;
   color: rgba(0, 0, 0, 0.54);
   font-size: 11px;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+ 
 }
 .color-image-field-wrapper .mat-label {
   display: block;
@@ -1160,7 +1162,7 @@ mat-button-toggle-group:disabled {
   color: rgba(0, 0, 0, 0.6);
   margin-bottom: 6px;
   letter-spacing: 0.3px;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+ 
 }
 .color-image-field-wrapper .color-grid,
 .list-image-field-wrapper .color-grid {
@@ -1222,7 +1224,7 @@ mat-button-toggle-group:disabled {
 .color-image-field-wrapper .color-item b, 
 .list-image-field-wrapper .color-item b {
   color:#333;
-  font-weight: 600;
+  font-weight: 500;
 }
 .color-image-field-wrapper .color-item:hover,
 .list-image-field-wrapper .color-item:hover {
