@@ -1,0 +1,1051 @@
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { Subject, Subscription, forkJoin, of } from 'rxjs';
+import { catchError, finalize, switchMap, takeUntil } from 'rxjs/operators';
+import { ApiService } from '../services/api.service';
+import { environment } from '../../environments/environment';
+import { ProductPreloadService } from '../services/product-preload.service';
+import Swal from 'sweetalert2';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+
+interface ListingCategoryValue {
+  name: string;
+  id: string | number;
+  categoryid?: string | number;
+  img?: string;
+}
+
+interface ListingCategory {
+  name: string;
+  id: string | number;
+  values: ListingCategoryValue[];
+}
+
+interface ListingProductItem {
+  pei_productid?: string | number;
+  productname?: string;
+  ecomdescription?: string;
+  description?: string;
+  fd_id?: string | number;
+  fabricid?: string | number;
+  fabricname?: string;
+  fabric_name?: string;
+  cd_id?: string | number;
+  colorid?: string | number;
+  colorname?: string;
+  color_name?: string;
+  suppliername?: string;
+  supplier_name?: string;
+  supplier?: string;
+  supplierid?: string | number;
+  supplier_id?: string | number;
+  groupid?: string | number;
+  pricegroupid?: string | number;
+  matmapid?: string | number;
+  prices?: string;
+  category?: string | number;
+  pricetablesupplier?: string;
+  salecount?: string | number;
+  minprice?: string | number;
+  minimum_price?: string | number;
+  price?: string | number;
+  colorimage?: string;
+  color_image?: string;
+  [key: string]: any;
+}
+
+type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
+
+@Component({
+  selector: 'app-product-listing',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatCheckboxModule,
+    MatExpansionModule,
+    MatPaginatorModule,
+    MatProgressSpinnerModule,
+    MatButtonToggleModule
+  ],
+  templateUrl: './product-listing.component.html',
+  styleUrls: ['./product-listing.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class ProductListingComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  private listRequestSub: Subscription | null = null;
+  private productDataPayload: any = null;
+
+  isLoading = false;
+  isListLoading = false;
+  errorMessage: string | null = null;
+  listErrorMessage: string | null = null;
+
+  params: any = {};
+  productId = 0;
+  productTitle = '';
+  productDescription = '';
+  productSlug = '';
+  bannerImageUrl = '';
+  listingFrameImageUrl = '';
+  productCategory = 0;
+  ecomFreeSample = false;
+  ecomSamplePrice = 0;
+  fieldscategoryid = 20;
+
+  gridColumns = 3;
+  sortBy: SortKey = 'defaultsorting';
+  currencySymbol = '\u00A3';
+
+  categories: ListingCategory[] = [];
+  paginatedProducts: ListingProductItem[] = [];
+  selectedCategoryValues: Record<string, Set<string>> = {};
+  pageSizeOptions: number[] = [12, 24, 48, 96];
+  pageSize = 24;
+  pageIndex = 0;
+  totalProducts = 0;
+  totalPages = 0;
+  submittingFreeSampleKey: string | null = null;
+
+  readonly imgpath = `${environment.apiUrl}/api/public/storage/attachments/${environment.apiName}/material/colour/`;
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private apiService: ApiService,
+    private productPreloadService: ProductPreloadService,
+    private cd: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    this.route.params.pipe(takeUntil(this.destroy$)).subscribe((routeParams) => {
+      const queryParams = this.route.snapshot.queryParams || {};
+      const productId = routeParams['product_id'] ?? queryParams['product_id'];
+
+      if (!productId) {
+        this.errorMessage = 'Missing product id for listing page.';
+        this.cd.markForCheck();
+        return;
+      }
+
+      this.params = {
+        ...queryParams,
+        ...routeParams,
+        product_id: productId,
+        cart_productid: routeParams['cart_productid'] ?? queryParams['cart_productid'] ?? productId,
+        api_url: environment.apiUrl,
+        api_key: environment.apiKey,
+        api_name: environment.apiName,
+        site: environment.site
+      };
+
+      this.loadListingData();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.listRequestSub?.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private loadListingData(): void {
+    this.isLoading = true;
+    this.errorMessage = null;
+    this.listErrorMessage = null;
+    this.paginatedProducts = [];
+    this.pageIndex = 0;
+    this.totalProducts = 0;
+    this.totalPages = 0;
+
+    this.apiService.getProductData(this.params).pipe(
+      takeUntil(this.destroy$),
+      switchMap((productData: any) => {
+        const product = productData?.result?.EcomProductlist?.[0];
+        if (!product) {
+          throw new Error('Product details not found.');
+        }
+
+        this.productDataPayload = productData;
+        this.productId = Number(product.pei_productid || this.params.product_id || 0);
+        this.productTitle = product.pei_ecomProductName || product.label || '';
+        this.productSlug = this.slugify(product.label || this.productTitle);
+        this.productDescription = String(product.pi_productdescription || '');
+        this.bannerImageUrl = this.resolveBannerImage(product);
+        this.listingFrameImageUrl = this.resolveListingFrameImage(product);
+        this.productCategory = this.toNumber(product.pi_category);
+        this.ecomFreeSample = this.toBoolean(product.pei_ecomFreeSample);
+        this.ecomSamplePrice = this.toNumber(product.pei_ecomsampleprice);
+        this.fieldscategoryid = this.resolveFieldsCategoryId(product.pi_category);
+
+        this.productPreloadService.set(this.productId || this.params.product_id, productData);
+
+        return forkJoin({
+          categoryData: this.apiService.getCategoryList(this.params).pipe(catchError(() => of(null))),
+          brandsData: this.apiService.getBrands(this.params).pipe(catchError(() => of(null)))
+        });
+      }),
+      catchError((err) => {
+        console.error('Listing page load failed:', err);
+        this.errorMessage = 'Unable to load listing data.';
+        return of(null);
+      }),
+      finalize(() => {
+        this.isLoading = false;
+        this.cd.markForCheck();
+      })
+    ).subscribe((result: any) => {
+      if (!result) {
+        return;
+      }
+
+      this.categories = this.prepareCategories(result?.categoryData?.result, result?.brandsData?.result);
+      this.initializeSelectedFilters();
+      this.applyQueryParamSelections();
+      this.fetchListingProducts(false);
+      this.cd.markForCheck();
+    });
+  }
+
+  private prepareCategories(rawCategories: any, rawBrands: any): ListingCategory[] {
+    const categories: ListingCategory[] = [];
+    const categoryArray = this.toArray(rawCategories);
+
+    categoryArray.forEach((cat: any) => {
+      const valuesArray = this.toArray(cat?.values);
+      if (!cat || !cat.name || valuesArray.length === 0) {
+        return;
+      }
+
+      const values = valuesArray
+        .filter((value: any) => value && value.name)
+        .map((value: any) => ({
+          name: String(value.name),
+          id: value.id,
+          categoryid: value.categoryid,
+          img: value.img || ''
+        }));
+
+      if (!values.length) {
+        return;
+      }
+
+      categories.push({
+        name: String(cat.name),
+        id: cat.id ?? '',
+        values
+      });
+    });
+
+    const brands = this.toArray(rawBrands);
+    const supplierValues: ListingCategoryValue[] = [];
+    let supplierId = 99999;
+
+    brands.forEach((brand: any) => {
+      const supplierName = brand?.supplier_name || brand?.name || '';
+      if (!supplierName) {
+        return;
+      }
+
+      supplierValues.push({
+        name: String(supplierName),
+        id: supplierId--,
+        categoryid: '0',
+        img: ''
+      });
+    });
+
+    if (supplierValues.length) {
+      categories.unshift({
+        name: 'Supplier',
+        id: '0',
+        values: supplierValues
+      });
+    }
+
+    return categories.sort((a, b) => {
+      if (a.name === 'Color') return -1;
+      if (b.name === 'Color') return 1;
+      return 0;
+    });
+  }
+
+  private initializeSelectedFilters(): void {
+    this.selectedCategoryValues = {};
+    this.categories.forEach((category) => {
+      this.selectedCategoryValues[this.categoryKey(category)] = new Set<string>();
+    });
+  }
+
+  private applyQueryParamSelections(): void {
+    const queryParams = this.route.snapshot.queryParams || {};
+    this.categories.forEach((category) => {
+      const key = this.categoryKey(category);
+      const fromQuery = queryParams[category.name];
+      if (!fromQuery || typeof fromQuery !== 'string') {
+        return;
+      }
+
+      const selected = fromQuery
+        .split(',')
+        .map((value: string) => this.normalize(value))
+        .filter((value: string) => !!value);
+
+      selected.forEach((value: string) => this.selectedCategoryValues[key].add(value));
+    });
+
+    const sortBy = String(queryParams['product_sorting'] || queryParams['sort'] || '').trim();
+    const validValues: SortKey[] = ['defaultsorting', 'bestselling', 'priceasc', 'pricedesc'];
+    if (validValues.includes(sortBy as SortKey)) {
+      this.sortBy = sortBy as SortKey;
+    }
+
+    const pageFromQuery = this.toNumber(queryParams['page'] ?? queryParams['page_no']);
+    if (pageFromQuery > 0) {
+      this.pageIndex = pageFromQuery - 1;
+    }
+
+    const perPageFromQuery = this.toNumber(queryParams['per_page'] ?? queryParams['perpage']);
+    if (perPageFromQuery > 0) {
+      this.pageSize = perPageFromQuery;
+      this.mergePageSizeOption(perPageFromQuery);
+    }
+  }
+
+  onFilterToggle(category: ListingCategory, value: ListingCategoryValue, checked: boolean): void {
+    const key = this.categoryKey(category);
+    const selectedSet = this.selectedCategoryValues[key];
+    if (!selectedSet) {
+      return;
+    }
+
+    const normalizedValue = this.normalize(value.name);
+    if (checked) {
+      selectedSet.add(normalizedValue);
+    } else {
+      selectedSet.delete(normalizedValue);
+    }
+    this.fetchListingProducts(true);
+  }
+
+  isSelected(category: ListingCategory, value: ListingCategoryValue): boolean {
+    const selectedSet = this.selectedCategoryValues[this.categoryKey(category)];
+    if (!selectedSet) {
+      return false;
+    }
+    return selectedSet.has(this.normalize(value.name));
+  }
+
+  clearAllFilters(): void {
+    Object.values(this.selectedCategoryValues).forEach((set) => set.clear());
+    this.fetchListingProducts(true);
+  }
+
+  onSortChange(rawValue: string): void {
+    const validValues: SortKey[] = ['defaultsorting', 'bestselling', 'priceasc', 'pricedesc'];
+    const nextSort = (validValues.includes(rawValue as SortKey) ? rawValue : 'defaultsorting') as SortKey;
+    this.sortBy = nextSort;
+    this.fetchListingProducts(true);
+  }
+
+  private fetchListingProducts(resetPage: boolean): void {
+    if (resetPage) {
+      this.pageIndex = 0;
+    }
+
+    if (!this.productId) {
+      this.paginatedProducts = [];
+      this.totalProducts = 0;
+      this.totalPages = 0;
+      return;
+    }
+
+    const page = this.pageIndex + 1;
+    const perPage = this.pageSize;
+    const sort = this.sortBy === 'defaultsorting' ? '' : this.sortBy;
+    const filterData = this.buildFilterPayload();
+
+    this.listErrorMessage = null;
+    this.isListLoading = true;
+    this.listRequestSub?.unsubscribe();
+    this.listRequestSub = this.apiService.getFabricListView(
+      this.params,
+      this.fieldscategoryid,
+      {
+        page,
+        filter_data: filterData,
+        sort
+      },
+      page,
+      perPage
+    ).pipe(
+      takeUntil(this.destroy$),
+      catchError((err) => {
+        console.error('Listing products load failed:', err);
+        this.listErrorMessage = 'Unable to load listing products.';
+        this.paginatedProducts = [];
+        this.totalProducts = 0;
+        this.totalPages = 0;
+        return of(null);
+      }),
+      finalize(() => {
+        this.isListLoading = false;
+        this.cd.markForCheck();
+      })
+    ).subscribe((response: any) => {
+      if (!response) {
+        return;
+      }
+
+      this.listErrorMessage = null;
+      const parsed = this.parseListingResponse(response, page, perPage);
+      this.paginatedProducts = parsed.items;
+      this.totalProducts = parsed.total;
+      this.totalPages = parsed.totalPages;
+      this.pageIndex = Math.max(parsed.currentPage - 1, 0);
+      this.pageSize = parsed.perPage;
+      this.mergePageSizeOption(parsed.perPage);
+    });
+  }
+
+  private buildFilterPayload(): Record<string, string> {
+    const filterData: Record<string, string> = {};
+
+    this.categories.forEach((category) => {
+      const selectedSet = this.selectedCategoryValues[this.categoryKey(category)];
+      if (!selectedSet || selectedSet.size === 0) {
+        return;
+      }
+
+      const selectedNames = this.getSelectedCategoryNames(category, selectedSet);
+      if (!selectedNames.length) {
+        return;
+      }
+
+      const key = this.normalizeFilterKey(category.name);
+      const value = selectedNames.join(',');
+      filterData[key === 'supplier' ? 'pricetablesupplier' : key] = value;
+    });
+
+    return filterData;
+  }
+
+  private getSelectedCategoryNames(category: ListingCategory, selectedSet: Set<string>): string[] {
+    const selectedNames: string[] = [];
+    category.values.forEach((value) => {
+      if (selectedSet.has(this.normalize(value.name))) {
+        selectedNames.push(String(value.name));
+      }
+    });
+
+    if (!selectedNames.length) {
+      selectedSet.forEach((value) => selectedNames.push(value));
+    }
+
+    return Array.from(new Set(selectedNames));
+  }
+
+  private normalizeFilterKey(name: string): string {
+    return String(name || '').trim().toLowerCase().replace(/\s+/g, '');
+  }
+
+  private parseListingResponse(
+    response: any,
+    fallbackPage: number,
+    fallbackPerPage: number
+  ): {
+    items: ListingProductItem[];
+    total: number;
+    totalPages: number;
+    currentPage: number;
+    perPage: number;
+  } {
+    const nestedResult = response?.result && !Array.isArray(response.result) ? response.result : null;
+    let items: ListingProductItem[] = [];
+
+    if (Array.isArray(response?.result)) {
+      items = response.result as ListingProductItem[];
+    } else if (Array.isArray(nestedResult?.Ecomfabiclist)) {
+      items = nestedResult.Ecomfabiclist as ListingProductItem[];
+    } else if (Array.isArray(response?.Ecomfabiclist)) {
+      items = response.Ecomfabiclist as ListingProductItem[];
+    }
+
+    const perPage = this.toPositiveInt(
+      response?.per_page ?? nestedResult?.per_page ?? fallbackPerPage,
+      fallbackPerPage
+    );
+    const total = this.toPositiveInt(response?.total ?? nestedResult?.total ?? items.length, items.length);
+
+    let totalPages = this.toPositiveInt(response?.total_pages ?? nestedResult?.total_pages, 0);
+    if (totalPages <= 0) {
+      totalPages = perPage > 0 ? Math.ceil(total / perPage) : 0;
+    }
+
+    const currentPage = this.toPositiveInt(
+      response?.current_page ?? nestedResult?.current_page ?? fallbackPage,
+      fallbackPage
+    );
+
+    return {
+      items: items.filter((item) => item && typeof item === 'object'),
+      total,
+      totalPages,
+      currentPage,
+      perPage
+    };
+  }
+
+  private mergePageSizeOption(size: number): void {
+    const next = this.toPositiveInt(size, 0);
+    if (!next || this.pageSizeOptions.includes(next)) {
+      return;
+    }
+    this.pageSizeOptions = [...this.pageSizeOptions, next].sort((a, b) => a - b);
+  }
+
+  private toPositiveInt(value: any, fallback: number): number {
+    const parsed = this.toNumber(value);
+    if (!parsed || parsed < 0) {
+      return fallback;
+    }
+    return Math.floor(parsed);
+  }
+
+  setGrid(columns: number | string): void {
+    const normalizedColumns = Number(columns);
+    if (![1, 2, 3, 4].includes(normalizedColumns)) {
+      return;
+    }
+    if (this.gridColumns === normalizedColumns) {
+      return;
+    }
+    this.gridColumns = normalizedColumns;
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.fetchListingProducts(false);
+  }
+
+  openOrderForm(product: ListingProductItem): void {
+    if (!this.productId) {
+      return;
+    }
+
+    if (this.productDataPayload) {
+      this.productPreloadService.set(this.productId, this.productDataPayload);
+    }
+
+    const productSlug = this.productSlug || this.slugify(this.productTitle);
+    const selectionLabel = this.buildSelectionLabel(product);
+    const selectionSlug = this.slugify(selectionLabel || 'single_view');
+
+    const fabricId = this.toNumber(product.fd_id || product.fabricid);
+    const colorId = this.toNumber(product.cd_id || product.colorid);
+    const pricingGroup = this.toNumber(product.groupid || product.pricegroupid);
+    const supplier = this.toNumber(product.supplierid || product.supplier_id);
+    const cartProductId = this.params?.cart_productid || this.productId;
+
+    this.router.navigate([
+      '/',
+      this.productId,
+      productSlug,
+      selectionSlug,
+      fabricId,
+      colorId,
+      pricingGroup,
+      supplier,
+      cartProductId
+    ]);
+  }
+
+  onCustomizeClick(product: ListingProductItem, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.openOrderForm(product);
+  }
+
+  onFreeSampleClick(product: ListingProductItem, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.canShowFreeSample(product)) {
+      return;
+    }
+
+    const submitKey = this.getFreeSampleSubmitKey(product);
+    this.submittingFreeSampleKey = submitKey;
+
+    const payload = this.buildFreeSampleRequestPayload(product);
+    this.apiService.addFreeSample(this.params?.site || environment.site, payload).pipe(
+      takeUntil(this.destroy$),
+      finalize(() => {
+        if (this.submittingFreeSampleKey === submitKey) {
+          this.submittingFreeSampleKey = null;
+          this.cd.markForCheck();
+        }
+      })
+    ).subscribe({
+      next: (response: any) => {
+        const successValue = String(response?.success ?? '').toLowerCase();
+        const isSuccess = successValue === 'true' || successValue === '1' || response?.success === true;
+        const nextUrl = response?.link_source || `${this.params?.site || environment.site}/cart`;
+
+        if (!isSuccess) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Sample Already Added',
+            text: response?.value || 'This sample is already in your cart.'
+          });
+          return;
+        }
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Sample Added',
+          text: response?.value || 'Free sample has been added to cart.',
+          confirmButtonText: response?.button_text || 'View Cart'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = nextUrl;
+          }
+        });
+      },
+      error: () => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Failed',
+          text: 'Unable to add free sample right now. Please try again.'
+        });
+      }
+    });
+  }
+
+  canShowFreeSample(product: ListingProductItem): boolean {
+    if (!this.ecomFreeSample) {
+      return false;
+    }
+    const colorId = this.toNumber(product.cd_id || product.colorid);
+    return colorId > 0;
+  }
+
+  isFreeSampleSubmitting(product: ListingProductItem): boolean {
+    return this.submittingFreeSampleKey === this.getFreeSampleSubmitKey(product);
+  }
+
+  get freeSampleButtonLabel(): string {
+    if (this.ecomSamplePrice > 0) {
+      return `Free Sample ${this.currencySymbol}${this.ecomSamplePrice.toFixed(2)}`;
+    }
+    return 'Free Sample';
+  }
+
+  private buildFreeSampleRequestPayload(product: ListingProductItem): Record<string, any> {
+    const colorId = this.toNumber(product.cd_id || product.colorid);
+    const fabricId = this.toNumber(product.fd_id || product.fabricid);
+    const pricingGroupId = this.toNumber(product.groupid || product.pricegroupid);
+    const supplierId = this.toNumber(product.supplierid || product.supplier_id);
+    const matmapId = this.toNumber(product.matmapid);
+    const productDisplayName = this.getProductDisplayName(product);
+    const freeSampleData = this.buildFreeSampleData(product, {
+      colorId,
+      fabricId,
+      pricingGroupId,
+      supplierId,
+      matmapId,
+      productDisplayName
+    });
+
+    return {
+      color_id: colorId,
+      fabric_id: fabricId,
+      pricing_grp_id: pricingGroupId,
+      fabricname: productDisplayName,
+      free_sample_data: freeSampleData,
+      fabric_img_url: this.getProductImage(product)
+    };
+  }
+
+  private buildFreeSampleData(
+    product: ListingProductItem,
+    ids: {
+      colorId: number;
+      fabricId: number;
+      pricingGroupId: number;
+      supplierId: number;
+      matmapId: number;
+      productDisplayName: string;
+    }
+  ): Record<string, any> {
+    const categoryId = this.toNumber(product.category || this.productCategory);
+    const pricingType = String(product.prices || '').trim();
+    const supplierName = String(product.pricetablesupplier || '').trim();
+    const normalizedApiUrl = String(environment.apiUrl || '').replace(/\/+$/, '');
+
+    const width = this.buildFreeSampleParameter('11', 'Width', 0);
+    const drop = this.buildFreeSampleParameter('12', 'Drop', 0);
+    const productType = this.buildFreeSampleParameter('13', 'Pricing Group', pricingType);
+    const quantity = this.buildFreeSampleParameter('14', 'Quantity', 1);
+
+    const data: Record<string, any> = {
+      pid: this.productId,
+      free_sample_price: this.ecomSamplePrice,
+      type: 'free_sample',
+      product_with_fabric_and_color: `${this.productTitle} - ${ids.productDisplayName}`,
+      ProductName: this.productTitle,
+      sid: ids.supplierId || '',
+      matmapid: ids.matmapId || '',
+      Measurement: '',
+      Quantity: 1,
+      categoryid: categoryId || '',
+      ProductCode: '',
+      Supplier: supplierName,
+      pricing_group_type: pricingType,
+      width,
+      drop,
+      product_type: productType,
+      quantity,
+      Seqno: '',
+      fittedbywho: '',
+      fittingheight: '',
+      chainfraction: '',
+      childfraction: '',
+      totalchainfraction: '',
+      childsafetyrequired: '',
+      chaincordsystem: '',
+      additionalchaincorddeduction: '',
+      wandlength: '',
+      chaincorddrop: '',
+      totalchaincorddrop: '',
+      itemno: '',
+      itemid: '',
+      cus_seq: '',
+      ordertransfertype: '',
+      OverridePrice: '',
+      api_url: normalizedApiUrl
+    };
+
+    const fabricName = String(product.fabricname || product.fabric_name || '').trim();
+    const colorName = String(product.colorname || product.color_name || '').trim();
+    if (ids.fabricId > 0 && categoryId === 3) {
+      data['fabric'] = this.buildFreeSampleParameter('5', 'Fabric', fabricName);
+      data['color'] = this.buildFreeSampleParameter('5', 'Color', colorName);
+    } else {
+      data['color'] = this.buildFreeSampleParameter('20', 'Color', colorName);
+    }
+
+    return data;
+  }
+
+  private buildFreeSampleParameter(type: string, name: string, option: string | number): Record<string, any> {
+    return {
+      ParameterType: type,
+      ParameterName: name,
+      ParameterOption: option,
+      fieldCode: '',
+      ParameterFraction: '',
+      DualSeq: '',
+      ParameterSelectType: '0'
+    };
+  }
+
+  getProductDisplayName(product: ListingProductItem): string {
+    const fabricName = String(product.fabricname || product.fabric_name || '').trim();
+    const colorName = String(product.colorname || product.color_name || '').trim();
+    if (fabricName && colorName) {
+      return `${fabricName} ${colorName}`;
+    }
+    return colorName || fabricName || this.productTitle;
+  }
+
+  private getFreeSampleSubmitKey(product: ListingProductItem): string {
+    return [
+      this.productId || 0,
+      this.toNumber(product.fd_id || product.fabricid),
+      this.toNumber(product.cd_id || product.colorid),
+      this.toNumber(product.groupid || product.pricegroupid),
+      this.toNumber(product.supplierid || product.supplier_id)
+    ].join('_');
+  }
+
+  getProductImage(product: ListingProductItem): string {
+    const colorImage = product?.colorimage || product?.color_image || '';
+    if (!colorImage) {
+      return 'assets/no-image.jpg';
+    }
+    if (this.isAbsoluteUrl(colorImage)) {
+      return colorImage;
+    }
+    if (String(colorImage).includes('/')) {
+      return this.resolveStorageImageUrl(String(colorImage));
+    }
+    return `${this.imgpath}${encodeURIComponent(String(colorImage).trim())}`;
+  }
+
+  getCategoryValueImage(value: ListingCategoryValue): string {
+    if (!value?.img) {
+      return '';
+    }
+    if (this.isAbsoluteUrl(value.img)) {
+      return value.img;
+    }
+    return this.resolveStorageImageUrl(String(value.img));
+  }
+
+  getPrice(product: ListingProductItem): number {
+    return this.toNumber(product?.minprice ?? product?.minimum_price ?? product?.price);
+  }
+
+  get productDescriptionPreview(): string {
+    if (!this.productDescription) {
+      return '';
+    }
+    return this.productDescription.length > 300
+      ? `${this.productDescription.slice(0, 300)}...`
+      : this.productDescription;
+  }
+
+  get hasSidebar(): boolean {
+    return this.categories.some((category) => Array.isArray(category.values) && category.values.length > 0);
+  }
+
+  get activeResultCount(): number {
+    return this.totalProducts;
+  }
+
+  get homeUrl(): string {
+    return this.params?.site || '/';
+  }
+
+  get visibleResultCount(): number {
+    return this.paginatedProducts.length;
+  }
+
+  isColorCategory(category: ListingCategory): boolean {
+    const name = this.normalize(category?.name || '');
+    return name === 'color' || name === 'colour' || name.includes('color') || name.includes('colour');
+  }
+
+  toggleColorFilter(category: ListingCategory, value: ListingCategoryValue): void {
+    const selected = this.isSelected(category, value);
+    this.onFilterToggle(category, value, !selected);
+  }
+
+  getProductCategoryLabel(product: ListingProductItem): string {
+    return String(product?.['productname'] || this.productTitle || '').toUpperCase();
+  }
+
+  getProductDescription(product: ListingProductItem): string {
+    const fromItem = String(product?.['ecomdescription'] || product?.['description'] || '').trim();
+    if (fromItem) {
+      return fromItem.length > 95 ? `${fromItem.slice(0, 95)}...` : fromItem;
+    }
+    if (this.productDescriptionPreview) {
+      return this.productDescriptionPreview.length > 95
+        ? `${this.productDescriptionPreview.slice(0, 95)}...`
+        : this.productDescriptionPreview;
+    }
+    return 'Stylish and versatile design for any space.';
+  }
+
+  trackCategory(index: number): number {
+    return index;
+  }
+
+  trackCategoryValue(index: number): number {
+    return index;
+  }
+
+  trackProduct(index: number): number {
+    return index;
+  }
+
+  private categoryKey(category: ListingCategory): string {
+    return `${category.id}::${this.normalize(category.name)}`;
+  }
+
+  private buildSelectionLabel(product: ListingProductItem): string {
+    const fabricName = String(product?.fabricname || product?.fabric_name || '').trim();
+    const colorName = String(product?.colorname || product?.color_name || '').trim();
+    if (fabricName && colorName) {
+      return `${fabricName}-${colorName}`;
+    }
+    return colorName || fabricName || 'single_view';
+  }
+
+  private resolveFieldsCategoryId(categoryId: any): number {
+    return Number(categoryId) === 3 ? 5 : 20;
+  }
+
+  private resolveBannerImage(product: any): string {
+    const direct = this.resolveStorageImageUrl(product?.banner_url);
+    if (direct) return direct;
+
+    const parsedBanner = this.extractFirstImage(product?.pi_prodbannerimage);
+    if (parsedBanner) return this.resolveStorageImageUrl(parsedBanner);
+
+    const parsedBackground = this.extractFirstImage(product?.pi_backgroundimage);
+    if (parsedBackground) return this.resolveStorageImageUrl(parsedBackground);
+
+    return '';
+  }
+
+  private resolveListingFrameImage(product: any): string {
+    const direct = this.resolveStorageImageUrl(product?.frame_url);
+    if (direct) {
+      return direct;
+    }
+
+    const parsedFrame = this.extractFirstImage(product?.pi_frameimage);
+    if (parsedFrame) {
+      return this.resolveStorageImageUrl(parsedFrame);
+    }
+
+    return '';
+  }
+
+  private extractFirstImage(raw: any): string {
+    if (!raw) {
+      return '';
+    }
+
+    if (Array.isArray(raw) && raw.length) {
+      return String(raw[0] || '');
+    }
+
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (!trimmed) {
+        return '';
+      }
+
+      if ((trimmed.startsWith('[') || trimmed.startsWith('{')) && (trimmed.endsWith(']') || trimmed.endsWith('}'))) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed) && parsed.length) {
+            return String(parsed[0] || '');
+          }
+        } catch {
+          return trimmed;
+        }
+      }
+      return trimmed;
+    }
+
+    return '';
+  }
+
+  private resolveStorageImageUrl(path: string): string {
+    if (!path) {
+      return '';
+    }
+
+    const cleaned = String(path).trim().replace(/\\/g, '/');
+    if (!cleaned) {
+      return '';
+    }
+
+    if (this.isAbsoluteUrl(cleaned)) {
+      return cleaned;
+    }
+
+    if (cleaned.startsWith('/api/public')) {
+      return `${environment.apiUrl}${this.encodePathSegments(cleaned)}`;
+    }
+
+    if (cleaned.startsWith('api/public')) {
+      return `${environment.apiUrl}/${this.encodePathSegments(cleaned)}`;
+    }
+
+    if (cleaned.startsWith('/storage/')) {
+      return `${environment.apiUrl}/api/public${this.encodePathSegments(cleaned)}`;
+    }
+
+    if (cleaned.startsWith('storage/')) {
+      return `${environment.apiUrl}/api/public/${this.encodePathSegments(cleaned)}`;
+    }
+
+    if (cleaned.includes('/attachments/')) {
+      return `${environment.apiUrl}/api/public/storage/${this.encodePathSegments(cleaned.replace(/^\/+/, ''))}`;
+    }
+
+    return `${environment.apiUrl}/api/public/${this.encodePathSegments(cleaned.replace(/^\/+/, ''))}`;
+  }
+
+  private encodePathSegments(path: string): string {
+    return String(path || '')
+      .split('/')
+      .map((segment) => {
+        if (!segment) {
+          return segment;
+        }
+        try {
+          return encodeURIComponent(decodeURIComponent(segment));
+        } catch {
+          return encodeURIComponent(segment);
+        }
+      })
+      .join('/');
+  }
+
+  private isAbsoluteUrl(value: string): boolean {
+    return /^https?:\/\//i.test(value);
+  }
+
+  private normalize(value: string): string {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  private slugify(value: string): string {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  }
+
+  private toNumber(value: any): number {
+    if (value === null || value === undefined) {
+      return 0;
+    }
+    const numeric = Number(String(value).replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(numeric) ? numeric : 0;
+  }
+
+  private toBoolean(value: any): boolean {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    const normalized = String(value ?? '').trim().toLowerCase();
+    return ['1', 'true', 'yes', 'on'].includes(normalized);
+  }
+
+  private toArray(value: any): any[] {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    if (value && typeof value === 'object') {
+      return Object.values(value);
+    }
+    return [];
+  }
+}

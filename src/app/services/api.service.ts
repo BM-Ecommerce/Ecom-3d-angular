@@ -9,6 +9,7 @@ interface ApiCommonParams {
   api_name: string;
   recipeid?: string;
   productid?: string;
+  product_id?: string | number;
   [key: string]: any;
 }
 
@@ -16,6 +17,7 @@ interface ApiResponse {
   success: boolean;
   data: any;
   message?: string;
+  [key: string]: any;
 }
 
 @Injectable({
@@ -140,6 +142,33 @@ export class ApiService {
     const key = this.cacheKey('productParams', { passData, payload });
     return this.fromCacheOr(key, () => this.callApi('GET', passData, payload, true, false, api_url, api_key, api_name));
   }
+
+  getCategoryList(params: ApiCommonParams): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, product_id, ...payload } = params;
+    const passData = `getcategorylist/${product_id}`;
+    const key = this.cacheKey('categoryList', { passData, payload });
+    return this.fromCacheOr(key, () => this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name));
+  }
+
+  getBrands(params: ApiCommonParams): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, ...payload } = params;
+    const passData = 'getbrands';
+    const key = this.cacheKey('brands', { passData, payload });
+    return this.fromCacheOr(key, () => this.callApi('GET', passData, payload, false, false, api_url, api_key, api_name));
+  }
+
+  getFabricListView(
+    params: ApiCommonParams,
+    fieldsCategoryId: number,
+    extraPayload: Record<string, any> = {},
+    page: number = 1,
+    perpage: number = 24
+  ): Observable<ApiResponse> {
+    const { api_url, api_key, api_name, product_id } = params;
+    const passData = `fabriclistview/${fieldsCategoryId}/${product_id}/?page=${page}&perpage=${perpage}`;
+    const payload = { ...extraPayload };
+    return this.callApi('POST', passData, payload, false, false, api_url, api_key, api_name);
+  }
   getminandmax(params: ApiCommonParams, colorid: string, unittype: number, pricegroup: number, fabricFieldType: number): Observable<ApiResponse> {
     const { api_url, api_key, api_name, product_id, category } = params;
     const payload = {
@@ -208,6 +237,28 @@ export class ApiService {
 
     const requestUrl = apiUrl.replace(/\/+$/, '') +
       '/wp-admin/admin-ajax.php?action=blindmatrix_api';
+
+    return this.http.post<ApiResponse>(requestUrl, body.toString(), {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+      })
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  addFreeSample(siteUrl: string, payload: Record<string, any>): Observable<ApiResponse> {
+    const requestUrl = `${String(siteUrl || '').replace(/\/+$/, '')}/wp-admin/admin-ajax.php`;
+    let body = new HttpParams().set('action', 'add_freesample');
+
+    Object.keys(payload || {}).forEach((key) => {
+      const value = payload[key];
+      if (value === null || value === undefined) {
+        return;
+      }
+      const finalValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      body = body.set(key, finalValue);
+    });
 
     return this.http.post<ApiResponse>(requestUrl, body.toString(), {
       headers: new HttpHeaders({

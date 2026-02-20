@@ -32,6 +32,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconRegistry } from '@angular/material/icon';
 import * as htmlToImage from 'html-to-image';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
+import { ProductPreloadService } from '../services/product-preload.service';
 
 
 // Interfaces (kept as you had them)
@@ -496,6 +497,7 @@ hasDescriptionContent = false;
     };
   constructor(
     private apiService: ApiService,
+    private productPreloadService: ProductPreloadService,
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
@@ -1272,8 +1274,12 @@ public onToggleLoopAnimate(): void {
     this.optionsLoaded = false;
     this.updateSkeletonState();
     this.errorMessage = null;
+    const preloadedProductData = this.productPreloadService.consume(params?.product_id);
+    const productData$ = preloadedProductData
+      ? of(preloadedProductData)
+      : this.apiService.getProductData(params);
 
-    this.apiService.getProductData(params).pipe(
+    productData$.pipe(
       takeUntil(this.destroy$),
       switchMap((productData: any) => {
         if (productData.result?.EcomProductlist?.length > 0) {

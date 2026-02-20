@@ -1,0 +1,194 @@
+<div class="listing-page">
+  <div class="loading-state" *ngIf="isLoading">
+    <mat-progress-spinner mode="indeterminate" diameter="46"></mat-progress-spinner>
+    <span>Loading products...</span>
+  </div>
+
+  <mat-card class="state error" *ngIf="!isLoading && errorMessage">{{ errorMessage }}</mat-card>
+
+  <ng-container *ngIf="!isLoading && !errorMessage">
+    <mat-card class="listing-banner" [style.background-image]="bannerImageUrl ? 'url(' + bannerImageUrl + ')' : null">
+      <div class="overlay">
+        <div class="banner-content">
+          <h1>{{ productTitle }}</h1>
+          <div class="banner-breadcrumb">
+            <a [href]="homeUrl">Home</a>
+            <span>/</span>
+            <span>Listing Page</span>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <section class="listing-header">
+      <div class="header-copy">
+        <h1>{{ productTitle }}</h1>
+        <p>Showing {{ visibleResultCount }} of {{ activeResultCount }} products</p>
+      </div>
+
+      <div class="header-tools">
+        <mat-form-field appearance="outline" class="sort-field">
+          <mat-select [value]="sortBy" (selectionChange)="onSortChange($event.value)">
+            <mat-option value="defaultsorting">Featured</mat-option>
+            <mat-option value="bestselling">Bestselling</mat-option>
+            <mat-option value="priceasc">Price: Low to High</mat-option>
+            <mat-option value="pricedesc">Price: High to Low</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="view-switch" role="group" aria-label="Listing view mode">
+          <button
+            type="button"
+            mat-icon-button
+            [class.active]="gridColumns === 1"
+            (click)="setGrid(1)"
+            aria-label="List view">
+            <mat-icon>view_headline</mat-icon>
+          </button>
+          <button
+            type="button"
+            mat-icon-button
+            [class.active]="gridColumns !== 1"
+            (click)="setGrid(3)"
+            aria-label="Grid view">
+            <mat-icon>grid_view</mat-icon>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="listing-content" [class.no-sidebar]="!hasSidebar">
+      <aside class="sidebar" *ngIf="hasSidebar">
+        <mat-card class="sidebar-card">
+          <div class="sidebar-head">
+            <h2>Filters</h2>
+            <button mat-button type="button" (click)="clearAllFilters()">Clear all</button>
+          </div>
+
+          <div class="filter-sections">
+            <div class="filter-section" *ngFor="let category of categories; trackBy: trackCategory">
+              <h3>{{ category.name }}</h3>
+
+              <div class="color-chip-group" *ngIf="isColorCategory(category)">
+                <ng-container *ngFor="let value of category.values; trackBy: trackCategoryValue">
+                  <button
+                    *ngIf="getCategoryValueImage(value) as colorImage"
+                    type="button"
+                    class="color-chip"
+                    [class.selected]="isSelected(category, value)"
+                    [style.background-image]="'url(' + colorImage + ')'"
+                    [attr.aria-label]="value.name"
+                    [title]="value.name"
+                    (click)="toggleColorFilter(category, value)">
+                  </button>
+                </ng-container>
+              </div>
+
+              <div class="filter-group" *ngIf="!isColorCategory(category)">
+                <mat-checkbox
+                  class="filter-option"
+                  *ngFor="let value of category.values; trackBy: trackCategoryValue"
+                  [checked]="isSelected(category, value)"
+                  (change)="onFilterToggle(category, value, $event.checked)">
+                  <img
+                    *ngIf="getCategoryValueImage(value)"
+                    [src]="getCategoryValueImage(value)"
+                    [alt]="value.name">
+                  <span>{{ value.name }}</span>
+                </mat-checkbox>
+              </div>
+            </div>
+          </div>
+        </mat-card>
+      </aside>
+
+      <div class="products-wrapper">
+        <div class="list-overlay" *ngIf="isListLoading">
+          <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+        </div>
+
+        <mat-card class="state error" *ngIf="!isListLoading && listErrorMessage">{{ listErrorMessage }}</mat-card>
+
+        <mat-card class="empty" *ngIf="!isListLoading && !listErrorMessage && activeResultCount === 0">
+          No products found for selected filters.
+        </mat-card>
+
+        <div
+          class="products-grid"
+          [ngClass]="'cols-' + gridColumns"
+          *ngIf="!isListLoading && paginatedProducts.length > 0">
+          <mat-card
+            class="product-card"
+            role="button"
+            tabindex="0"
+            *ngFor="let product of paginatedProducts; trackBy: trackProduct"
+            (click)="openOrderForm(product)"
+            (keydown.enter)="openOrderForm(product)"
+            (keydown.space)="openOrderForm(product)">
+            <div class="card-image">
+              <img
+                class="product-frame"
+                [class.has-frame]="!!listingFrameImageUrl"
+                [src]="listingFrameImageUrl || getProductImage(product)"
+                [style.background-image]="listingFrameImageUrl ? 'url(' + getProductImage(product) + ')' : null"
+                [alt]="productTitle"
+                loading="lazy">
+            </div>
+            <mat-card-content class="card-content">
+              <div class="card-info-row">
+                <div class="card-copy">
+                  <div class="product-type">{{ getProductCategoryLabel(product) }}</div>
+                  <h4>{{ getProductDisplayName(product) }}</h4>
+                  <p class="product-desc">{{ getProductDescription(product) }}</p>
+                </div>
+
+                <div class="swatch-wrap">
+                  <img
+                    class="swatch-img"
+                    [src]="getProductImage(product)"
+                    [alt]="(product.colorname || product.color_name || product.fabricname || product.fabric_name || productTitle)">
+                </div>
+              </div>
+
+              <div class="price-label" *ngIf="getPrice(product) > 0">Starting from</div>
+              <div class="price" *ngIf="getPrice(product) > 0">
+                {{ currencySymbol }}{{ getPrice(product) | number:'1.2-2' }}
+              </div>
+
+              <div class="card-actions">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  class="customize-btn"
+                  (click)="onCustomizeClick(product, $event)">
+                  Customize
+                </button>
+                <button
+                  *ngIf="canShowFreeSample(product)"
+                  mat-raised-button
+                  color="primary"
+                  type="button"
+                  class="sample-btn"
+                  [disabled]="isFreeSampleSubmitting(product)"
+                  (click)="onFreeSampleClick(product, $event)">
+                  {{ isFreeSampleSubmitting(product) ? 'Adding...' : freeSampleButtonLabel }}
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <mat-paginator
+          class="listing-paginator"
+          *ngIf="!isListLoading && activeResultCount > 0"
+          [length]="activeResultCount"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex"
+          [pageSizeOptions]="pageSizeOptions"
+          [showFirstLastButtons]="true"
+          (page)="onPageChange($event)">
+        </mat-paginator>
+      </div>
+    </section>
+  </ng-container>
+</div>
