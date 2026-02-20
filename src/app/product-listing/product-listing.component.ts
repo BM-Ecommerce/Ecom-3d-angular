@@ -120,6 +120,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   gridColumns = 3;
   sortBy: SortKey = 'defaultsorting';
   currencySymbol = '\u00A3';
+  // Component-level toggle: set true to show Supplier/Brands filter category.
+  showSupplierBrandsCategory = false;
 
   categories: ListingCategory[] = [];
   paginatedProducts: ListingProductItem[] = [];
@@ -296,7 +298,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       });
     });
 
-    if (supplierValues.length) {
+    if (this.showSupplierBrandsCategory && supplierValues.length) {
       categories.unshift({
         name: 'Supplier',
         id: '0',
