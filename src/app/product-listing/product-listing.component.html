@@ -308,10 +308,10 @@
         <div
           class="products-grid fabric-groups-grid"
           [ngClass]="'cols-' + gridColumns"
-          *ngIf="!isListLoading && catalogViewMode === 'fabrics' && fabricGroups.length > 0">
+          *ngIf="!isListLoading && catalogViewMode === 'fabrics' && paginatedFabricGroups.length > 0">
           <mat-card
             class="product-card fabric-group-card"
-            *ngFor="let group of fabricGroups; trackBy: trackFabricGroup">
+            *ngFor="let group of paginatedFabricGroups; trackBy: trackFabricGroup">
             <button
               type="button"
               class="card-image-btn"
@@ -441,7 +441,7 @@
 
         <mat-paginator
           class="listing-paginator"
-          *ngIf="!isListLoading && catalogViewMode === 'products' && activeResultCount > 0"
+          *ngIf="!isListLoading && activeResultCount > 0"
           [length]="activeResultCount"
           [pageSize]="pageSize"
           [pageIndex]="pageIndex"

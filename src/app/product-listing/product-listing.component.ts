@@ -142,6 +142,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   categories: ListingCategory[] = [];
   paginatedProducts: ListingProductItem[] = [];
   fabricGroups: ListingFabricGroup[] = [];
+  paginatedFabricGroups: ListingFabricGroup[] = [];
   private selectedFabricVariantByGroup: Record<string, string> = {};
   fabricColorPopupGroupKey: string | null = null;
   selectedCategoryValues: Record<string, Set<string>> = {};
@@ -151,7 +152,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   totalProducts = 0;
   totalPages = 0;
   submittingFreeSampleKey: string | null = null;
-  private readonly fabricViewPerPage = 2000;
+  private readonly fabricFetchPerPage = 2000;
   readonly fabricColorPreviewLimit = 10;
   readonly skeletonCards = Array.from({ length: 6 });
   readonly skeletonFilterBlocks = Array.from({ length: 3 });
@@ -289,6 +290,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.listErrorMessage = null;
     this.paginatedProducts = [];
     this.fabricGroups = [];
+    this.paginatedFabricGroups = [];
     this.selectedFabricVariantByGroup = {};
     this.fabricColorPopupGroupKey = null;
     this.pageIndex = 0;
@@ -497,6 +499,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (!this.productId) {
       this.paginatedProducts = [];
       this.fabricGroups = [];
+      this.paginatedFabricGroups = [];
       this.selectedFabricVariantByGroup = {};
       this.fabricColorPopupGroupKey = null;
       this.totalProducts = 0;
@@ -506,7 +509,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
     const isFabricMode = this.catalogViewMode === 'fabrics';
     const page = isFabricMode ? 1 : this.pageIndex + 1;
-    const perPage = isFabricMode ? this.fabricViewPerPage : this.pageSize;
+    const perPage = isFabricMode ? this.fabricFetchPerPage : this.pageSize;
     const sort = this.sortBy === 'defaultsorting' ? '' : this.sortBy;
     const filterData = this.buildFilterPayload();
     const requestVersion = ++this.listRequestVersion;
@@ -534,6 +537,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         this.listErrorMessage = 'Unable to load listing products.';
         this.paginatedProducts = [];
         this.fabricGroups = [];
+        this.paginatedFabricGroups = [];
         this.selectedFabricVariantByGroup = {};
         this.fabricColorPopupGroupKey = null;
         this.totalProducts = 0;
@@ -556,16 +560,13 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       const parsed = this.parseListingResponse(response, page, perPage);
       this.paginatedProducts = parsed.items;
       this.rebuildFabricGroups(this.paginatedProducts);
-      if (isFabricMode) {
-        this.totalProducts = this.fabricGroups.length;
-        this.totalPages = 1;
-        this.pageIndex = 0;
-      } else {
+      if (!isFabricMode) {
         this.totalProducts = parsed.total;
         this.totalPages = parsed.totalPages;
         this.pageIndex = Math.max(parsed.currentPage - 1, 0);
         this.pageSize = parsed.perPage;
         this.mergePageSizeOption(parsed.perPage);
+        this.paginatedFabricGroups = [];
       }
       this.prepareListingCardCompositions();
     });
@@ -667,6 +668,42 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.pageSizeOptions = [...this.pageSizeOptions, next].sort((a, b) => a - b);
   }
 
+  private updateFabricGroupsPagination(): void {
+    const safePageSize = Math.max(this.toPositiveInt(this.pageSize, 0), 1);
+    this.pageSize = safePageSize;
+    this.mergePageSizeOption(safePageSize);
+
+    const totalGroups = this.fabricGroups.length;
+    this.totalProducts = totalGroups;
+
+    if (!totalGroups) {
+      this.totalPages = 0;
+      this.pageIndex = 0;
+      this.paginatedFabricGroups = [];
+      this.fabricColorPopupGroupKey = null;
+      return;
+    }
+
+    const totalPages = Math.max(Math.ceil(totalGroups / safePageSize), 1);
+    this.totalPages = totalPages;
+
+    if (this.pageIndex < 0) {
+      this.pageIndex = 0;
+    } else if (this.pageIndex >= totalPages) {
+      this.pageIndex = totalPages - 1;
+    }
+
+    const start = this.pageIndex * safePageSize;
+    this.paginatedFabricGroups = this.fabricGroups.slice(start, start + safePageSize);
+
+    if (
+      this.fabricColorPopupGroupKey &&
+      !this.paginatedFabricGroups.some((group) => group.key === this.fabricColorPopupGroupKey)
+    ) {
+      this.fabricColorPopupGroupKey = null;
+    }
+  }
+
   private toPositiveInt(value: any, fallback: number): number {
     const parsed = this.toNumber(value);
     if (!parsed || parsed < 0) {
@@ -714,6 +751,11 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   onPageChange(event: PageEvent): void {
     if (this.catalogViewMode === 'fabrics') {
+      this.pageIndex = event.pageIndex;
+      this.pageSize = event.pageSize;
+      this.updateFabricGroupsPagination();
+      this.prepareListingCardCompositions();
+      this.cd.markForCheck();
       return;
     }
     this.pageIndex = event.pageIndex;
@@ -983,6 +1025,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         ? { ...item, activeVariant: variant }
         : item
     );
+    this.updateFabricGroupsPagination();
     this.prepareListingCardCompositionForProduct(variant);
     this.cd.markForCheck();
   }
@@ -1026,7 +1069,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (!popupKey) {
       return null;
     }
-    return this.fabricGroups.find((group) => group.key === popupKey) || null;
+    return this.paginatedFabricGroups.find((group) => group.key === popupKey) || null;
   }
 
   private getFreeSampleSubmitKey(product: ListingProductItem): string {
@@ -1081,7 +1124,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
     const sourceProducts =
       this.catalogViewMode === 'fabrics'
-        ? this.fabricGroups.map((group) => group.activeVariant)
+        ? this.paginatedFabricGroups.map((group) => group.activeVariant)
         : this.paginatedProducts;
 
     sourceProducts.forEach((product) => this.prepareListingCardCompositionForProduct(product));
@@ -1388,7 +1431,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   get visibleResultCount(): number {
     if (this.catalogViewMode === 'fabrics') {
-      return this.fabricGroups.length;
+      return this.paginatedFabricGroups.length;
     }
     return this.paginatedProducts.length;
   }
@@ -1450,6 +1493,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private rebuildFabricGroups(products: ListingProductItem[]): void {
     if (!products?.length) {
       this.fabricGroups = [];
+      this.paginatedFabricGroups = [];
       this.selectedFabricVariantByGroup = {};
       this.fabricColorPopupGroupKey = null;
       return;
@@ -1496,9 +1540,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     groups.sort((a, b) => a.fabricName.localeCompare(b.fabricName));
     this.selectedFabricVariantByGroup = nextSelected;
     this.fabricGroups = groups;
-    if (this.fabricColorPopupGroupKey && !groups.some((group) => group.key === this.fabricColorPopupGroupKey)) {
-      this.fabricColorPopupGroupKey = null;
-    }
+    this.updateFabricGroupsPagination();
   }
 
   private buildFabricGroupKey(product: ListingProductItem): string {
