@@ -156,7 +156,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   totalPages = 0;
   submittingFreeSampleKey: string | null = null;
   private readonly fabricFetchPerPage = 2000;
-  readonly fabricColorPreviewLimit = 10;
+  private readonly fabricColorPreviewLimitMobile = 10;
+  private readonly fabricColorPreviewLimitDesktopGrid = 10;
+  private readonly fabricColorPreviewLimitDesktopList = 18;
   readonly skeletonCards = Array.from({ length: 6 });
   readonly skeletonFilterBlocks = Array.from({ length: 3 });
   readonly skeletonFilterLines = Array.from({ length: 4 });
@@ -239,6 +241,10 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (this.isMobileViewport !== nextIsMobile) {
       this.isMobileViewport = nextIsMobile;
       shouldMarkForCheck = true;
+      // Recompute preview chips count when switching desktop/mobile.
+      if (this.paginatedProducts.length) {
+        this.rebuildFabricGroups(this.paginatedProducts);
+      }
     }
 
     if (nextIsMobile) {
@@ -615,6 +621,16 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     return Array.from(new Set(selectedNames));
   }
 
+  private getFabricColorPreviewLimit(): number {
+    if (this.isMobileViewport) {
+      return this.fabricColorPreviewLimitMobile;
+    }
+    if (this.gridColumns === 1) {
+      return this.fabricColorPreviewLimitDesktopList;
+    }
+    return this.fabricColorPreviewLimitDesktopGrid;
+  }
+
   private normalizeFilterKey(name: string): string {
     return String(name || '').trim().toLowerCase().replace(/\s+/g, '');
   }
@@ -722,6 +738,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (this.isMobileViewport) {
       if (this.gridColumns !== 1) {
         this.gridColumns = 1;
+        if (this.paginatedProducts.length) {
+          this.rebuildFabricGroups(this.paginatedProducts);
+        }
         this.cd.markForCheck();
       }
       return;
@@ -737,6 +756,10 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.gridColumns = normalizedColumns;
     this.forceListByMobileViewport = false;
     this.lastDesktopGridColumns = normalizedColumns;
+    if (this.paginatedProducts.length) {
+      this.rebuildFabricGroups(this.paginatedProducts);
+    }
+    this.cd.markForCheck();
   }
 
   setCatalogViewMode(mode: 'products' | 'fabrics'): void {
@@ -1621,6 +1644,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     });
 
     const nextSelected: Record<string, string> = {};
+    const previewLimit = this.getFabricColorPreviewLimit();
     const groups = Array.from(grouped.entries()).map(([key, value]) => {
       const variants = [...value.variants].sort((a, b) =>
         this.getFabricColorName(a).localeCompare(this.getFabricColorName(b))
@@ -1630,8 +1654,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         variants.find((variant) => this.buildFabricVariantKey(variant) === previousKey) || variants[0];
       nextSelected[key] = this.buildFabricVariantKey(activeVariant);
       const resolvedName = String(value.fabricName || '').trim() || this.getFabricGroupName(activeVariant);
-      const previewVariants = variants.slice(0, this.fabricColorPreviewLimit);
-      const hiddenVariantCount = Math.max(variants.length - this.fabricColorPreviewLimit, 0);
+      const previewVariants = variants.slice(0, previewLimit);
+      const hiddenVariantCount = Math.max(variants.length - previewLimit, 0);
       return {
         key,
         fabricName: resolvedName,
