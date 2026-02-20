@@ -1,7 +1,58 @@
 <div class="listing-page">
-  <div class="loading-state" *ngIf="isLoading">
-    <mat-progress-spinner mode="indeterminate" diameter="46"></mat-progress-spinner>
-    <span>Loading products...</span>
+  <div class="listing-skeleton" *ngIf="isLoading" aria-hidden="true">
+    <div class="skeleton skeleton-banner"></div>
+
+    <section class="listing-header skeleton-header">
+      <div class="header-copy">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-subtitle"></div>
+      </div>
+      <div class="header-tools">
+        <div class="skeleton skeleton-sort"></div>
+        <div class="skeleton skeleton-toggle"></div>
+      </div>
+    </section>
+
+    <section class="listing-content">
+      <aside class="sidebar">
+        <mat-card class="sidebar-card skeleton-sidebar-card">
+          <div class="skeleton skeleton-filter-head"></div>
+          <div class="skeleton-filter-block" *ngFor="let _ of skeletonFilterBlocks">
+            <div class="skeleton skeleton-filter-title"></div>
+            <div class="skeleton skeleton-filter-line" *ngFor="let __ of skeletonFilterLines"></div>
+          </div>
+        </mat-card>
+      </aside>
+
+      <div class="products-wrapper">
+        <div class="products-grid cols-3 skeleton-products-grid">
+          <mat-card class="product-card skeleton-product-card" *ngFor="let _ of skeletonCards">
+            <div class="card-image">
+              <div class="skeleton skeleton-card-image"></div>
+            </div>
+            <mat-card-content class="card-content">
+              <div class="card-info-row">
+                <div class="card-copy">
+                  <div class="skeleton skeleton-card-type"></div>
+                  <div class="skeleton skeleton-card-title"></div>
+                  <div class="skeleton skeleton-card-line"></div>
+                  <div class="skeleton skeleton-card-line short"></div>
+                </div>
+                <div class="skeleton skeleton-card-swatch"></div>
+              </div>
+
+              <div class="skeleton skeleton-card-price-label"></div>
+              <div class="skeleton skeleton-card-price"></div>
+
+              <div class="card-actions">
+                <div class="skeleton skeleton-card-btn"></div>
+                <div class="skeleton skeleton-card-btn"></div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </section>
   </div>
 
   <mat-card class="state error" *ngIf="!isLoading && errorMessage">{{ errorMessage }}</mat-card>
@@ -105,8 +156,33 @@
       </aside>
 
       <div class="products-wrapper">
-        <div class="list-overlay" *ngIf="isListLoading">
-          <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+        <div class="list-overlay list-overlay-skeleton" *ngIf="isListLoading" aria-hidden="true">
+          <div class="products-grid skeleton-products-grid" [ngClass]="'cols-' + gridColumns">
+            <mat-card class="product-card skeleton-product-card" *ngFor="let _ of skeletonCards">
+              <div class="card-image">
+                <div class="skeleton skeleton-card-image"></div>
+              </div>
+              <mat-card-content class="card-content">
+                <div class="card-info-row">
+                  <div class="card-copy">
+                    <div class="skeleton skeleton-card-type"></div>
+                    <div class="skeleton skeleton-card-title"></div>
+                    <div class="skeleton skeleton-card-line"></div>
+                    <div class="skeleton skeleton-card-line short"></div>
+                  </div>
+                  <div class="skeleton skeleton-card-swatch"></div>
+                </div>
+
+                <div class="skeleton skeleton-card-price-label"></div>
+                <div class="skeleton skeleton-card-price"></div>
+
+                <div class="card-actions">
+                  <div class="skeleton skeleton-card-btn"></div>
+                  <div class="skeleton skeleton-card-btn"></div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
         </div>
 
         <mat-card class="state error" *ngIf="!isListLoading && listErrorMessage">{{ listErrorMessage }}</mat-card>

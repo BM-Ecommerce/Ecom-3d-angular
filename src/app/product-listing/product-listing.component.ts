@@ -15,7 +15,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 interface ListingCategoryValue {
@@ -90,7 +89,6 @@ type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
     MatCheckboxModule,
     MatExpansionModule,
     MatPaginatorModule,
-    MatProgressSpinnerModule,
     MatButtonToggleModule
   ],
   templateUrl: './product-listing.component.html',
@@ -132,6 +130,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   totalProducts = 0;
   totalPages = 0;
   submittingFreeSampleKey: string | null = null;
+  readonly skeletonCards = Array.from({ length: 6 });
+  readonly skeletonFilterBlocks = Array.from({ length: 3 });
+  readonly skeletonFilterLines = Array.from({ length: 4 });
 
   readonly imgpath = `${environment.apiUrl}/api/public/storage/attachments/${environment.apiName}/material/colour/`;
   private readonly composedImageCacheLimit = 120;
