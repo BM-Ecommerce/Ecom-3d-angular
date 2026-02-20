@@ -1,11 +1,11 @@
 .listing-page {
   width: min(1240px, 100%);
   margin: 0 auto;
-  padding: 14px 16px 18px;
+  padding: 16px 18px 22px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   font-family: Arial, sans-serif;
   color: #0b2242;
 }
@@ -38,7 +38,7 @@
 .listing-skeleton {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .skeleton-banner {
@@ -241,10 +241,10 @@
 .listing-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
+  align-items: center;
+  gap: 18px;
   flex-wrap: wrap;
-  padding: 0 2px;
+  padding: 2px 2px 0;
 }
 
 .header-copy {
@@ -261,18 +261,18 @@
 }
 
 .header-copy p {
-  margin: 7px 0 0;
+  margin: 10px 0 0;
   color: #314f72;
   font-size: 14px !important;
-  line-height: 1.2 !important;
-  font-weight: 700;
+  line-height: 1.35 !important;
+  font-weight: 600;
 }
 
 .header-tools {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
   flex: 0 0 auto;
 }
 
@@ -380,7 +380,7 @@
 .listing-content {
   display: grid;
   grid-template-columns: 300px 1fr;
-  gap: 18px;
+  gap: 20px;
   align-items: start;
 }
 
@@ -397,14 +397,14 @@
   border-radius: 14px;
   border: 1px solid #d8e1ec;
   box-shadow: none;
-  padding: 10px 10px 12px;
+  padding: 14px 14px 16px;
 }
 
 .sidebar-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .sidebar-head h2 {
@@ -426,13 +426,13 @@
 .filter-sections {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 18px;
 }
 
 .filter-section h3 {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   font-size: 14px !important;
-  line-height: 1.2 !important;
+  line-height: 1.3 !important;
   font-weight: 700;
   color: #13355e;
 }
@@ -468,13 +468,13 @@
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
 
 .filter-option {
-  min-height: 30px;
+  min-height: 32px;
   font-size: 14px !important;
-  line-height: 1.2 !important;
+  line-height: 1.3 !important;
   color: #173454;
 }
 
@@ -500,7 +500,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   min-height: 260px;
 }
 
@@ -539,7 +539,7 @@
 
 .products-grid {
   display: grid;
-  gap: 14px;
+  gap: 16px;
   transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
@@ -560,12 +560,13 @@
 }
 
 .product-card {
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid #d8e1ec;
   box-shadow: none;
   transition: box-shadow 0.16s ease;
   overflow: hidden;
   background: #fff;
+  padding: 0;
 }
 
 .product-card:hover {
@@ -594,11 +595,11 @@
 }
 
 .card-image {
-  min-height: 250px;
+  min-height: 252px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px;
+  padding: 12px;
 }
 
 .card-image img {
@@ -608,15 +609,15 @@
 }
 
 .card-content {
-  padding: 11px 12px 12px;
+  padding: 14px 14px 14px;
   display: flex;
   flex-direction: column;
-  min-height: 170px;
+  min-height: 188px;
 }
 
 .card-info-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: flex-start;
   justify-content: space-between;
 }
@@ -632,14 +633,14 @@
   letter-spacing: 0.04em;
   color: #0b325f;
   text-transform: uppercase;
-  margin: 0 0 4px;
-  line-height: 1.2;
+  margin: 0 0 6px;
+  line-height: 1.3;
 }
 
 .card-content h4 {
   margin: 0;
   font-size: 18px !important;
-  line-height: 1.18 !important;
+  line-height: 1.24 !important;
   font-weight: 700;
   color: #081f3d;
   letter-spacing: 0;
@@ -668,10 +669,11 @@
 }
 
 .product-desc {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   color: #314d6d;
   font-size: 14px !important;
-  line-height: 1.28 !important;
+  line-height: 1.4 !important;
+  min-height: 40px;
 }
 
 .swatch-wrap {
@@ -759,39 +761,40 @@
 }
 
 .price-label {
-  margin-top: 8px;
+  margin-top: 10px;
   color: #334d6e;
-  font-size: 14px !important;
+  font-size: 13px !important;
+  line-height: 1.25 !important;
   font-weight: 700;
 }
 
 .price {
-  margin-top: 2px;
+  margin-top: 4px;
   font-weight: 700;
   color: #0b2f5a;
   font-size: 18px !important;
-  line-height: 1.2 !important;
+  line-height: 1.18 !important;
 }
 
 .card-actions {
   margin-top: auto;
-  padding-top: 10px;
+  padding-top: 12px;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: nowrap;
   align-items: center;
 }
 
 .fabric-color-row {
-  margin-top: 9px;
+  margin-top: 12px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 9px;
+  min-height: 70px;
 }
-
 .fabric-color-chip {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: 2px solid #d5dfeb;
   background-color: #f4f7fb;
@@ -829,18 +832,18 @@
 }
 
 .fabric-color-name {
-  margin-top: 8px;
+  margin-top: 10px;
   color: #2b4869;
   font-size: 12px !important;
-  line-height: 1.2 !important;
+  line-height: 1.3 !important;
   font-weight: 700;
 }
 
 .fabric-group-meta {
-  margin-top: 3px;
+  margin-top: 4px;
   color: #3b5a7d;
   font-size: 12px !important;
-  line-height: 1.2 !important;
+  line-height: 1.3 !important;
   font-weight: 700;
 }
 
@@ -925,12 +928,13 @@
 
 .customize-btn,
 .sample-btn {
-  min-height: 36px;
+  min-height: 38px;
   border-radius: 999px;
   font-size: 14px !important;
   font-weight: 700;
-  padding: 0 16px;
+  padding: 0 15px;
   white-space: nowrap;
+  line-height: 1 !important;
 }
 
 .customize-btn {
@@ -964,11 +968,11 @@
 
 .products-grid.cols-1 .product-card {
   display: grid;
-  grid-template-columns: minmax(280px, 34%) 1fr;
+  grid-template-columns: minmax(290px, 35%) 1fr;
 }
 
 .products-grid.cols-1 .card-image {
-  min-height: 278px;
+  min-height: 292px;
 }
 
 .products-grid.cols-1 .skeleton-card-image {
@@ -976,19 +980,21 @@
 }
 
 .products-grid.cols-1 .card-content {
-  padding: 14px 14px 13px;
+  padding: 20px 20px 18px;
 }
 
 .products-grid.cols-1 .card-content h4 {
-  font-size: 20px !important;
+  font-size: 22px !important;
+  line-height: 1.22 !important;
 }
 
 .products-grid.cols-1 .price {
-  font-size: 46px !important;
+  font-size: 34px !important;
+  line-height: 1.1 !important;
 }
 
 .products-grid:not(.cols-1) .card-image {
-  min-height: 252px;
+  min-height: 248px;
 }
 
 .products-grid:not(.cols-1) .skeleton-card-image {
@@ -996,7 +1002,7 @@
 }
 
 .products-grid:not(.cols-1) .card-content {
-  min-height: 196px;
+  min-height: 214px;
 }
 
 .products-grid:not(.cols-1) .swatch-wrap {
@@ -1028,14 +1034,14 @@
 }
 
 .products-grid:not(.cols-1) .card-actions {
-  padding-top: 8px;
-  gap: 6px;
+  padding-top: 10px;
+  gap: 7px;
 }
 
 .products-grid:not(.cols-1) .customize-btn,
 .products-grid:not(.cols-1) .sample-btn {
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 36px;
+  padding: 0 11px;
   font-size: 13px !important;
 }
 
@@ -1211,6 +1217,8 @@
 
   .card-actions {
     width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .customize-btn,
