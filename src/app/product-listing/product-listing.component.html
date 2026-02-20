@@ -74,15 +74,30 @@
     <section class="listing-header">
       <div class="header-copy">
         <h1>{{ productTitle }}</h1>
-        <p>
+        <p *ngIf="!isListLoading; else listingSummaryLoading">
           Showing {{ visibleResultCount }} of {{ activeResultCount }}
           {{ catalogViewMode === 'fabrics' ? 'fabrics' : 'products' }}
         </p>
+        <ng-template #listingSummaryLoading>
+          <p>Loading {{ catalogViewMode === 'fabrics' ? 'fabrics' : 'products' }}...</p>
+        </ng-template>
       </div>
 
       <div class="header-tools">
+        <button
+          *ngIf="isMobileViewport && hasSidebar"
+          type="button"
+          class="mobile-filter-btn"
+          (click)="openMobileFilterDrawer($event)">
+          <mat-icon>tune</mat-icon>
+          <span>Filters</span>
+        </button>
+
         <mat-form-field appearance="outline" class="sort-field">
-          <mat-select [value]="sortBy" (selectionChange)="onSortChange($event.value)">
+          <mat-select
+            [value]="sortBy"
+            panelClass="listing-sort-panel"
+            (selectionChange)="onSortChange($event.value)">
             <mat-option value="defaultsorting">Featured</mat-option>
             <mat-option value="bestselling">Bestselling</mat-option>
             <mat-option value="priceasc">Price: Low to High</mat-option>
@@ -90,7 +105,7 @@
           </mat-select>
         </mat-form-field>
 
-        <div class="view-switch" role="group" aria-label="Listing view mode">
+        <div class="view-switch" role="group" aria-label="Listing view mode" *ngIf="!isMobileViewport">
           <button
             type="button"
             mat-icon-button
@@ -130,48 +145,51 @@
       </div>
     </section>
 
-    <section class="listing-content" [class.no-sidebar]="!hasSidebar">
-      <aside class="sidebar" *ngIf="hasSidebar">
+    <ng-template #filtersContent>
+      <div class="filter-sections">
+        <div class="filter-section" *ngFor="let category of categories; trackBy: trackCategory">
+          <h3>{{ category.name }}</h3>
+
+          <div class="color-chip-group" *ngIf="isColorCategory(category)">
+            <ng-container *ngFor="let value of category.values; trackBy: trackCategoryValue">
+              <button
+                *ngIf="getCategoryValueImage(value) as colorImage"
+                type="button"
+                class="color-chip"
+                [class.selected]="isSelected(category, value)"
+                [style.background-image]="'url(' + colorImage + ')'"
+                [attr.aria-label]="value.name"
+                [title]="value.name"
+                (click)="toggleColorFilter(category, value)">
+              </button>
+            </ng-container>
+          </div>
+
+          <div class="filter-group" *ngIf="!isColorCategory(category)">
+            <mat-checkbox
+              class="filter-option"
+              *ngFor="let value of category.values; trackBy: trackCategoryValue"
+              [checked]="isSelected(category, value)"
+              (change)="onFilterToggle(category, value, $event.checked)">
+              <img
+                *ngIf="getCategoryValueImage(value)"
+                [src]="getCategoryValueImage(value)"
+                [alt]="value.name">
+              <span>{{ value.name }}</span>
+            </mat-checkbox>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
+    <section class="listing-content" [class.no-sidebar]="!hasSidebar || isMobileViewport">
+      <aside class="sidebar" *ngIf="hasSidebar && !isMobileViewport">
         <mat-card class="sidebar-card">
           <div class="sidebar-head">
             <h2>Filters</h2>
             <button mat-button type="button" (click)="clearAllFilters()">Clear all</button>
           </div>
-
-          <div class="filter-sections">
-            <div class="filter-section" *ngFor="let category of categories; trackBy: trackCategory">
-              <h3>{{ category.name }}</h3>
-
-              <div class="color-chip-group" *ngIf="isColorCategory(category)">
-                <ng-container *ngFor="let value of category.values; trackBy: trackCategoryValue">
-                  <button
-                    *ngIf="getCategoryValueImage(value) as colorImage"
-                    type="button"
-                    class="color-chip"
-                    [class.selected]="isSelected(category, value)"
-                    [style.background-image]="'url(' + colorImage + ')'"
-                    [attr.aria-label]="value.name"
-                    [title]="value.name"
-                    (click)="toggleColorFilter(category, value)">
-                  </button>
-                </ng-container>
-              </div>
-
-              <div class="filter-group" *ngIf="!isColorCategory(category)">
-                <mat-checkbox
-                  class="filter-option"
-                  *ngFor="let value of category.values; trackBy: trackCategoryValue"
-                  [checked]="isSelected(category, value)"
-                  (change)="onFilterToggle(category, value, $event.checked)">
-                  <img
-                    *ngIf="getCategoryValueImage(value)"
-                    [src]="getCategoryValueImage(value)"
-                    [alt]="value.name">
-                  <span>{{ value.name }}</span>
-                </mat-checkbox>
-              </div>
-            </div>
-          </div>
+          <ng-container *ngTemplateOutlet="filtersContent"></ng-container>
         </mat-card>
       </aside>
 
@@ -433,5 +451,29 @@
         </mat-paginator>
       </div>
     </section>
+
+    <div
+      class="mobile-filter-drawer-backdrop"
+      *ngIf="isMobileViewport && hasSidebar && isMobileFilterDrawerOpen"
+      (click)="closeMobileFilterDrawer($event)">
+      <aside class="mobile-filter-drawer" (click)="$event.stopPropagation()">
+        <mat-card class="sidebar-card mobile-sidebar-card">
+          <div class="sidebar-head">
+            <h2>Filters</h2>
+            <div class="mobile-filter-actions">
+              <button mat-button type="button" (click)="clearAllFilters()">Clear all</button>
+              <button
+                type="button"
+                class="mobile-filter-close-btn"
+                aria-label="Close filters"
+                (click)="closeMobileFilterDrawer($event)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+          <ng-container *ngTemplateOutlet="filtersContent"></ng-container>
+        </mat-card>
+      </aside>
+    </div>
   </ng-container>
 </div>

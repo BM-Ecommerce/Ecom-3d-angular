@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject, Subscription, forkJoin, of } from 'rxjs';
@@ -108,6 +108,7 @@ type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
 export class ProductListingComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private listRequestSub: Subscription | null = null;
+  private listRequestVersion = 0;
   private productDataPayload: any = null;
 
   isLoading = false;
@@ -128,6 +129,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   fieldscategoryid = 20;
 
   gridColumns = 3;
+  isMobileViewport = false;
+  isMobileFilterDrawerOpen = false;
   sortBy: SortKey = 'defaultsorting';
   currencySymbol = '\u00A3';
   // Component-level toggle: set true to show Supplier/Brands filter category.
@@ -165,6 +168,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private listingCompositionQueue: Array<{ key: string; frameUrl: string; colorUrl: string }> = [];
   private activeListingCompositions = 0;
   private readonly maxParallelListingCompositions = 4;
+  private readonly mobileViewportMaxWidth = 640;
+  private forceListByMobileViewport = false;
+  private lastDesktopGridColumns = this.gridColumns;
 
   constructor(
     private route: ActivatedRoute,
@@ -175,6 +181,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.applyViewportMode();
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe((routeParams) => {
       const queryParams = this.route.snapshot.queryParams || {};
       const productId = routeParams['product_id'] ?? queryParams['product_id'];
@@ -211,6 +218,69 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.activeListingCompositions = 0;
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.applyViewportMode();
+  }
+
+  private applyViewportMode(): void {
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1280;
+    const nextIsMobile = viewportWidth <= this.mobileViewportMaxWidth;
+    let shouldMarkForCheck = false;
+
+    if (this.isMobileViewport !== nextIsMobile) {
+      this.isMobileViewport = nextIsMobile;
+      shouldMarkForCheck = true;
+    }
+
+    if (nextIsMobile) {
+      if (this.gridColumns !== 1) {
+        this.lastDesktopGridColumns = this.gridColumns;
+        this.gridColumns = 1;
+        this.forceListByMobileViewport = true;
+        shouldMarkForCheck = true;
+      }
+    } else {
+      if (this.forceListByMobileViewport) {
+        const restoreColumns = [1, 2, 3, 4].includes(this.lastDesktopGridColumns) ? this.lastDesktopGridColumns : 3;
+        this.gridColumns = restoreColumns;
+        this.forceListByMobileViewport = false;
+        shouldMarkForCheck = true;
+      }
+      if (this.isMobileFilterDrawerOpen) {
+        this.isMobileFilterDrawerOpen = false;
+        shouldMarkForCheck = true;
+      }
+    }
+
+    if (shouldMarkForCheck) {
+      this.cd.markForCheck();
+    }
+  }
+
+  openMobileFilterDrawer(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!this.isMobileViewport || !this.hasSidebar) {
+      return;
+    }
+    if (this.isMobileFilterDrawerOpen) {
+      return;
+    }
+    this.isMobileFilterDrawerOpen = true;
+    this.cd.markForCheck();
+  }
+
+  closeMobileFilterDrawer(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!this.isMobileFilterDrawerOpen) {
+      return;
+    }
+    this.isMobileFilterDrawerOpen = false;
+    this.cd.markForCheck();
   }
 
   private loadListingData(): void {
@@ -439,10 +509,11 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     const perPage = isFabricMode ? this.fabricViewPerPage : this.pageSize;
     const sort = this.sortBy === 'defaultsorting' ? '' : this.sortBy;
     const filterData = this.buildFilterPayload();
+    const requestVersion = ++this.listRequestVersion;
 
+    this.listRequestSub?.unsubscribe();
     this.listErrorMessage = null;
     this.isListLoading = true;
-    this.listRequestSub?.unsubscribe();
     this.listRequestSub = this.apiService.getFabricListView(
       this.params,
       this.fieldscategoryid,
@@ -456,6 +527,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     ).pipe(
       takeUntil(this.destroy$),
       catchError((err) => {
+        if (requestVersion !== this.listRequestVersion) {
+          return of(null);
+        }
         console.error('Listing products load failed:', err);
         this.listErrorMessage = 'Unable to load listing products.';
         this.paginatedProducts = [];
@@ -467,11 +541,14 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         return of(null);
       }),
       finalize(() => {
+        if (requestVersion !== this.listRequestVersion) {
+          return;
+        }
         this.isListLoading = false;
         this.cd.markForCheck();
       })
     ).subscribe((response: any) => {
-      if (!response) {
+      if (requestVersion !== this.listRequestVersion || !response) {
         return;
       }
 
@@ -599,6 +676,14 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   setGrid(columns: number | string): void {
+    if (this.isMobileViewport) {
+      if (this.gridColumns !== 1) {
+        this.gridColumns = 1;
+        this.cd.markForCheck();
+      }
+      return;
+    }
+
     const normalizedColumns = Number(columns);
     if (![1, 2, 3, 4].includes(normalizedColumns)) {
       return;
@@ -607,6 +692,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       return;
     }
     this.gridColumns = normalizedColumns;
+    this.forceListByMobileViewport = false;
+    this.lastDesktopGridColumns = normalizedColumns;
   }
 
   setCatalogViewMode(mode: 'products' | 'fabrics'): void {

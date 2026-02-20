@@ -87,3 +87,7 @@ body { margin: 0; font-family: 'Poppins', sans-serif!important; }
     height: 35px;
     line-height: 35px;
 }
+  .header-tools .mat-form-field-wrapper {
+      padding: 0;
+      margin: 0;
+  }
