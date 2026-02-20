@@ -73,6 +73,13 @@ interface TransparentHoleRegion {
   found: boolean;
 }
 
+interface ListingFabricGroup {
+  key: string;
+  fabricName: string;
+  variants: ListingProductItem[];
+  activeVariant: ListingProductItem;
+}
+
 type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
 
 @Component({
@@ -122,9 +129,14 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   currencySymbol = '\u00A3';
   // Component-level toggle: set true to show Supplier/Brands filter category.
   showSupplierBrandsCategory = false;
+  // Component-level toggle: set true to enable grouped Fabric view switch.
+  enableFabricGroupedView = true;
+  catalogViewMode: 'products' | 'fabrics' = 'products';
 
   categories: ListingCategory[] = [];
   paginatedProducts: ListingProductItem[] = [];
+  fabricGroups: ListingFabricGroup[] = [];
+  private selectedFabricVariantByGroup: Record<string, string> = {};
   selectedCategoryValues: Record<string, Set<string>> = {};
   pageSizeOptions: number[] = [12, 24, 48, 96];
   pageSize = 24;
@@ -132,6 +144,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   totalProducts = 0;
   totalPages = 0;
   submittingFreeSampleKey: string | null = null;
+  private readonly fabricViewPerPage = 2000;
   readonly skeletonCards = Array.from({ length: 6 });
   readonly skeletonFilterBlocks = Array.from({ length: 3 });
   readonly skeletonFilterLines = Array.from({ length: 4 });
@@ -141,8 +154,12 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private readonly frameAlphaThreshold = 40;
   private composedListingImageMap = new Map<string, string>();
   private composingListingImageKeys = new Set<string>();
+  private failedListingImageKeys = new Set<string>();
   private imageLoadPromiseCache = new Map<string, Promise<HTMLImageElement>>();
   private frameTransparentRegionCache = new Map<string, TransparentHoleRegion>();
+  private listingCompositionQueue: Array<{ key: string; frameUrl: string; colorUrl: string }> = [];
+  private activeListingCompositions = 0;
+  private readonly maxParallelListingCompositions = 4;
 
   constructor(
     private route: ActivatedRoute,
@@ -181,9 +198,12 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.listRequestSub?.unsubscribe();
     this.composingListingImageKeys.clear();
+    this.failedListingImageKeys.clear();
     this.imageLoadPromiseCache.clear();
     this.frameTransparentRegionCache.clear();
     this.composedListingImageMap.clear();
+    this.listingCompositionQueue = [];
+    this.activeListingCompositions = 0;
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -193,6 +213,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.errorMessage = null;
     this.listErrorMessage = null;
     this.paginatedProducts = [];
+    this.fabricGroups = [];
+    this.selectedFabricVariantByGroup = {};
     this.pageIndex = 0;
     this.totalProducts = 0;
     this.totalPages = 0;
@@ -398,13 +420,16 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
     if (!this.productId) {
       this.paginatedProducts = [];
+      this.fabricGroups = [];
+      this.selectedFabricVariantByGroup = {};
       this.totalProducts = 0;
       this.totalPages = 0;
       return;
     }
 
-    const page = this.pageIndex + 1;
-    const perPage = this.pageSize;
+    const isFabricMode = this.catalogViewMode === 'fabrics';
+    const page = isFabricMode ? 1 : this.pageIndex + 1;
+    const perPage = isFabricMode ? this.fabricViewPerPage : this.pageSize;
     const sort = this.sortBy === 'defaultsorting' ? '' : this.sortBy;
     const filterData = this.buildFilterPayload();
 
@@ -427,6 +452,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         console.error('Listing products load failed:', err);
         this.listErrorMessage = 'Unable to load listing products.';
         this.paginatedProducts = [];
+        this.fabricGroups = [];
+        this.selectedFabricVariantByGroup = {};
         this.totalProducts = 0;
         this.totalPages = 0;
         return of(null);
@@ -443,12 +470,19 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.listErrorMessage = null;
       const parsed = this.parseListingResponse(response, page, perPage);
       this.paginatedProducts = parsed.items;
-      this.totalProducts = parsed.total;
-      this.totalPages = parsed.totalPages;
-      this.pageIndex = Math.max(parsed.currentPage - 1, 0);
-      this.pageSize = parsed.perPage;
-      this.mergePageSizeOption(parsed.perPage);
-      this.prepareListingCardCompositions(this.paginatedProducts);
+      this.rebuildFabricGroups(this.paginatedProducts);
+      if (isFabricMode) {
+        this.totalProducts = this.fabricGroups.length;
+        this.totalPages = 1;
+        this.pageIndex = 0;
+      } else {
+        this.totalProducts = parsed.total;
+        this.totalPages = parsed.totalPages;
+        this.pageIndex = Math.max(parsed.currentPage - 1, 0);
+        this.pageSize = parsed.perPage;
+        this.mergePageSizeOption(parsed.perPage);
+      }
+      this.prepareListingCardCompositions();
     });
   }
 
@@ -567,7 +601,22 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.gridColumns = normalizedColumns;
   }
 
+  setCatalogViewMode(mode: 'products' | 'fabrics'): void {
+    if (!this.enableFabricGroupedView) {
+      this.catalogViewMode = 'products';
+      return;
+    }
+    if (this.catalogViewMode === mode) {
+      return;
+    }
+    this.catalogViewMode = mode;
+    this.fetchListingProducts(true);
+  }
+
   onPageChange(event: PageEvent): void {
+    if (this.catalogViewMode === 'fabrics') {
+      return;
+    }
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
     this.fetchListingProducts(false);
@@ -814,6 +863,35 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     return fabricName || this.productTitle || 'Swatch';
   }
 
+  getFabricColorName(product: ListingProductItem): string {
+    const colorName = String(
+      product?.colorname || product?.color_name || product?.['color'] || product?.['colour'] || ''
+    ).trim();
+    if (colorName) {
+      return colorName;
+    }
+    return this.getProductSwatchName(product);
+  }
+
+  onFabricColorSelect(group: ListingFabricGroup, variant: ListingProductItem, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const variantKey = this.buildFabricVariantKey(variant);
+    this.selectedFabricVariantByGroup[group.key] = variantKey;
+    this.fabricGroups = this.fabricGroups.map((item) =>
+      item.key === group.key
+        ? { ...item, activeVariant: variant }
+        : item
+    );
+    this.prepareListingCardCompositionForProduct(variant);
+    this.cd.markForCheck();
+  }
+
+  isFabricColorSelected(group: ListingFabricGroup, variant: ListingProductItem): boolean {
+    return this.buildFabricVariantKey(group.activeVariant) === this.buildFabricVariantKey(variant);
+  }
+
   private getFreeSampleSubmitKey(product: ListingProductItem): string {
     return [
       this.productId || 0,
@@ -847,22 +925,37 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     }
 
     const key = this.composeListingImageKey(frameUrl, colorUrl);
-    return this.composedListingImageMap.get(key) || frameUrl;
+    const composedImage = this.composedListingImageMap.get(key);
+    if (composedImage) {
+      return composedImage;
+    }
+
+    if (!this.failedListingImageKeys.has(key)) {
+      this.queueListingImageComposition(frameUrl, colorUrl);
+    }
+
+    return frameUrl;
   }
 
-  private prepareListingCardCompositions(products: ListingProductItem[]): void {
-    if (!this.listingFrameImageUrl || !products?.length) {
+  private prepareListingCardCompositions(): void {
+    if (!this.listingFrameImageUrl) {
       return;
     }
 
-    const frameUrl = this.listingFrameImageUrl;
-    products.forEach((product) => {
-      const colorUrl = this.getProductImage(product);
-      if (!colorUrl) {
-        return;
-      }
-      this.queueListingImageComposition(frameUrl, colorUrl);
-    });
+    const sourceProducts =
+      this.catalogViewMode === 'fabrics'
+        ? this.fabricGroups.map((group) => group.activeVariant)
+        : this.paginatedProducts;
+
+    sourceProducts.forEach((product) => this.prepareListingCardCompositionForProduct(product));
+  }
+
+  private prepareListingCardCompositionForProduct(product: ListingProductItem | null | undefined): void {
+    if (!product || !this.listingFrameImageUrl) {
+      return;
+    }
+    const colorUrl = this.getProductImage(product);
+    this.queueListingImageComposition(this.listingFrameImageUrl, colorUrl);
   }
 
   private queueListingImageComposition(frameUrl: string, colorUrl: string): void {
@@ -871,24 +964,53 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     }
 
     const key = this.composeListingImageKey(frameUrl, colorUrl);
-    if (this.composedListingImageMap.has(key) || this.composingListingImageKeys.has(key)) {
+    if (
+      this.composedListingImageMap.has(key) ||
+      this.composingListingImageKeys.has(key) ||
+      this.failedListingImageKeys.has(key)
+    ) {
       return;
     }
 
     this.composingListingImageKeys.add(key);
-    this.composeListingFrameAndColor(frameUrl, colorUrl)
-      .then((composedUrl) => {
-        if (composedUrl) {
-          this.setComposedListingImage(key, composedUrl);
-        }
-      })
-      .catch(() => {
-        // Keep original frame fallback when composition fails.
-      })
-      .finally(() => {
-        this.composingListingImageKeys.delete(key);
-        this.cd.markForCheck();
-      });
+    this.listingCompositionQueue.push({ key, frameUrl, colorUrl });
+    this.drainListingCompositionQueue();
+  }
+
+  private drainListingCompositionQueue(): void {
+    if (!this.listingCompositionQueue.length) {
+      return;
+    }
+
+    while (
+      this.activeListingCompositions < this.maxParallelListingCompositions &&
+      this.listingCompositionQueue.length
+    ) {
+      const next = this.listingCompositionQueue.shift();
+      if (!next) {
+        return;
+      }
+
+      this.activeListingCompositions += 1;
+      this.composeListingFrameAndColor(next.frameUrl, next.colorUrl)
+        .then((composedUrl) => {
+          if (composedUrl) {
+            this.setComposedListingImage(next.key, composedUrl);
+          } else {
+            this.failedListingImageKeys.add(next.key);
+          }
+        })
+        .catch(() => {
+          // Keep original frame fallback when composition fails.
+          this.failedListingImageKeys.add(next.key);
+        })
+        .finally(() => {
+          this.activeListingCompositions = Math.max(this.activeListingCompositions - 1, 0);
+          this.composingListingImageKeys.delete(next.key);
+          this.drainListingCompositionQueue();
+          this.cd.markForCheck();
+        });
+    }
   }
 
   private async composeListingFrameAndColor(frameUrl: string, colorUrl: string): Promise<string | null> {
@@ -1082,8 +1204,11 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private resetListingImageCompositionCaches(): void {
     this.composedListingImageMap.clear();
     this.composingListingImageKeys.clear();
+    this.failedListingImageKeys.clear();
     this.imageLoadPromiseCache.clear();
     this.frameTransparentRegionCache.clear();
+    this.listingCompositionQueue = [];
+    this.activeListingCompositions = 0;
   }
 
   getCategoryValueImage(value: ListingCategoryValue): string {
@@ -1114,6 +1239,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   get activeResultCount(): number {
+    if (this.catalogViewMode === 'fabrics') {
+      return this.fabricGroups.length;
+    }
     return this.totalProducts;
   }
 
@@ -1122,6 +1250,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   get visibleResultCount(): number {
+    if (this.catalogViewMode === 'fabrics') {
+      return this.fabricGroups.length;
+    }
     return this.paginatedProducts.length;
   }
 
@@ -1140,14 +1271,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   getProductDescription(product: ListingProductItem): string {
-    const fromItem = String(product?.['ecomdescription'] || product?.['description'] || '').trim();
+    const fromItem = String(product?.['ecomdescription'] || '').trim();
     if (fromItem) {
       return fromItem.length > 95 ? `${fromItem.slice(0, 95)}...` : fromItem;
-    }
-    if (this.productDescriptionPreview) {
-      return this.productDescriptionPreview.length > 95
-        ? `${this.productDescriptionPreview.slice(0, 95)}...`
-        : this.productDescriptionPreview;
     }
     return 'Stylish and versatile design for any space.';
   }
@@ -1164,6 +1290,13 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     return index;
   }
 
+  trackFabricGroup(index: number, group: ListingFabricGroup): string {
+    return group.key;
+  }
+
+  readonly trackFabricVariant = (index: number, variant: ListingProductItem): string =>
+    this.buildFabricVariantKey(variant);
+
   private categoryKey(category: ListingCategory): string {
     return `${category.id}::${this.normalize(category.name)}`;
   }
@@ -1175,6 +1308,105 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       return `${fabricName}-${colorName}`;
     }
     return colorName || fabricName || 'single_view';
+  }
+
+  private rebuildFabricGroups(products: ListingProductItem[]): void {
+    if (!products?.length) {
+      this.fabricGroups = [];
+      this.selectedFabricVariantByGroup = {};
+      return;
+    }
+
+    const grouped = new Map<string, { fabricName: string; variants: ListingProductItem[] }>();
+    products.forEach((product) => {
+      const groupKey = this.buildFabricGroupKey(product);
+      const fabricName = this.getFabricGroupName(product);
+      const existing = grouped.get(groupKey);
+      if (existing) {
+        if (!existing.fabricName && fabricName) {
+          existing.fabricName = fabricName;
+        }
+        existing.variants.push(product);
+      } else {
+        grouped.set(groupKey, { fabricName, variants: [product] });
+      }
+    });
+
+    const nextSelected: Record<string, string> = {};
+    const groups = Array.from(grouped.entries()).map(([key, value]) => {
+      const variants = [...value.variants].sort((a, b) =>
+        this.getFabricColorName(a).localeCompare(this.getFabricColorName(b))
+      );
+      const previousKey = this.selectedFabricVariantByGroup[key];
+      const activeVariant =
+        variants.find((variant) => this.buildFabricVariantKey(variant) === previousKey) || variants[0];
+      nextSelected[key] = this.buildFabricVariantKey(activeVariant);
+      const resolvedName = String(value.fabricName || '').trim() || this.getFabricGroupName(activeVariant);
+      return {
+        key,
+        fabricName: resolvedName,
+        variants,
+        activeVariant
+      } as ListingFabricGroup;
+    });
+
+    groups.sort((a, b) => a.fabricName.localeCompare(b.fabricName));
+    this.selectedFabricVariantByGroup = nextSelected;
+    this.fabricGroups = groups;
+  }
+
+  private buildFabricGroupKey(product: ListingProductItem): string {
+    const fabricCode = String(product?.['fabriccode'] || product?.['fabric_code'] || '').trim();
+    const fabricName = String(product?.fabricname || product?.fabric_name || '').trim();
+    if (fabricCode || fabricName) {
+      const groupedLabel = `${fabricCode || fabricName} ${fabricName || fabricCode}`.trim();
+      return `fabric_label_${this.slugify(groupedLabel)}`;
+    }
+
+    const fabricId = this.toNumber(product?.fd_id || product?.fabricid);
+    if (fabricId > 0) {
+      return `fabric_id_${fabricId}`;
+    }
+
+    const groupId = this.toNumber(product?.groupid || product?.pricegroupid);
+    if (groupId > 0) {
+      return `group_${groupId}`;
+    }
+
+    const fallback = this.getFabricGroupName(product) || String(product?.productname || this.productTitle || 'fabric');
+    return `fabric_fallback_${this.slugify(fallback)}`;
+  }
+
+  private getFabricGroupName(product: ListingProductItem): string {
+    const fabricName = String(product?.fabricname || product?.fabric_name || '').trim();
+    if (fabricName) {
+      return fabricName;
+    }
+    const fabricCode = String(product?.['fabriccode'] || product?.['fabric_code'] || '').trim();
+    if (fabricCode) {
+      return fabricCode;
+    }
+    const productName = String(product?.productname || '').trim();
+    if (productName) {
+      return productName;
+    }
+    const displayName = this.getProductDisplayName(product);
+    if (displayName) {
+      return displayName;
+    }
+    return this.productTitle || 'Fabric';
+  }
+
+  private buildFabricVariantKey(product: ListingProductItem): string {
+    const colorName = this.getFabricColorName(product);
+    return [
+      this.toNumber(product?.fd_id || product?.fabricid),
+      this.toNumber(product?.cd_id || product?.colorid),
+      this.toNumber(product?.groupid || product?.pricegroupid),
+      this.toNumber(product?.supplierid || product?.supplier_id),
+      this.toNumber(product?.matmapid || product?.['mapid']),
+      this.slugify(colorName || String(product?.['colorcode'] || product?.['color_code'] || ''))
+    ].join('_');
   }
 
   private resolveFieldsCategoryId(categoryId: any): number {

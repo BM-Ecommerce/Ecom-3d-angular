@@ -74,7 +74,10 @@
     <section class="listing-header">
       <div class="header-copy">
         <h1>{{ productTitle }}</h1>
-        <p>Showing {{ visibleResultCount }} of {{ activeResultCount }} products</p>
+        <p>
+          Showing {{ visibleResultCount }} of {{ activeResultCount }}
+          {{ catalogViewMode === 'fabrics' ? 'fabrics' : 'products' }}
+        </p>
       </div>
 
       <div class="header-tools">
@@ -105,6 +108,23 @@
             (click)="setGrid(1)"
             aria-label="List view">
             <mat-icon>view_headline</mat-icon>
+          </button>
+        </div>
+
+        <div class="catalog-view-switch" role="group" aria-label="Catalog mode" *ngIf="enableFabricGroupedView">
+          <button
+            type="button"
+            class="catalog-view-btn"
+            [class.active]="catalogViewMode === 'products'"
+            (click)="setCatalogViewMode('products')">
+            Products
+          </button>
+          <button
+            type="button"
+            class="catalog-view-btn"
+            [class.active]="catalogViewMode === 'fabrics'"
+            (click)="setCatalogViewMode('fabrics')">
+            Fabrics
           </button>
         </div>
       </div>
@@ -194,27 +214,36 @@
         <div
           class="products-grid"
           [ngClass]="'cols-' + gridColumns"
-          *ngIf="!isListLoading && paginatedProducts.length > 0">
+          *ngIf="!isListLoading && catalogViewMode === 'products' && paginatedProducts.length > 0">
           <mat-card
             class="product-card"
-            role="button"
-            tabindex="0"
-            *ngFor="let product of paginatedProducts; trackBy: trackProduct"
-            (click)="openOrderForm(product)"
-            (keydown.enter)="openOrderForm(product)"
-            (keydown.space)="openOrderForm(product)">
-            <div class="card-image">
-              <img
-                class="product-frame"
-                [src]="getListingCardImage(product)"
-                [alt]="getProductDisplayName(product)"
-                loading="lazy">
-            </div>
+            *ngFor="let product of paginatedProducts; trackBy: trackProduct">
+            <button
+              type="button"
+              class="card-image-btn"
+              [attr.aria-label]="'Open ' + getProductDisplayName(product)"
+              (click)="openOrderForm(product)">
+              <div class="card-image">
+                <img
+                  class="product-frame"
+                  [src]="getListingCardImage(product)"
+                  [alt]="getProductDisplayName(product)"
+                  loading="lazy">
+              </div>
+            </button>
             <mat-card-content class="card-content">
               <div class="card-info-row">
                 <div class="card-copy">
                   <div class="product-type">{{ getProductCategoryLabel(product) }}</div>
-                  <h4>{{ getProductDisplayName(product) }}</h4>
+                  <h4>
+                    <button
+                      type="button"
+                      class="card-title-btn"
+                      [attr.aria-label]="'Open ' + getProductDisplayName(product)"
+                      (click)="openOrderForm(product)">
+                      {{ getProductDisplayName(product) }}
+                    </button>
+                  </h4>
                   <p class="product-desc">{{ getProductDescription(product) }}</p>
                 </div>
 
@@ -259,9 +288,92 @@
           </mat-card>
         </div>
 
+        <div
+          class="products-grid fabric-groups-grid"
+          [ngClass]="'cols-' + gridColumns"
+          *ngIf="!isListLoading && catalogViewMode === 'fabrics' && fabricGroups.length > 0">
+          <mat-card
+            class="product-card fabric-group-card"
+            *ngFor="let group of fabricGroups; trackBy: trackFabricGroup">
+            <button
+              type="button"
+              class="card-image-btn"
+              [attr.aria-label]="'Open ' + group.fabricName"
+              (click)="openOrderForm(group.activeVariant)">
+              <div class="card-image">
+                <img
+                  class="product-frame"
+                  [src]="getListingCardImage(group.activeVariant)"
+                  [alt]="group.fabricName"
+                  loading="lazy">
+              </div>
+            </button>
+            <mat-card-content class="card-content">
+              <div class="card-info-row">
+                <div class="card-copy">
+                  <div class="product-type">{{ getProductCategoryLabel(group.activeVariant) }}</div>
+                  <h4>
+                    <button
+                      type="button"
+                      class="card-title-btn"
+                      [attr.aria-label]="'Open ' + group.fabricName"
+                      (click)="openOrderForm(group.activeVariant)">
+                      {{ group.fabricName }}
+                    </button>
+                  </h4>
+                  <div class="fabric-group-meta">{{ group.variants.length }} colors</div>
+                  <p class="product-desc">{{ getProductDescription(group.activeVariant) }}</p>
+                </div>
+              </div>
+
+              <div class="fabric-color-row">
+                <button
+                  type="button"
+                  class="fabric-color-chip"
+                  *ngFor="let variant of group.variants; trackBy: trackFabricVariant"
+                  [class.active]="isFabricColorSelected(group, variant)"
+                  [style.background-image]="'url(' + getProductImage(variant) + ')'"
+                  [attr.aria-label]="getFabricColorName(variant)"
+                  [title]="getFabricColorName(variant)"
+                  (click)="onFabricColorSelect(group, variant, $event)">
+                </button>
+              </div>
+
+              <div class="fabric-color-name">
+                Selected: {{ getFabricColorName(group.activeVariant) }}
+              </div>
+
+              <div class="price-label" *ngIf="getPrice(group.activeVariant) > 0">Starting from</div>
+              <div class="price" *ngIf="getPrice(group.activeVariant) > 0">
+                {{ currencySymbol }}{{ getPrice(group.activeVariant) | number:'1.2-2' }}
+              </div>
+
+              <div class="card-actions">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  class="customize-btn"
+                  (click)="onCustomizeClick(group.activeVariant, $event)">
+                  Customize
+                </button>
+                <button
+                  *ngIf="canShowFreeSample(group.activeVariant)"
+                  mat-raised-button
+                  color="primary"
+                  type="button"
+                  class="sample-btn"
+                  [disabled]="isFreeSampleSubmitting(group.activeVariant)"
+                  (click)="onFreeSampleClick(group.activeVariant, $event)">
+                  {{ isFreeSampleSubmitting(group.activeVariant) ? 'Adding...' : freeSampleButtonLabel }}
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
         <mat-paginator
           class="listing-paginator"
-          *ngIf="!isListLoading && activeResultCount > 0"
+          *ngIf="!isListLoading && catalogViewMode === 'products' && activeResultCount > 0"
           [length]="activeResultCount"
           [pageSize]="pageSize"
           [pageIndex]="pageIndex"

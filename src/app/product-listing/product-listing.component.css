@@ -343,6 +343,40 @@
   box-shadow: 0 4px 10px rgba(22, 52, 87, 0.28);
 }
 
+.catalog-view-switch {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #d7e0ea;
+  border-radius: 999px;
+  background: #fff;
+  padding: 2px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.catalog-view-btn {
+  border: 0;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px !important;
+  font-weight: 700;
+  color: #60758f;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.catalog-view-btn:hover {
+  background: #f2f5f9;
+}
+
+.catalog-view-btn.active {
+  background: #1f4473;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(22, 52, 87, 0.28);
+}
+
 .listing-content {
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -529,15 +563,13 @@
   border-radius: 14px;
   border: 1px solid #d8e1ec;
   box-shadow: none;
-  cursor: pointer;
-  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  transition: box-shadow 0.16s ease;
   overflow: hidden;
   background: #fff;
 }
 
 .product-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(22, 48, 78, 0.12);
+  box-shadow: 0 8px 18px rgba(22, 48, 78, 0.1);
 }
 
 .product-card:focus-visible {
@@ -545,9 +577,24 @@
   outline-offset: 2px;
 }
 
+.card-image-btn {
+  width: 100%;
+  display: block;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card-image-btn:focus-visible {
+  outline: 2px solid #1f4d7e;
+  outline-offset: -2px;
+}
+
 .card-image {
   min-height: 250px;
-  background: linear-gradient(180deg, #eee8dc, #e8e3d8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -596,6 +643,28 @@
   font-weight: 700;
   color: #081f3d;
   letter-spacing: 0;
+}
+
+.card-title-btn {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card-title-btn:hover {
+  text-decoration: underline;
+}
+
+.card-title-btn:focus-visible {
+  outline: 2px solid #1f4d7e;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .product-desc {
@@ -709,7 +778,54 @@
   padding-top: 10px;
   display: flex;
   gap: 8px;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.fabric-color-row {
+  margin-top: 9px;
+  display: flex;
   flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fabric-color-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #d5dfeb;
+  background-color: #f4f7fb;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 1px rgba(17, 35, 63, 0.1);
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.fabric-color-chip:hover {
+  transform: translateY(-1px);
+}
+
+.fabric-color-chip.active {
+  border-color: #1f4473;
+  box-shadow: 0 0 0 2px rgba(31, 68, 115, 0.2);
+}
+
+.fabric-color-name {
+  margin-top: 8px;
+  color: #2b4869;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-weight: 700;
+}
+
+.fabric-group-meta {
+  margin-top: 3px;
+  color: #3b5a7d;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-weight: 700;
 }
 
 .customize-btn,
@@ -719,6 +835,7 @@
   font-size: 14px !important;
   font-weight: 700;
   padding: 0 16px;
+  white-space: nowrap;
 }
 
 .customize-btn {
@@ -817,12 +934,23 @@
 
 .products-grid:not(.cols-1) .card-actions {
   padding-top: 8px;
+  gap: 6px;
 }
 
 .products-grid:not(.cols-1) .customize-btn,
 .products-grid:not(.cols-1) .sample-btn {
   min-height: 34px;
-  padding: 0 14px;
+  padding: 0 10px;
+  font-size: 13px !important;
+}
+
+.products-grid:not(.cols-1) .customize-btn {
+  flex: 0 0 auto;
+}
+
+.products-grid:not(.cols-1) .sample-btn {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 @media (max-width: 1280px) {
@@ -923,6 +1051,11 @@
     width: 100%;
     justify-content: space-between;
     gap: 8px;
+  }
+
+  .catalog-view-btn {
+    padding: 0 10px;
+    height: 32px;
   }
 
   .skeleton-sort {
