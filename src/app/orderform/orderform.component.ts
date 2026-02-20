@@ -3532,7 +3532,22 @@ public onToggleLoopAnimate(): void {
       return i;
     });
   }	 
+  shouldHideMaterialLevelOne(field: ProductField): boolean {
+    if (!field || ![3, 5].includes(Number(this.category))) {
+      return false;
+    }
+
+    if (![5, 21].includes(Number(field.fieldtypeid))) {
+      return false;
+    }
+
+    const effectiveLevel = Number(field.level ?? field.fieldlevel ?? 0);
+    return effectiveLevel === 1;
+  }
 getClassNameAccessories(field: any,list_field:boolean = false): string {
+    if (this.shouldHideMaterialLevelOne(field)) {
+      return 'hide_section';
+    }
     if('single_view' != this.routeParams?.fabric && list_field && 2 == this.category && field.fieldid == this.chosenAccessoriesFieldId){
        return 'hide_section';
     } 

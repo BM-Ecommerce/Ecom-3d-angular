@@ -7,10 +7,10 @@
 // or environment variables to manage these settings securely.
 export const environment = {
   production: false,
-  apiUrl: 'https://blindmatrix.software',
-  apiKey: '0d5b2abe-d707-4eb3-a7cb-3f05a5e5d3fb',
-  apiName: 'ECOMMERCE',
-  site: 'https://blindssoftware.com',
+  apiUrl: 'https://us.blindmatrix.software',
+  apiKey: 'e1d4b939-75de-46f7-b02d-2f5db6512e70',
+  apiName: 'DISCOUNTBUYBLINDS',
+  site: 'https://discountbuyblinds.blindssoftware.com',
   loaderMode: 'topbar' as 'overlay' | 'topbar',
   loaderEnabled: true
 };
