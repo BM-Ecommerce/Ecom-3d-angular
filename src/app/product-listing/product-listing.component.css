@@ -988,11 +988,6 @@
   line-height: 1.22 !important;
 }
 
-.products-grid.cols-1 .price {
-  font-size: 34px !important;
-  line-height: 1.1 !important;
-}
-
 .products-grid:not(.cols-1) .card-image {
   min-height: 248px;
 }
@@ -1114,10 +1109,6 @@
 
   .products-grid.cols-1 .card-image {
     min-height: 240px;
-  }
-
-  .products-grid.cols-1 .price {
-    font-size: 30px !important;
   }
 }
 
