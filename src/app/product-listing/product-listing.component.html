@@ -330,12 +330,21 @@
                 <button
                   type="button"
                   class="fabric-color-chip"
-                  *ngFor="let variant of group.variants; trackBy: trackFabricVariant"
+                  *ngFor="let variant of group.previewVariants; trackBy: trackFabricVariant"
                   [class.active]="isFabricColorSelected(group, variant)"
                   [style.background-image]="'url(' + getProductImage(variant) + ')'"
                   [attr.aria-label]="getFabricColorName(variant)"
                   [title]="getFabricColorName(variant)"
                   (click)="onFabricColorSelect(group, variant, $event)">
+                </button>
+                <button
+                  *ngIf="group.hasMoreVariants"
+                  type="button"
+                  class="fabric-color-chip fabric-color-chip-more"
+                  [attr.aria-label]="'Show ' + group.hiddenVariantCount + ' more colors for ' + group.fabricName"
+                  [title]="'Show all ' + group.variants.length + ' colors'"
+                  (click)="openFabricColorPopup(group, $event)">
+                  <span class="fabric-color-chip-more-dots" aria-hidden="true">...</span>
                 </button>
               </div>
 
@@ -369,6 +378,48 @@
               </div>
             </mat-card-content>
           </mat-card>
+        </div>
+
+        <div
+          class="fabric-color-popup-backdrop"
+          *ngIf="activeFabricColorPopupGroup as popupGroup"
+          (click)="closeFabricColorPopup($event)">
+          <div
+            class="fabric-color-popup-panel"
+            role="dialog"
+            aria-modal="true"
+            [attr.aria-label]="'Select color for ' + popupGroup.fabricName"
+            (click)="onFabricColorPopupPanelClick($event)">
+            <div class="fabric-color-popup-head">
+              <h3>{{ popupGroup.fabricName }}</h3>
+              <button
+                type="button"
+                class="fabric-color-popup-close"
+                aria-label="Close color selector"
+                (click)="closeFabricColorPopup($event)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+
+            <div class="fabric-color-popup-subtitle">{{ popupGroup.variants.length }} colors</div>
+
+            <div class="fabric-color-popup-grid">
+              <button
+                type="button"
+                class="fabric-color-chip fabric-color-chip-popup"
+                *ngFor="let variant of popupGroup.variants; trackBy: trackFabricVariant"
+                [class.active]="isFabricColorSelected(popupGroup, variant)"
+                [style.background-image]="'url(' + getProductImage(variant) + ')'"
+                [attr.aria-label]="getFabricColorName(variant)"
+                [title]="getFabricColorName(variant)"
+                (click)="onFabricPopupVariantSelect(variant, $event)">
+              </button>
+            </div>
+
+            <div class="fabric-color-popup-selected">
+              Selected: {{ getFabricColorName(popupGroup.activeVariant) }}
+            </div>
+          </div>
         </div>
 
         <mat-paginator

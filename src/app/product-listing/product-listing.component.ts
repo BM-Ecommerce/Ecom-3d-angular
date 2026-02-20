@@ -77,6 +77,9 @@ interface ListingFabricGroup {
   key: string;
   fabricName: string;
   variants: ListingProductItem[];
+  previewVariants: ListingProductItem[];
+  hiddenVariantCount: number;
+  hasMoreVariants: boolean;
   activeVariant: ListingProductItem;
 }
 
@@ -137,6 +140,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   paginatedProducts: ListingProductItem[] = [];
   fabricGroups: ListingFabricGroup[] = [];
   private selectedFabricVariantByGroup: Record<string, string> = {};
+  fabricColorPopupGroupKey: string | null = null;
   selectedCategoryValues: Record<string, Set<string>> = {};
   pageSizeOptions: number[] = [12, 24, 48, 96];
   pageSize = 24;
@@ -145,6 +149,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   totalPages = 0;
   submittingFreeSampleKey: string | null = null;
   private readonly fabricViewPerPage = 2000;
+  readonly fabricColorPreviewLimit = 10;
   readonly skeletonCards = Array.from({ length: 6 });
   readonly skeletonFilterBlocks = Array.from({ length: 3 });
   readonly skeletonFilterLines = Array.from({ length: 4 });
@@ -215,6 +220,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.paginatedProducts = [];
     this.fabricGroups = [];
     this.selectedFabricVariantByGroup = {};
+    this.fabricColorPopupGroupKey = null;
     this.pageIndex = 0;
     this.totalProducts = 0;
     this.totalPages = 0;
@@ -422,6 +428,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.paginatedProducts = [];
       this.fabricGroups = [];
       this.selectedFabricVariantByGroup = {};
+      this.fabricColorPopupGroupKey = null;
       this.totalProducts = 0;
       this.totalPages = 0;
       return;
@@ -454,6 +461,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         this.paginatedProducts = [];
         this.fabricGroups = [];
         this.selectedFabricVariantByGroup = {};
+        this.fabricColorPopupGroupKey = null;
         this.totalProducts = 0;
         this.totalPages = 0;
         return of(null);
@@ -604,12 +612,16 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   setCatalogViewMode(mode: 'products' | 'fabrics'): void {
     if (!this.enableFabricGroupedView) {
       this.catalogViewMode = 'products';
+      this.fabricColorPopupGroupKey = null;
       return;
     }
     if (this.catalogViewMode === mode) {
       return;
     }
     this.catalogViewMode = mode;
+    if (mode !== 'fabrics') {
+      this.fabricColorPopupGroupKey = null;
+    }
     this.fetchListingProducts(true);
   }
 
@@ -888,8 +900,46 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.cd.markForCheck();
   }
 
+  openFabricColorPopup(group: ListingFabricGroup, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.fabricColorPopupGroupKey = group.key;
+    this.cd.markForCheck();
+  }
+
+  closeFabricColorPopup(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!this.fabricColorPopupGroupKey) {
+      return;
+    }
+    this.fabricColorPopupGroupKey = null;
+    this.cd.markForCheck();
+  }
+
+  onFabricColorPopupPanelClick(event: Event): void {
+    event.stopPropagation();
+  }
+
+  onFabricPopupVariantSelect(variant: ListingProductItem, event: Event): void {
+    const popupGroup = this.activeFabricColorPopupGroup;
+    if (!popupGroup) {
+      return;
+    }
+    this.onFabricColorSelect(popupGroup, variant, event);
+    this.closeFabricColorPopup();
+  }
+
   isFabricColorSelected(group: ListingFabricGroup, variant: ListingProductItem): boolean {
     return this.buildFabricVariantKey(group.activeVariant) === this.buildFabricVariantKey(variant);
+  }
+
+  get activeFabricColorPopupGroup(): ListingFabricGroup | null {
+    const popupKey = this.fabricColorPopupGroupKey;
+    if (!popupKey) {
+      return null;
+    }
+    return this.fabricGroups.find((group) => group.key === popupKey) || null;
   }
 
   private getFreeSampleSubmitKey(product: ListingProductItem): string {
@@ -1314,6 +1364,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (!products?.length) {
       this.fabricGroups = [];
       this.selectedFabricVariantByGroup = {};
+      this.fabricColorPopupGroupKey = null;
       return;
     }
 
@@ -1342,10 +1393,15 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         variants.find((variant) => this.buildFabricVariantKey(variant) === previousKey) || variants[0];
       nextSelected[key] = this.buildFabricVariantKey(activeVariant);
       const resolvedName = String(value.fabricName || '').trim() || this.getFabricGroupName(activeVariant);
+      const previewVariants = variants.slice(0, this.fabricColorPreviewLimit);
+      const hiddenVariantCount = Math.max(variants.length - this.fabricColorPreviewLimit, 0);
       return {
         key,
         fabricName: resolvedName,
         variants,
+        previewVariants,
+        hiddenVariantCount,
+        hasMoreVariants: hiddenVariantCount > 0,
         activeVariant
       } as ListingFabricGroup;
     });
@@ -1353,6 +1409,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     groups.sort((a, b) => a.fabricName.localeCompare(b.fabricName));
     this.selectedFabricVariantByGroup = nextSelected;
     this.fabricGroups = groups;
+    if (this.fabricColorPopupGroupKey && !groups.some((group) => group.key === this.fabricColorPopupGroupKey)) {
+      this.fabricColorPopupGroupKey = null;
+    }
   }
 
   private buildFabricGroupKey(product: ListingProductItem): string {
