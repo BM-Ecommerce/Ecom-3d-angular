@@ -776,6 +776,16 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     return colorName || fabricName || this.productTitle;
   }
 
+  getProductSwatchName(product: ListingProductItem): string {
+    const colorName = String(product?.colorname || product?.color_name || '').trim();
+    if (colorName) {
+      return colorName;
+    }
+
+    const fabricName = String(product?.fabricname || product?.fabric_name || '').trim();
+    return fabricName || this.productTitle || 'Swatch';
+  }
+
   private getFreeSampleSubmitKey(product: ListingProductItem): string {
     return [
       this.productId || 0,

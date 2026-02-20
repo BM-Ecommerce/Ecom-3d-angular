@@ -40,18 +40,20 @@
           <button
             type="button"
             mat-icon-button
-            [class.active]="gridColumns === 1"
-            (click)="setGrid(1)"
-            aria-label="List view">
-            <mat-icon>view_headline</mat-icon>
-          </button>
-          <button
-            type="button"
-            mat-icon-button
+            class="view-switch-btn"
             [class.active]="gridColumns !== 1"
             (click)="setGrid(3)"
             aria-label="Grid view">
             <mat-icon>grid_view</mat-icon>
+          </button>
+          <button
+            type="button"
+            mat-icon-button
+            class="view-switch-btn"
+            [class.active]="gridColumns === 1"
+            (click)="setGrid(1)"
+            aria-label="List view">
+            <mat-icon>view_headline</mat-icon>
           </button>
         </div>
       </div>
@@ -142,11 +144,16 @@
                   <p class="product-desc">{{ getProductDescription(product) }}</p>
                 </div>
 
-                <div class="swatch-wrap">
-                  <img
-                    class="swatch-img"
-                    [src]="getProductImage(product)"
-                    [alt]="(product.colorname || product.color_name || product.fabricname || product.fabric_name || productTitle)">
+                <div class="swatch-wrap" *ngIf="getProductSwatchName(product) as swatchName">
+                  <div class="swatch-tile">
+                    <img
+                      class="swatch-img"
+                      [src]="getProductImage(product)"
+                      [alt]="swatchName">
+                    <span class="swatch-eyelet" aria-hidden="true"></span>
+                    <span class="swatch-hole" aria-hidden="true"></span>
+                    <span class="swatch-size" aria-hidden="true">10 x 10</span>
+                  </div>
                 </div>
               </div>
 
