@@ -415,13 +415,6 @@
   object-fit: contain;
 }
 
-.product-frame.has-frame {
-  object-fit: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 86% 86%;
-}
-
 .card-content {
   padding: 11px 12px 12px;
   display: flex;

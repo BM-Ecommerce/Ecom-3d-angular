@@ -64,6 +64,16 @@ interface ListingProductItem {
   [key: string]: any;
 }
 
+interface TransparentHoleRegion {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  width: number;
+  height: number;
+  found: boolean;
+}
+
 type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
 
 @Component({
@@ -124,6 +134,12 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   submittingFreeSampleKey: string | null = null;
 
   readonly imgpath = `${environment.apiUrl}/api/public/storage/attachments/${environment.apiName}/material/colour/`;
+  private readonly composedImageCacheLimit = 120;
+  private readonly frameAlphaThreshold = 40;
+  private composedListingImageMap = new Map<string, string>();
+  private composingListingImageKeys = new Set<string>();
+  private imageLoadPromiseCache = new Map<string, Promise<HTMLImageElement>>();
+  private frameTransparentRegionCache = new Map<string, TransparentHoleRegion>();
 
   constructor(
     private route: ActivatedRoute,
@@ -161,6 +177,10 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.listRequestSub?.unsubscribe();
+    this.composingListingImageKeys.clear();
+    this.imageLoadPromiseCache.clear();
+    this.frameTransparentRegionCache.clear();
+    this.composedListingImageMap.clear();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -188,7 +208,11 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         this.productSlug = this.slugify(product.label || this.productTitle);
         this.productDescription = String(product.pi_productdescription || '');
         this.bannerImageUrl = this.resolveBannerImage(product);
-        this.listingFrameImageUrl = this.resolveListingFrameImage(product);
+        const nextFrameUrl = this.resolveListingFrameImage(product);
+        if (this.listingFrameImageUrl !== nextFrameUrl) {
+          this.resetListingImageCompositionCaches();
+        }
+        this.listingFrameImageUrl = nextFrameUrl;
         this.productCategory = this.toNumber(product.pi_category);
         this.ecomFreeSample = this.toBoolean(product.pei_ecomFreeSample);
         this.ecomSamplePrice = this.toNumber(product.pei_ecomsampleprice);
@@ -421,6 +445,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.pageIndex = Math.max(parsed.currentPage - 1, 0);
       this.pageSize = parsed.perPage;
       this.mergePageSizeOption(parsed.perPage);
+      this.prepareListingCardCompositions(this.paginatedProducts);
     });
   }
 
@@ -808,6 +833,254 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       return this.resolveStorageImageUrl(String(colorImage));
     }
     return `${this.imgpath}${encodeURIComponent(String(colorImage).trim())}`;
+  }
+
+  getListingCardImage(product: ListingProductItem): string {
+    const colorUrl = this.getProductImage(product);
+    const frameUrl = this.listingFrameImageUrl;
+
+    if (!frameUrl) {
+      return colorUrl;
+    }
+
+    const key = this.composeListingImageKey(frameUrl, colorUrl);
+    return this.composedListingImageMap.get(key) || frameUrl;
+  }
+
+  private prepareListingCardCompositions(products: ListingProductItem[]): void {
+    if (!this.listingFrameImageUrl || !products?.length) {
+      return;
+    }
+
+    const frameUrl = this.listingFrameImageUrl;
+    products.forEach((product) => {
+      const colorUrl = this.getProductImage(product);
+      if (!colorUrl) {
+        return;
+      }
+      this.queueListingImageComposition(frameUrl, colorUrl);
+    });
+  }
+
+  private queueListingImageComposition(frameUrl: string, colorUrl: string): void {
+    if (!frameUrl || !colorUrl) {
+      return;
+    }
+
+    const key = this.composeListingImageKey(frameUrl, colorUrl);
+    if (this.composedListingImageMap.has(key) || this.composingListingImageKeys.has(key)) {
+      return;
+    }
+
+    this.composingListingImageKeys.add(key);
+    this.composeListingFrameAndColor(frameUrl, colorUrl)
+      .then((composedUrl) => {
+        if (composedUrl) {
+          this.setComposedListingImage(key, composedUrl);
+        }
+      })
+      .catch(() => {
+        // Keep original frame fallback when composition fails.
+      })
+      .finally(() => {
+        this.composingListingImageKeys.delete(key);
+        this.cd.markForCheck();
+      });
+  }
+
+  private async composeListingFrameAndColor(frameUrl: string, colorUrl: string): Promise<string | null> {
+    try {
+      const [frameImage, colorImage] = await Promise.all([
+        this.loadImageForComposition(frameUrl),
+        this.loadImageForComposition(colorUrl)
+      ]);
+
+      const holeRegion = this.getFrameTransparentRegion(frameUrl, frameImage);
+      if (!holeRegion.found) {
+        return null;
+      }
+
+      const frameWidth = frameImage.naturalWidth || frameImage.width;
+      const frameHeight = frameImage.naturalHeight || frameImage.height;
+      const colorWidth = colorImage.naturalWidth || colorImage.width;
+      const colorHeight = colorImage.naturalHeight || colorImage.height;
+      if (!frameWidth || !frameHeight || !colorWidth || !colorHeight) {
+        return null;
+      }
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return null;
+      }
+
+      canvas.width = frameWidth;
+      canvas.height = frameHeight;
+
+      const holeWidth = Math.max(holeRegion.maxX - holeRegion.minX, 1);
+      const holeHeight = Math.max(holeRegion.maxY - holeRegion.minY, 1);
+      const scale = Math.max(holeWidth / colorWidth, holeHeight / colorHeight);
+      const drawWidth = colorWidth * scale;
+      const drawHeight = colorHeight * scale;
+      const dx = holeRegion.minX + (holeWidth - drawWidth) / 2;
+      const dy = holeRegion.minY + (holeHeight - drawHeight) / 2;
+
+      ctx.drawImage(colorImage, 0, 0, colorWidth, colorHeight, dx, dy, drawWidth, drawHeight);
+      ctx.drawImage(frameImage, 0, 0, frameWidth, frameHeight);
+
+      return canvas.toDataURL('image/png');
+    } catch {
+      return null;
+    }
+  }
+
+  private getFrameTransparentRegion(frameUrl: string, frameImage: HTMLImageElement): TransparentHoleRegion {
+    const cachedRegion = this.frameTransparentRegionCache.get(frameUrl);
+    if (cachedRegion) {
+      return cachedRegion;
+    }
+
+    const detectedRegion = this.detectTransparentHoleRegion(frameImage, this.frameAlphaThreshold);
+    this.frameTransparentRegionCache.set(frameUrl, detectedRegion);
+    return detectedRegion;
+  }
+
+  private detectTransparentHoleRegion(image: HTMLImageElement, alphaThreshold = 10): TransparentHoleRegion {
+    const width = image.naturalWidth || image.width;
+    const height = image.naturalHeight || image.height;
+    if (!width || !height) {
+      return {
+        minX: 0,
+        minY: 0,
+        maxX: 0,
+        maxY: 0,
+        width: 0,
+        height: 0,
+        found: false
+      };
+    }
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return {
+        minX: 0,
+        minY: 0,
+        maxX: width,
+        maxY: height,
+        width,
+        height,
+        found: false
+      };
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    ctx.drawImage(image, 0, 0, width, height);
+
+    let pixelData: Uint8ClampedArray;
+    try {
+      pixelData = ctx.getImageData(0, 0, width, height).data;
+    } catch {
+      return {
+        minX: 0,
+        minY: 0,
+        maxX: width,
+        maxY: height,
+        width,
+        height,
+        found: false
+      };
+    }
+
+    let minX = width;
+    let minY = height;
+    let maxX = 0;
+    let maxY = 0;
+    let found = false;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = pixelData[(y * width + x) * 4 + 3];
+        if (alpha < alphaThreshold) {
+          found = true;
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (!found) {
+      return {
+        minX: 0,
+        minY: 0,
+        maxX: width,
+        maxY: height,
+        width,
+        height,
+        found: false
+      };
+    }
+
+    return {
+      minX,
+      minY,
+      maxX,
+      maxY,
+      width,
+      height,
+      found: true
+    };
+  }
+
+  private loadImageForComposition(url: string): Promise<HTMLImageElement> {
+    const existingPromise = this.imageLoadPromiseCache.get(url);
+    if (existingPromise) {
+      return existingPromise;
+    }
+
+    const promise = new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.decoding = 'async';
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+      image.src = url;
+    }).catch((error) => {
+      this.imageLoadPromiseCache.delete(url);
+      throw error;
+    });
+
+    this.imageLoadPromiseCache.set(url, promise);
+    return promise;
+  }
+
+  private composeListingImageKey(frameUrl: string, colorUrl: string): string {
+    return `${frameUrl}::${colorUrl}`;
+  }
+
+  private setComposedListingImage(key: string, dataUrl: string): void {
+    if (this.composedListingImageMap.has(key)) {
+      this.composedListingImageMap.delete(key);
+    }
+    this.composedListingImageMap.set(key, dataUrl);
+
+    while (this.composedListingImageMap.size > this.composedImageCacheLimit) {
+      const oldestKey = this.composedListingImageMap.keys().next().value as string | undefined;
+      if (!oldestKey) {
+        break;
+      }
+      this.composedListingImageMap.delete(oldestKey);
+    }
+  }
+
+  private resetListingImageCompositionCaches(): void {
+    this.composedListingImageMap.clear();
+    this.composingListingImageKeys.clear();
+    this.imageLoadPromiseCache.clear();
+    this.frameTransparentRegionCache.clear();
   }
 
   getCategoryValueImage(value: ListingCategoryValue): string {

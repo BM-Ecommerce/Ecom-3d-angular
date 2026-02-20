@@ -130,10 +130,8 @@
             <div class="card-image">
               <img
                 class="product-frame"
-                [class.has-frame]="!!listingFrameImageUrl"
-                [src]="listingFrameImageUrl || getProductImage(product)"
-                [style.background-image]="listingFrameImageUrl ? 'url(' + getProductImage(product) + ')' : null"
-                [alt]="productTitle"
+                [src]="getListingCardImage(product)"
+                [alt]="getProductDisplayName(product)"
                 loading="lazy">
             </div>
             <mat-card-content class="card-content">
