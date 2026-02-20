@@ -110,6 +110,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private listRequestSub: Subscription | null = null;
   private listRequestVersion = 0;
   private productDataPayload: any = null;
+  private shouldRestoreListingScroll = false;
+  private readonly listingScrollStoragePrefix = 'listing_scroll::';
+  private readonly listingScrollPendingStorageKey = 'listing_scroll_pending';
 
   isLoading = false;
   isListLoading = false;
@@ -186,6 +189,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe((routeParams) => {
       const queryParams = this.route.snapshot.queryParams || {};
       const productId = routeParams['product_id'] ?? queryParams['product_id'];
+      this.shouldRestoreListingScroll =
+        this.router.getCurrentNavigation()?.trigger === 'popstate' || this.hasPendingScrollRestore();
 
       if (!productId) {
         this.errorMessage = 'Missing product id for listing page.';
@@ -569,6 +574,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         this.paginatedFabricGroups = [];
       }
       this.prepareListingCardCompositions();
+      this.restoreListingScrollPositionIfNeeded();
     });
   }
 
@@ -763,6 +769,98 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.fetchListingProducts(false);
   }
 
+  private getListingScrollStorageKey(): string {
+    const currentUrl = this.router.url?.split('#')?.[0] || '';
+    return `${this.listingScrollStoragePrefix}${currentUrl}`;
+  }
+
+  private saveListingScrollPosition(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      const payload = {
+        x: Math.max(window.scrollX || 0, 0),
+        y: Math.max(window.scrollY || 0, 0)
+      };
+      const key = this.getListingScrollStorageKey();
+      sessionStorage.setItem(key, JSON.stringify(payload));
+      sessionStorage.setItem(this.listingScrollPendingStorageKey, key);
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private restoreListingScrollPositionIfNeeded(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const hasPendingRestore = this.hasPendingScrollRestore();
+    if (!this.shouldRestoreListingScroll && !hasPendingRestore) {
+      return;
+    }
+    this.shouldRestoreListingScroll = false;
+
+    let savedPosition: { x: number; y: number } | null = null;
+    try {
+      const raw = sessionStorage.getItem(this.getListingScrollStorageKey());
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const x = Number(parsed?.x);
+        const y = Number(parsed?.y);
+        savedPosition = {
+          x: Number.isFinite(x) ? Math.max(x, 0) : 0,
+          y: Number.isFinite(y) ? Math.max(y, 0) : 0
+        };
+      }
+    } catch {
+      savedPosition = null;
+    }
+
+    if (!savedPosition) {
+      this.clearPendingScrollRestore();
+      return;
+    }
+
+    let attempts = 0;
+    const maxAttempts = 14;
+    const restoreStep = () => {
+      window.scrollTo({
+        left: savedPosition!.x,
+        top: savedPosition!.y,
+        behavior: 'auto'
+      });
+
+      attempts += 1;
+      const reached = Math.abs((window.scrollY || 0) - savedPosition!.y) <= 2;
+      if (reached || attempts >= maxAttempts) {
+        this.clearPendingScrollRestore();
+        return;
+      }
+
+      setTimeout(restoreStep, 80);
+    };
+
+    requestAnimationFrame(() => restoreStep());
+  }
+
+  private hasPendingScrollRestore(): boolean {
+    try {
+      return sessionStorage.getItem(this.listingScrollPendingStorageKey) === this.getListingScrollStorageKey();
+    } catch {
+      return false;
+    }
+  }
+
+  private clearPendingScrollRestore(): void {
+    try {
+      sessionStorage.removeItem(this.listingScrollPendingStorageKey);
+    } catch {
+      // ignore storage errors
+    }
+  }
+
   openOrderForm(product: ListingProductItem): void {
     if (!this.productId) {
       return;
@@ -782,17 +880,25 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     const supplier = this.toNumber(product.supplierid || product.supplier_id);
     const cartProductId = this.params?.cart_productid || this.productId;
 
-    this.router.navigate([
-      '/',
-      this.productId,
-      productSlug,
-      selectionSlug,
-      fabricId,
-      colorId,
-      pricingGroup,
-      supplier,
-      cartProductId
-    ]);
+    this.saveListingScrollPosition();
+    this.router.navigate(
+      [
+        '/',
+        this.productId,
+        productSlug,
+        selectionSlug,
+        fabricId,
+        colorId,
+        pricingGroup,
+        supplier,
+        cartProductId
+      ],
+      {
+        state: {
+          listingReturnUrl: this.router.url
+        }
+      }
+    );
   }
 
   onCustomizeClick(product: ListingProductItem, event: Event): void {

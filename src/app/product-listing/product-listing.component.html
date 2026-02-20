@@ -25,7 +25,7 @@
       </aside>
 
       <div class="products-wrapper">
-        <div class="products-grid cols-3 skeleton-products-grid">
+        <div class="products-grid cols-3 skeleton-products-grid" [class.list-view-selected]="gridColumns === 1">
           <mat-card class="product-card skeleton-product-card" *ngFor="let _ of skeletonCards">
             <div class="card-image">
               <div class="skeleton skeleton-card-image"></div>
@@ -195,7 +195,9 @@
 
       <div class="products-wrapper">
         <div class="list-overlay list-overlay-skeleton" *ngIf="isListLoading" aria-hidden="true">
-          <div class="products-grid skeleton-products-grid" [ngClass]="'cols-' + gridColumns">
+          <div
+            class="products-grid skeleton-products-grid"
+            [ngClass]="['cols-' + gridColumns, gridColumns === 1 ? 'list-view-selected' : '']">
             <mat-card class="product-card skeleton-product-card" *ngFor="let _ of skeletonCards">
               <div class="card-image">
                 <div class="skeleton skeleton-card-image"></div>
@@ -231,7 +233,7 @@
 
         <div
           class="products-grid"
-          [ngClass]="'cols-' + gridColumns"
+          [ngClass]="['cols-' + gridColumns, gridColumns === 1 ? 'list-view-selected' : '']"
           *ngIf="!isListLoading && catalogViewMode === 'products' && paginatedProducts.length > 0">
           <mat-card
             class="product-card"
@@ -307,7 +309,7 @@
 
         <div
           class="products-grid fabric-groups-grid"
-          [ngClass]="'cols-' + gridColumns"
+          [ngClass]="['cols-' + gridColumns, gridColumns === 1 ? 'list-view-selected' : '']"
           *ngIf="!isListLoading && catalogViewMode === 'fabrics' && paginatedFabricGroups.length > 0">
           <mat-card
             class="product-card fabric-group-card"

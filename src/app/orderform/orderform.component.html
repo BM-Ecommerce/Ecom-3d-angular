@@ -26,6 +26,15 @@
           <div #stickyEl class="sticky-container" [class.scrolled]="isScrolled">
             <div class="product-header">
               <div class="productaname">
+                <button
+                  type="button"
+                  class="back-to-listing-btn"
+                  *ngIf="canGoBackToListing"
+                  (click)="goBackToListing()"
+                  aria-label="Back to listing">
+                  <mat-icon>arrow_back</mat-icon>
+                  <span>Back to listing</span>
+                </button>
                 <h1 class="product-title">
                   <span>{{ productTitle }}</span>
                 </h1>

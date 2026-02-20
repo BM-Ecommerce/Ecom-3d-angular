@@ -464,6 +464,7 @@ hasDescriptionContent = false;
   selected_option_data: SelectProductOption[] = [];
   accordionData: { label: string, value: any }[] = [];
   routeParams: any;
+  listingReturnUrl: string = '';
   unittype: number = 1;
   pricegroup: string = "";
   show_image_icons = false;
@@ -544,6 +545,12 @@ hasDescriptionContent = false;
         this.cd.markForCheck();
       });
     const queryParams = this.route.snapshot.queryParams;
+    const currentNavigation = this.router.getCurrentNavigation();
+    const navigationState = currentNavigation?.extras?.state;
+    const backLinkFromState = navigationState?.['listingReturnUrl'] || history.state?.listingReturnUrl;
+    if (typeof backLinkFromState === 'string' && backLinkFromState.trim()) {
+      this.listingReturnUrl = backLinkFromState.trim();
+    }
     // Check if running on localhost
     const isLocalhost = window.location.hostname === 'localhost';
     const pathParams = this.route.snapshot.params;
@@ -1977,6 +1984,50 @@ public onToggleLoopAnimate(): void {
                     .toLowerCase().replace(/ /g, '-');
 
     return `${this.siteurl}/visualizer/${this.product_id}/${slug1}/${slug2}/${product.fd_id}/${product.cd_id}/${product.groupid}/${product.supplierid}/${this.routeParams.cart_productid}`;
+  }
+  get canGoBackToListing(): boolean {
+    if (this.listingReturnUrl) {
+      return true;
+    }
+    const productId = this.route.snapshot.params['product_id'] || this.routeParams?.product_id || this.product_id;
+    return !!productId;
+  }
+
+  goBackToListing(): void {
+    if (this.listingReturnUrl) {
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        this.router.navigateByUrl(this.listingReturnUrl);
+      }
+      return;
+    }
+
+    this.router.navigate(this.getListingRouteCommands());
+  }
+
+  private getListingRouteCommands(): any[] {
+    const productId = this.route.snapshot.params['product_id'] || this.routeParams?.product_id || this.product_id;
+    const routeProductSlug = this.route.snapshot.params['product'] || this.routeParams?.product;
+    const productSlug = this.toRouteSlug(routeProductSlug || this.productslug || this.productname || this.ecomproductname);
+    const cartProductId = this.route.snapshot.params['cart_productid'] || this.routeParams?.cart_productid;
+
+    if (productId && cartProductId) {
+      return ['/listing', productId, productSlug, cartProductId];
+    }
+    if (productId) {
+      return ['/listing', productId, productSlug];
+    }
+    return ['/'];
+  }
+
+  private toRouteSlug(value: string): string {
+    const normalized = String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return normalized || 'product';
   }
   onImageError(event: Event) {
     const img = event.target as HTMLImageElement;

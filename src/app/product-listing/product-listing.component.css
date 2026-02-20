@@ -978,11 +978,11 @@
 }
 
 .price-label {
-  margin-top: 10px;
-  color: #334d6e;
-  font-size: 13px !important;
+  margin-top: 12px;
+  color: #697482;
+  font-size: 12px !important;
   line-height: 1.25 !important;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .price {
@@ -1213,9 +1213,6 @@
   min-height: 230px;
 }
 
-.products-grid:not(.cols-1) .card-content {
-  min-height: 214px;
-}
 
 .products-grid:not(.cols-1) .swatch-wrap {
   width: 76px;
@@ -1225,6 +1222,15 @@
 .products-grid:not(.cols-1) .swatch-tile {
   width: 68px;
   height: 68px;
+}
+.list-view-selected .card-info-row {
+    flex-direction: column;
+}
+.list-view-selected p.product-desc,.list-view-selected .fabric-color-row {
+    min-height: unset;
+}
+.list-view-selected  .card-actions{
+    justify-content: end;
 }
 
 .products-grid:not(.cols-1) .swatch-eyelet {
