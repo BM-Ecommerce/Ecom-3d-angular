@@ -2,60 +2,64 @@
   <div class="listing-skeleton" *ngIf="isLoading" aria-hidden="true">
     <div class="skeleton skeleton-banner"></div>
 
-    <section class="listing-header skeleton-header">
-      <div class="header-copy">
-        <div class="skeleton skeleton-title"></div>
-        <div class="skeleton skeleton-subtitle"></div>
-      </div>
-      <div class="header-tools">
-        <div class="skeleton skeleton-sort"></div>
-        <div class="skeleton skeleton-toggle"></div>
-      </div>
-    </section>
-
-    <section class="listing-content">
-      <aside class="sidebar">
-        <mat-card class="sidebar-card skeleton-sidebar-card">
-          <div class="skeleton skeleton-filter-head"></div>
-          <div class="skeleton-filter-block" *ngFor="let _ of skeletonFilterBlocks">
-            <div class="skeleton skeleton-filter-title"></div>
-            <div class="skeleton skeleton-filter-line" *ngFor="let __ of skeletonFilterLines"></div>
-          </div>
-        </mat-card>
-      </aside>
-
-      <div class="products-wrapper">
-        <div class="products-grid cols-3 skeleton-products-grid" [class.list-view-selected]="gridColumns === 1">
-          <mat-card class="product-card skeleton-product-card" *ngFor="let _ of skeletonCards">
-            <div class="card-image">
-              <div class="skeleton skeleton-card-image"></div>
-            </div>
-            <mat-card-content class="card-content">
-              <div class="card-info-row">
-                <div class="card-copy">
-                  <div class="skeleton skeleton-card-type"></div>
-                  <div class="skeleton skeleton-card-title"></div>
-                  <div class="skeleton skeleton-card-line"></div>
-                  <div class="skeleton skeleton-card-line short"></div>
-                </div>
-                <div class="skeleton skeleton-card-swatch"></div>
-              </div>
-
-              <div class="skeleton skeleton-card-price-label"></div>
-              <div class="skeleton skeleton-card-price"></div>
-
-              <div class="card-actions">
-                <div class="skeleton skeleton-card-btn"></div>
-                <div class="skeleton skeleton-card-btn"></div>
-              </div>
-            </mat-card-content>
-          </mat-card>
+    <div class="listing-page-inner listing-main">
+      <section class="listing-header skeleton-header">
+        <div class="header-copy">
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-subtitle"></div>
         </div>
-      </div>
-    </section>
+        <div class="header-tools">
+          <div class="skeleton skeleton-sort"></div>
+          <div class="skeleton skeleton-toggle"></div>
+        </div>
+      </section>
+
+      <section class="listing-content">
+        <aside class="sidebar">
+          <mat-card class="sidebar-card skeleton-sidebar-card">
+            <div class="skeleton skeleton-filter-head"></div>
+            <div class="skeleton-filter-block" *ngFor="let _ of skeletonFilterBlocks">
+              <div class="skeleton skeleton-filter-title"></div>
+              <div class="skeleton skeleton-filter-line" *ngFor="let __ of skeletonFilterLines"></div>
+            </div>
+          </mat-card>
+        </aside>
+
+        <div class="products-wrapper">
+          <div class="products-grid cols-3 skeleton-products-grid" [class.list-view-selected]="gridColumns === 1">
+            <mat-card class="product-card skeleton-product-card" *ngFor="let _ of skeletonCards">
+              <div class="card-image">
+                <div class="skeleton skeleton-card-image"></div>
+              </div>
+              <mat-card-content class="card-content">
+                <div class="card-info-row">
+                  <div class="card-copy">
+                    <div class="skeleton skeleton-card-type"></div>
+                    <div class="skeleton skeleton-card-title"></div>
+                    <div class="skeleton skeleton-card-line"></div>
+                    <div class="skeleton skeleton-card-line short"></div>
+                  </div>
+                  <div class="skeleton skeleton-card-swatch"></div>
+                </div>
+
+                <div class="skeleton skeleton-card-price-label"></div>
+                <div class="skeleton skeleton-card-price"></div>
+
+                <div class="card-actions">
+                  <div class="skeleton skeleton-card-btn"></div>
+                  <div class="skeleton skeleton-card-btn"></div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 
-  <mat-card class="state error" *ngIf="!isLoading && errorMessage">{{ errorMessage }}</mat-card>
+  <div class="listing-page-inner" *ngIf="!isLoading && errorMessage">
+    <mat-card class="state error">{{ errorMessage }}</mat-card>
+  </div>
 
   <ng-container *ngIf="!isLoading && !errorMessage">
     <mat-card class="listing-banner" [style.background-image]="bannerImageUrl ? 'url(' + bannerImageUrl + ')' : null">
@@ -71,79 +75,80 @@
       </div>
     </mat-card>
 
-    <section class="listing-header">
-      <div class="header-copy">
-        <h1>{{ productTitle }}</h1>
-        <p *ngIf="!isListLoading; else listingSummaryLoading">
-          Showing {{ visibleResultCount }} of {{ activeResultCount }}
-          {{ catalogViewMode === 'fabrics' ? 'fabrics' : 'products' }}
-        </p>
-        <ng-template #listingSummaryLoading>
-          <p>Loading {{ catalogViewMode === 'fabrics' ? 'fabrics' : 'products' }}...</p>
-        </ng-template>
-      </div>
-
-      <div class="header-tools">
-        <button
-          *ngIf="isMobileViewport && hasSidebar"
-          type="button"
-          class="mobile-filter-btn"
-          (click)="openMobileFilterDrawer($event)">
-          <mat-icon>tune</mat-icon>
-          <span>Filters</span>
-        </button>
-
-        <mat-form-field appearance="outline" class="sort-field">
-          <mat-select
-            [value]="sortBy"
-            panelClass="listing-sort-panel"
-            (selectionChange)="onSortChange($event.value)">
-            <mat-option value="defaultsorting">Featured</mat-option>
-            <mat-option value="bestselling">Bestselling</mat-option>
-            <mat-option value="priceasc">Price: Low to High</mat-option>
-            <mat-option value="pricedesc">Price: High to Low</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <div class="view-switch" role="group" aria-label="Listing view mode" *ngIf="!isMobileViewport">
-          <button
-            type="button"
-            mat-icon-button
-            class="view-switch-btn"
-            [class.active]="gridColumns !== 1"
-            (click)="setGrid(3)"
-            aria-label="Grid view">
-            <mat-icon>apps</mat-icon>
-          </button>
-          <button
-            type="button"
-            mat-icon-button
-            class="view-switch-btn"
-            [class.active]="gridColumns === 1"
-            (click)="setGrid(1)"
-            aria-label="List view">
-            <mat-icon>lists</mat-icon>
-          </button>
+    <div class="listing-page-inner listing-main">
+      <section class="listing-header">
+        <div class="header-copy">
+          <h1>{{ productTitle }}</h1>
+          <p *ngIf="!isListLoading; else listingSummaryLoading">
+            Showing {{ visibleResultCount }} of {{ activeResultCount }}
+            {{ catalogViewMode === 'fabrics' ? 'fabrics' : 'products' }}
+          </p>
+          <ng-template #listingSummaryLoading>
+            <p>Loading {{ catalogViewMode === 'fabrics' ? 'fabrics' : 'products' }}...</p>
+          </ng-template>
         </div>
 
-        <div class="catalog-view-switch" role="group" aria-label="Catalog mode" *ngIf="enableFabricGroupedView">
+        <div class="header-tools">
           <button
+            *ngIf="isMobileViewport && hasSidebar"
             type="button"
-            class="catalog-view-btn"
-            [class.active]="catalogViewMode === 'products'"
-            (click)="setCatalogViewMode('products')">
-            Products
+            class="mobile-filter-btn"
+            (click)="openMobileFilterDrawer($event)">
+            <mat-icon>tune</mat-icon>
+            <span>Filters</span>
           </button>
-          <button
-            type="button"
-            class="catalog-view-btn"
-            [class.active]="catalogViewMode === 'fabrics'"
-            (click)="setCatalogViewMode('fabrics')">
-            Fabrics
-          </button>
+
+          <mat-form-field appearance="outline" class="sort-field">
+            <mat-select
+              [value]="sortBy"
+              panelClass="listing-sort-panel"
+              (selectionChange)="onSortChange($event.value)">
+              <mat-option value="defaultsorting">Featured</mat-option>
+              <mat-option value="bestselling">Bestselling</mat-option>
+              <mat-option value="priceasc">Price: Low to High</mat-option>
+              <mat-option value="pricedesc">Price: High to Low</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <div class="view-switch" role="group" aria-label="Listing view mode" *ngIf="!isMobileViewport">
+            <button
+              type="button"
+              mat-icon-button
+              class="view-switch-btn"
+              [class.active]="gridColumns !== 1"
+              (click)="setGrid(3)"
+              aria-label="Grid view">
+              <mat-icon>apps</mat-icon>
+            </button>
+            <button
+              type="button"
+              mat-icon-button
+              class="view-switch-btn"
+              [class.active]="gridColumns === 1"
+              (click)="setGrid(1)"
+              aria-label="List view">
+              <mat-icon>lists</mat-icon>
+            </button>
+          </div>
+
+          <div class="catalog-view-switch" role="group" aria-label="Catalog mode" *ngIf="enableFabricGroupedView">
+            <button
+              type="button"
+              class="catalog-view-btn"
+              [class.active]="catalogViewMode === 'products'"
+              (click)="setCatalogViewMode('products')">
+              Products
+            </button>
+            <button
+              type="button"
+              class="catalog-view-btn"
+              [class.active]="catalogViewMode === 'fabrics'"
+              (click)="setCatalogViewMode('fabrics')">
+              Fabrics
+            </button>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
     <ng-template #filtersContent>
       <div class="filter-sections">
@@ -182,7 +187,7 @@
       </div>
     </ng-template>
 
-    <section class="listing-content" [class.no-sidebar]="!hasSidebar || isMobileViewport">
+      <section class="listing-content" [class.no-sidebar]="!hasSidebar || isMobileViewport">
       <aside class="sidebar" *ngIf="hasSidebar && !isMobileViewport">
         <mat-card class="sidebar-card">
           <div class="sidebar-head">
@@ -473,7 +478,8 @@
           </button>
         </nav>
       </div>
-    </section>
+      </section>
+    </div>
 
     <div
       class="mobile-filter-drawer-backdrop"

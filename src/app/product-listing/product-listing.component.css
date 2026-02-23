@@ -1,12 +1,25 @@
 .listing-page {
-  width: min(1240px, 100%);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 16px;
   font-family: Arial, sans-serif;
   color: #0b2242;
+}
+
+.listing-page-inner {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  padding: 0 18px;
+  box-sizing: border-box;
+}
+
+.listing-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .listing-page,
@@ -50,10 +63,8 @@
 }
 
 .skeleton-banner {
-  width: 100vw;
-  max-width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  width: 100%;
+  max-width: 100%;
   min-height: 230px;
   border-radius: 0;
 }
@@ -197,10 +208,8 @@
 }
 
 .listing-banner {
-  width: 100vw;
-  max-width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  width: 100%;
+  max-width: 100%;
   min-height: 230px;
   background: linear-gradient(120deg, #183a64, #2f5d8f);
   background-size: cover;
@@ -1471,8 +1480,12 @@
 
 @media (max-width: 640px) {
   .listing-page {
-    padding: 10px;
+    padding: 10px 0;
     gap: 12px;
+  }
+
+  .listing-page-inner {
+    padding: 0 10px;
   }
 
   .listing-banner {
