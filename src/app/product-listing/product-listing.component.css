@@ -450,10 +450,10 @@
 }
 
 .view-switch .view-switch-btn .mat-icon {
-  width: 16px;
-  height: 16px;
-  font-size: 16px;
-  line-height: 16px;
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  line-height: 18px;
 }
 
 .view-switch .view-switch-btn:hover {
@@ -1279,9 +1279,9 @@
     justify-content: end;
 }
 .view-switch button {
-    line-height: 10px;
-    width: 30px;
-    height: 30px;
+    line-height: 15px;
+    width: 35px;
+    height: 35px;
 }
 .products-grid:not(.cols-1) .swatch-eyelet {
   top: 5px;
