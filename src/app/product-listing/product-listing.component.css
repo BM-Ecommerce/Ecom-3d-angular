@@ -1,7 +1,6 @@
 .listing-page {
   width: min(1240px, 100%);
   margin: 0 auto;
-  padding: 16px 18px 22px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -51,8 +50,12 @@
 }
 
 .skeleton-banner {
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
   min-height: 230px;
-  border-radius: 14px;
+  border-radius: 0;
 }
 
 .skeleton-header .header-copy {
@@ -194,13 +197,18 @@
 }
 
 .listing-banner {
-  border-radius: 14px;
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
   min-height: 230px;
   background: linear-gradient(120deg, #183a64, #2f5d8f);
   background-size: cover;
   background-position: center;
   overflow: hidden;
   box-shadow: none;
+  border-radius: 0;
+  padding: 0;
 }
 
 .listing-banner .overlay {
@@ -266,12 +274,12 @@
   font-size: 46px !important;
   line-height: 1.08 !important;
   font-weight: 700;
-  color: #082a58;
+  color: #111827;
 }
 
 .header-copy p {
   margin: 10px 0 0;
-  color: #314f72;
+  color: #4a5565;
   font-size: 14px !important;
   line-height: 1.35 !important;
   font-weight: 600;
