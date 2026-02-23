@@ -10,6 +10,11 @@
   color: #0b2242;
 }
 
+.listing-page,
+.listing-page *:not(mat-icon):not(.mat-icon):not(.material-icons):not(.material-symbols-outlined) {
+  font-family: Arial, sans-serif !important;
+}
+
 .listing-page h1,
 .listing-page h2,
 .listing-page h3,
@@ -20,6 +25,10 @@
 .listing-page button,
 .listing-page label,
 .listing-page .mdc-list-item__primary-text {
+  font-family: Arial, sans-serif !important;
+}
+
+:host ::ng-deep .listing-sort-panel .mdc-list-item__primary-text {
   font-family: Arial, sans-serif !important;
 }
 
