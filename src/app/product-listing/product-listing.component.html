@@ -441,16 +441,37 @@
           </div>
         </div>
 
-        <mat-paginator
-          class="listing-paginator"
-          *ngIf="!isListLoading && activeResultCount > 0"
-          [length]="activeResultCount"
-          [pageSize]="pageSize"
-          [pageIndex]="pageIndex"
-          [pageSizeOptions]="pageSizeOptions"
-          [showFirstLastButtons]="true"
-          (page)="onPageChange($event)">
-        </mat-paginator>
+        <nav class="listing-pagination" *ngIf="!isListLoading && activeResultCount > 0 && totalPages > 1" aria-label="Pagination">
+          <button
+            type="button"
+            class="listing-page-chip listing-page-chip-next"
+            *ngIf="canGoToPreviousPage"
+            aria-label="Previous page"
+            (click)="goToPreviousPage()">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+
+          <button
+            type="button"
+            class="listing-page-chip"
+            *ngFor="let token of paginationTokens; trackBy: trackPaginationToken"
+            [class.active]="isPageTokenActive(token)"
+            [class.ellipsis]="token === paginationEllipsis"
+            [disabled]="token === paginationEllipsis"
+            [attr.aria-current]="isPageTokenActive(token) ? 'page' : null"
+            (click)="onPaginationTokenClick(token)">
+            {{ token }}
+          </button>
+
+          <button
+            type="button"
+            class="listing-page-chip listing-page-chip-next"
+            *ngIf="canGoToNextPage"
+            aria-label="Next page"
+            (click)="goToNextPage()">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </nav>
       </div>
     </section>
 

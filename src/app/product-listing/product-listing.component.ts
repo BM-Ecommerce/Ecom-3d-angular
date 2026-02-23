@@ -863,6 +863,87 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.fetchListingProducts(false);
   }
 
+  readonly paginationEllipsis = '...';
+
+  get paginationTokens(): Array<number | string> {
+    const total = Math.max(this.toPositiveInt(this.totalPages, 0), 0);
+    if (total <= 0) {
+      return [];
+    }
+
+    const current = Math.min(Math.max(this.pageIndex + 1, 1), total);
+    const visibleCount = 5;
+    if (total <= visibleCount) {
+      return Array.from({ length: total }, (_, index) => index + 1);
+    }
+
+    const half = Math.floor(visibleCount / 2);
+    let start = Math.max(current - half, 1);
+    let end = start + visibleCount - 1;
+    if (end > total) {
+      end = total;
+      start = Math.max(end - visibleCount + 1, 1);
+    }
+
+    const tokens: Array<number | string> = [];
+    if (start > 1) {
+      tokens.push(this.paginationEllipsis);
+    }
+    for (let page = start; page <= end; page += 1) {
+      tokens.push(page);
+    }
+    if (end < total) {
+      tokens.push(this.paginationEllipsis);
+    }
+    return tokens;
+  }
+
+  get canGoToNextPage(): boolean {
+    return this.pageIndex < Math.max(this.totalPages - 1, 0);
+  }
+
+  get canGoToPreviousPage(): boolean {
+    return this.pageIndex > 0;
+  }
+
+  isPageTokenActive(token: number | string): boolean {
+    return typeof token === 'number' && token === this.pageIndex + 1;
+  }
+
+  onPaginationTokenClick(token: number | string): void {
+    if (typeof token !== 'number') {
+      return;
+    }
+    this.goToPage(token);
+  }
+
+  goToNextPage(): void {
+    this.goToPage(this.pageIndex + 2);
+  }
+
+  goToPreviousPage(): void {
+    this.goToPage(this.pageIndex);
+  }
+
+  readonly trackPaginationToken = (index: number, token: number | string): string => `${token}_${index}`;
+
+  private goToPage(pageNumber: number): void {
+    const nextPage = this.toPositiveInt(pageNumber, 1);
+    const clampedPage = Math.min(Math.max(nextPage, 1), Math.max(this.totalPages, 1));
+    if (clampedPage === this.pageIndex + 1) {
+      return;
+    }
+
+    this.pageIndex = clampedPage - 1;
+    if (this.catalogViewMode === 'fabrics') {
+      this.updateFabricGroupsPagination();
+      this.prepareListingCardCompositions();
+      this.cd.markForCheck();
+      return;
+    }
+    this.fetchListingProducts(false);
+  }
+
   private getListingScrollStorageKey(): string {
     const currentUrl = this.router.url?.split('#')?.[0] || '';
     return `${this.listingScrollStoragePrefix}${currentUrl}`;
@@ -1761,7 +1842,14 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     groups.sort((a, b) => a.fabricName.localeCompare(b.fabricName));
     this.selectedFabricVariantByGroup = nextSelected;
     this.fabricGroups = groups;
-    this.updateFabricGroupsPagination();
+    if (this.catalogViewMode === 'fabrics') {
+      this.updateFabricGroupsPagination();
+      return;
+    }
+
+    // Keep product-mode pagination untouched when only grid/list UI changes.
+    this.paginatedFabricGroups = [];
+    this.fabricColorPopupGroupKey = null;
   }
 
   private buildFabricGroupKey(product: ListingProductItem): string {

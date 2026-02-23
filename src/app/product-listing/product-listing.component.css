@@ -1166,21 +1166,67 @@
   border: 1px solid #1f4473 !important;
 }
 
-.listing-paginator {
-  border: 1px solid #d7e0ea;
-  border-radius: 12px;
-  box-shadow: none;
+.listing-pagination {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
 }
 
-:host ::ng-deep .listing-paginator .mat-mdc-paginator-container {
-  min-height: 48px;
+.listing-page-chip {
+  min-width: 31px;
+  height: 31px;
   padding: 0 8px;
+  border-radius: 999px;
+  border: 2px solid #204573;
+  background: #fff;
+  color: #204573;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
-:host ::ng-deep .listing-paginator .mat-mdc-paginator-page-size-label,
-:host ::ng-deep .listing-paginator .mat-mdc-select-value-text,
-:host ::ng-deep .listing-paginator .mat-mdc-paginator-range-label {
-  font-size: 13px !important;
+.listing-page-chip:not(.active):not(.ellipsis):hover:not([disabled]) {
+  background: #edf4ff;
+  transform: translateY(-1px);
+}
+
+.listing-page-chip.active {
+  background: #1a3f70;
+  border-color: #1a3f70;
+  color: #fff;
+}
+
+.listing-page-chip.ellipsis {
+  min-width: 24px;
+  border-color: transparent;
+  background: transparent;
+  color: #365a86;
+  cursor: default;
+  pointer-events: none;
+}
+
+.listing-page-chip:disabled {
+  opacity: 0.72;
+  cursor: default;
+}
+
+.listing-page-chip-next {
+  padding: 0;
+}
+
+.listing-page-chip-next .mat-icon {
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  font-size: 18px !important;
 }
 
 .products-grid.cols-1 .product-card {
@@ -1232,7 +1278,11 @@
 .list-view-selected  .card-actions{
     justify-content: end;
 }
-
+.view-switch button {
+    line-height: 10px;
+    width: 30px;
+    height: 30px;
+}
 .products-grid:not(.cols-1) .swatch-eyelet {
   top: 5px;
   left: 5px;
@@ -1315,6 +1365,23 @@
 }
 
 @media (max-width: 860px) {
+  .listing-pagination {
+    justify-content: center;
+  }
+
+  .listing-page-chip {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 6px;
+    border-width: 1.8px;
+    font-size: 12px !important;
+  }
+
+  .listing-page-chip-next {
+    min-width: 30px;
+    width: 30px;
+  }
+
   .listing-banner {
     min-height: 185px;
   }
