@@ -339,7 +339,7 @@
                 </div>
               </div>
 
-              <div class="card-actions">
+              <div class="card-actions" [class.single-action]="!canShowFreeSample(product)">
                 <button
                   mat-stroked-button
                   type="button"
@@ -451,7 +451,7 @@
                 </div>
               </div>
 
-              <div class="card-actions">
+              <div class="card-actions" [class.single-action]="!canShowFreeSample(group.activeVariant)">
                 <button
                   mat-stroked-button
                   type="button"

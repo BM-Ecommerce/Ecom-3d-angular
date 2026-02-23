@@ -1161,9 +1161,22 @@
   margin-top: auto;
   padding-top: 12px;
   display: flex;
-  gap: 10px;
+  --card-actions-gap: 10px;
+  gap: var(--card-actions-gap);
   flex-wrap: nowrap;
   align-items: center;
+}
+
+.card-actions .customize-btn,
+.card-actions .sample-btn {
+  width: calc((100% - var(--card-actions-gap)) / 2);
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.card-actions.single-action .customize-btn,
+.card-actions.single-action .sample-btn {
+  width: 100%;
 }
 
 .fabric-color-row {
@@ -1517,7 +1530,8 @@
 
 .products-grid:not(.cols-1) .card-actions {
   padding-top: 10px;
-  gap: 7px;
+  --card-actions-gap: 7px;
+  gap: var(--card-actions-gap);
 }
 
 .products-grid:not(.cols-1) .customize-btn,
@@ -1525,15 +1539,6 @@
   min-height: 36px;
   padding: 0 11px;
   font-size: 13px !important;
-}
-
-.products-grid:not(.cols-1) .customize-btn {
-  flex: 0 0 auto;
-}
-
-.products-grid:not(.cols-1) .sample-btn {
-  flex: 1 1 auto;
-  min-width: 0;
 }
 
 @media (max-width: 1280px) {
@@ -1877,8 +1882,8 @@
     gap: 8px;
   }
 
-  .customize-btn,
-  .sample-btn {
+  .card-actions .customize-btn,
+  .card-actions .sample-btn {
     width: 100%;
     justify-content: center;
   }
