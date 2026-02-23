@@ -69,7 +69,7 @@
           <div class="banner-breadcrumb">
             <a [href]="homeUrl">Home</a>
             <span>/</span>
-            <span>Listing Page</span>
+            <span>{{ productTitle }}</span>
           </div>
         </div>
       </div>
@@ -314,17 +314,18 @@
                   type="button"
                   class="customize-btn"
                   (click)="onCustomizeClick(product, $event)">
-                  Customize
+                  <span class="btn-label">Customize</span>
+                  <mat-icon aria-hidden="true">arrow_forward</mat-icon>
                 </button>
                 <button
                   *ngIf="canShowFreeSample(product)"
-                  mat-raised-button
-                  color="primary"
+                  mat-stroked-button
                   type="button"
                   class="sample-btn"
                   [disabled]="isFreeSampleSubmitting(product)"
                   (click)="onFreeSampleClick(product, $event)">
-                  {{ isFreeSampleSubmitting(product) ? 'Adding...' : freeSampleButtonLabel }}
+                  <mat-icon *ngIf="!isFreeSampleSubmitting(product)" aria-hidden="true">shopping_cart</mat-icon>
+                  <span class="btn-label">{{ isFreeSampleSubmitting(product) ? 'Adding...' : freeSampleButtonLabel }}</span>
                 </button>
               </div>
             </mat-card-content>
@@ -425,17 +426,18 @@
                   type="button"
                   class="customize-btn"
                   (click)="onCustomizeClick(group.activeVariant, $event)">
-                  Customize
+                  <span class="btn-label">Customize</span>
+                  <mat-icon aria-hidden="true">arrow_forward</mat-icon>
                 </button>
                 <button
                   *ngIf="canShowFreeSample(group.activeVariant)"
-                  mat-raised-button
-                  color="primary"
+                  mat-stroked-button
                   type="button"
                   class="sample-btn"
                   [disabled]="isFreeSampleSubmitting(group.activeVariant)"
                   (click)="onFreeSampleClick(group.activeVariant, $event)">
-                  {{ isFreeSampleSubmitting(group.activeVariant) ? 'Adding...' : freeSampleButtonLabel }}
+                  <mat-icon *ngIf="!isFreeSampleSubmitting(group.activeVariant)" aria-hidden="true">shopping_cart</mat-icon>
+                  <span class="btn-label">{{ isFreeSampleSubmitting(group.activeVariant) ? 'Adding...' : freeSampleButtonLabel }}</span>
                 </button>
               </div>
             </mat-card-content>

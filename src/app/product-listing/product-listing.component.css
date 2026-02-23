@@ -865,7 +865,7 @@
     border-radius: 999px;
     background: var(--primary-color);
     color: #fff;
-    font-size: 11px !important;
+    font-size: 12px !important;
     line-height: 1;
     font-weight: 700;
     letter-spacing: 0.01em;
@@ -903,7 +903,7 @@
 
 .card-content h4 {
   margin: 0;
-  font-size: 18px !important;
+  font-size: 20px !important;
   line-height: 1.24 !important;
   font-weight: 700;
   color: #272e36;
@@ -1027,10 +1027,13 @@
   font-weight: 400;
 }
 
-.price-block.no-extra-price {
-  min-height: 80px;
+.price-block {
+  min-height: 86px;
   display: flex;
   flex-direction: column;
+}
+
+.price-block.no-extra-price {
   justify-content: end;
 }
 
@@ -1038,8 +1041,8 @@
   margin: 0;
   font-weight: 700;
   color: var(--primary-color);
-  font-size: 18px !important;
-  line-height: 1.18 !important;
+  font-size: 26px !important;
+  line-height: 1.1 !important;
 }
 
 .price-wrap {
@@ -1047,13 +1050,13 @@
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 7px;
 }
 
 .price-original {
   color: #6a788a;
-  font-size: 22px !important;
-  line-height: 1.15 !important;
+  font-size: 17px !important;
+  line-height: 1.2 !important;
   font-weight: 400;
   text-decoration: line-through;
 }
@@ -1061,7 +1064,7 @@
 .offer-save {
   margin-top: 4px;
   color: #0f8f4c;
-  font-size: 13px !important;
+  font-size: 14px !important;
   line-height: 1.3 !important;
   font-weight: 700;
 }
@@ -1222,9 +1225,14 @@
   border-radius: 999px;
   font-size: 14px !important;
   font-weight: 700;
-  padding: 0 15px;
+  padding: 0 16px;
   white-space: nowrap;
   line-height: 1 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: none !important;
 }
 
 .customize-btn {
@@ -1237,6 +1245,51 @@
   background: #fff !important;
   color: var(--primary-color) !important;
   border: 1px solid var(--primary-color) !important;
+}
+
+.customize-btn .btn-label,
+.sample-btn .btn-label,
+.customize-btn .mat-icon,
+.sample-btn .mat-icon {
+  transition: color 0.14s ease;
+}
+
+.customize-btn .mat-icon,
+.sample-btn .mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px !important;
+  line-height: 18px;
+}
+
+.customize-btn:hover,
+.customize-btn:focus-visible,
+.customize-btn:active {
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: #fff !important;
+}
+
+.sample-btn:hover,
+.sample-btn:focus-visible,
+.sample-btn:active {
+  background: #fff !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+.customize-btn:hover .btn-label,
+.customize-btn:hover .mat-icon,
+.customize-btn:focus-visible .btn-label,
+.customize-btn:focus-visible .mat-icon {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.sample-btn:hover .btn-label,
+.sample-btn:hover .mat-icon,
+.sample-btn:focus-visible .btn-label,
+.sample-btn:focus-visible .mat-icon {
+  color: rgba(var(--primary-color-rgb), 0.85);
 }
 
 .listing-pagination {
@@ -1464,7 +1517,11 @@
   }
 
   .price-original {
-    font-size: 18px !important;
+    font-size: 16px !important;
+  }
+
+  .price {
+    font-size: 23px !important;
   }
 
   .listing-banner {
@@ -1652,7 +1709,7 @@
   }
 
   .card-content h4 {
-    font-size: 17px !important;
+    font-size: 18px !important;
   }
 
   .offer-badge {
@@ -1698,7 +1755,15 @@
   }
 
   .price-original {
-    font-size: 16px !important;
+    font-size: 15px !important;
+  }
+
+  .price {
+    font-size: 21px !important;
+  }
+
+  .offer-save {
+    font-size: 13px !important;
   }
 
   .list-overlay {

@@ -1216,10 +1216,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   get freeSampleButtonLabel(): string {
-    if (this.ecomSamplePrice > 0) {
-      return `Free Sample ${this.currencySymbol}${this.ecomSamplePrice.toFixed(2)}`;
-    }
-    return 'Free Sample';
+    return 'Add Sample';
   }
 
   private buildFreeSampleRequestPayload(product: ListingProductItem): Record<string, any> {
