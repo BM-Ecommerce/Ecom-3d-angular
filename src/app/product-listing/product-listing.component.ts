@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject, Subscription, forkJoin, from, of } from 'rxjs';
 import { catchError, finalize, map, mergeMap, reduce, switchMap, takeUntil } from 'rxjs/operators';
@@ -100,6 +100,15 @@ interface ListingFabricGroup {
   activeVariant: ListingProductItem;
 }
 
+interface ListingActiveFilterChip {
+  key: string;
+  categoryKey: string;
+  categoryName: string;
+  normalizedValue: string;
+  valueName: string;
+  label: string;
+}
+
 type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
 
 @Component({
@@ -160,6 +169,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   enableFabricGroupedView = true;
   // Component-level toggle: set false to hide frame in listing cards.
   showFrameInProductListing = true;
+  // Component-level toggle: set false to hide top banner.
+  // When hidden, breadcrumb is shown under the listing page title.
+  showListingBanner = false;
   catalogViewMode: 'products' | 'fabrics' = 'products';
 
   categories: ListingCategory[] = [];
@@ -204,6 +216,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private location: Location,
     private apiService: ApiService,
     private productPreloadService: ProductPreloadService,
     private cd: ChangeDetectorRef
@@ -508,6 +521,159 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.pageSize = perPageFromQuery;
       this.mergePageSizeOption(perPageFromQuery);
     }
+
+    const catalogFromQuery = String(
+      queryParams['catalog'] ?? queryParams['catalog_view'] ?? queryParams['view_mode'] ?? ''
+    ).trim().toLowerCase();
+    if (this.enableFabricGroupedView && (catalogFromQuery === 'products' || catalogFromQuery === 'fabrics')) {
+      this.catalogViewMode = catalogFromQuery as 'products' | 'fabrics';
+    }
+
+    const gridFromQuery = this.toPositiveInt(
+      queryParams['grid'] ?? queryParams['cols'] ?? queryParams['columns'],
+      0
+    );
+    if ([1, 2, 3, 4].includes(gridFromQuery)) {
+      this.lastDesktopGridColumns = gridFromQuery;
+      if (this.isMobileViewport) {
+        this.gridColumns = 1;
+        this.forceListByMobileViewport = true;
+      } else {
+        this.gridColumns = gridFromQuery;
+        this.forceListByMobileViewport = false;
+      }
+    }
+  }
+
+  private syncListingStateToQueryParams(options: { resetPage?: boolean } = {}): void {
+    const currentQueryParams = this.getCurrentQueryParamsForSync();
+    const nextQueryParams = { ...currentQueryParams };
+
+    this.categories.forEach((category) => {
+      delete nextQueryParams[category.name];
+      const categoryKey = this.categoryKey(category);
+      const selectedSet = this.selectedCategoryValues[categoryKey];
+      if (!selectedSet || selectedSet.size === 0) {
+        return;
+      }
+
+      const selectedNames = this.getSelectedCategoryNames(category, selectedSet);
+      if (!selectedNames.length) {
+        return;
+      }
+      nextQueryParams[category.name] = selectedNames.join(',');
+    });
+
+    delete nextQueryParams['sort'];
+    if (this.sortBy === 'defaultsorting') {
+      delete nextQueryParams['product_sorting'];
+    } else {
+      nextQueryParams['product_sorting'] = this.sortBy;
+    }
+
+    delete nextQueryParams['page_no'];
+    const pageIndexForQuery = options.resetPage ? 0 : Math.max(this.pageIndex, 0);
+    if (pageIndexForQuery > 0) {
+      nextQueryParams['page'] = String(pageIndexForQuery + 1);
+    } else {
+      delete nextQueryParams['page'];
+    }
+
+    delete nextQueryParams['perpage'];
+    if (this.pageSize > 0 && this.pageSize !== 24) {
+      nextQueryParams['per_page'] = String(this.pageSize);
+    } else {
+      delete nextQueryParams['per_page'];
+    }
+
+    delete nextQueryParams['cols'];
+    delete nextQueryParams['columns'];
+    const gridForQuery = this.forceListByMobileViewport ? this.lastDesktopGridColumns : this.gridColumns;
+    if ([1, 2, 3, 4].includes(gridForQuery) && gridForQuery !== 3) {
+      nextQueryParams['grid'] = String(gridForQuery);
+    } else {
+      delete nextQueryParams['grid'];
+    }
+
+    delete nextQueryParams['catalog_view'];
+    delete nextQueryParams['view_mode'];
+    if (this.enableFabricGroupedView && this.catalogViewMode === 'fabrics') {
+      nextQueryParams['catalog'] = 'fabrics';
+    } else {
+      delete nextQueryParams['catalog'];
+    }
+
+    if (this.areQueryParamsEqual(currentQueryParams, nextQueryParams)) {
+      return;
+    }
+
+    const urlTree = this.router.createUrlTree([], {
+      relativeTo: this.route,
+      queryParams: nextQueryParams
+    });
+    this.location.replaceState(this.router.serializeUrl(urlTree));
+  }
+
+  private getCurrentQueryParamsForSync(): Record<string, string> {
+    if (typeof window === 'undefined') {
+      return this.normalizeComparableQueryParams(this.route.snapshot.queryParams || {});
+    }
+
+    const params: Record<string, string> = {};
+    const search = new URLSearchParams(window.location.search || '');
+    search.forEach((value, key) => {
+      const normalizedValue = this.normalizeQueryParamValue(value);
+      if (!normalizedValue) {
+        return;
+      }
+      params[key] = normalizedValue;
+    });
+    return params;
+  }
+
+  private normalizeComparableQueryParams(queryParams: Record<string, any>): Record<string, string> {
+    const normalized: Record<string, string> = {};
+    Object.keys(queryParams || {}).forEach((key) => {
+      const value = this.normalizeQueryParamValue(queryParams[key]);
+      if (!value) {
+        return;
+      }
+      normalized[key] = value;
+    });
+    return normalized;
+  }
+
+  private normalizeQueryParamValue(value: any): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => String(item ?? '').trim())
+        .filter((item) => !!item)
+        .join(',');
+    }
+    return String(value).trim();
+  }
+
+  private areQueryParamsEqual(left: Record<string, string>, right: Record<string, string>): boolean {
+    const leftKeys = Object.keys(left).sort();
+    const rightKeys = Object.keys(right).sort();
+    if (leftKeys.length !== rightKeys.length) {
+      return false;
+    }
+
+    for (let index = 0; index < leftKeys.length; index += 1) {
+      const leftKey = leftKeys[index];
+      const rightKey = rightKeys[index];
+      if (leftKey !== rightKey) {
+        return false;
+      }
+      if (left[leftKey] !== right[rightKey]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   onFilterToggle(category: ListingCategory, value: ListingCategoryValue, checked: boolean): void {
@@ -523,6 +689,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     } else {
       selectedSet.delete(normalizedValue);
     }
+    this.syncListingStateToQueryParams({ resetPage: true });
     this.scheduleListingFetch(true, 120);
   }
 
@@ -536,6 +703,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   clearAllFilters(): void {
     Object.values(this.selectedCategoryValues).forEach((set) => set.clear());
+    this.syncListingStateToQueryParams({ resetPage: true });
     this.scheduleListingFetch(true);
   }
 
@@ -543,6 +711,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     const validValues: SortKey[] = ['defaultsorting', 'bestselling', 'priceasc', 'pricedesc'];
     const nextSort = (validValues.includes(rawValue as SortKey) ? rawValue : 'defaultsorting') as SortKey;
     this.sortBy = nextSort;
+    this.syncListingStateToQueryParams({ resetPage: true });
     this.scheduleListingFetch(true, 100);
   }
 
@@ -895,6 +1064,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (this.catalogViewMode === 'fabrics' && this.paginatedProducts.length) {
       this.rebuildFabricGroups(this.paginatedProducts);
     }
+    this.syncListingStateToQueryParams();
     this.cd.markForCheck();
   }
 
@@ -911,6 +1081,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (mode !== 'fabrics') {
       this.fabricColorPopupGroupKey = null;
     }
+    this.syncListingStateToQueryParams({ resetPage: true });
     this.fetchListingProducts(true);
   }
 
@@ -986,6 +1157,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     }
 
     this.pageIndex = clampedPage - 1;
+    this.syncListingStateToQueryParams();
     if (this.catalogViewMode === 'fabrics') {
       this.updateFabricGroupsPagination();
       this.prepareListingCardCompositions();
@@ -996,8 +1168,18 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   private getListingScrollStorageKey(): string {
-    const currentUrl = this.router.url?.split('#')?.[0] || '';
+    const currentUrl = this.resolveCurrentListingUrlForStorage();
     return `${this.listingScrollStoragePrefix}${currentUrl}`;
+  }
+
+  private resolveCurrentListingUrlForStorage(): string {
+    if (typeof window !== 'undefined') {
+      const path = `${window.location.pathname || ''}${window.location.search || ''}`;
+      if (path) {
+        return path.split('#')[0];
+      }
+    }
+    return this.router.url?.split('#')?.[0] || '';
   }
 
   private saveListingScrollPosition(): void {
@@ -1927,6 +2109,43 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.onFilterToggle(category, value, !selected);
   }
 
+  removeActiveFilter(categoryKey: string, normalizedValue: string): void {
+    const selectedSet = this.selectedCategoryValues[categoryKey];
+    if (!selectedSet || !selectedSet.has(normalizedValue)) {
+      return;
+    }
+    selectedSet.delete(normalizedValue);
+    this.syncListingStateToQueryParams({ resetPage: true });
+    this.scheduleListingFetch(true, 80);
+  }
+
+  get activeFilterChips(): ListingActiveFilterChip[] {
+    const chips: ListingActiveFilterChip[] = [];
+    this.categories.forEach((category) => {
+      const categoryKey = this.categoryKey(category);
+      const selectedSet = this.selectedCategoryValues[categoryKey];
+      if (!selectedSet || selectedSet.size === 0) {
+        return;
+      }
+
+      selectedSet.forEach((normalizedValue) => {
+        const matchedValue = category.values.find(
+          (value) => this.getNormalizedCategoryValue(value) === normalizedValue
+        );
+        const valueName = String(matchedValue?.name || normalizedValue);
+        chips.push({
+          key: `${categoryKey}::${normalizedValue}`,
+          categoryKey,
+          categoryName: String(category.name || ''),
+          normalizedValue,
+          valueName,
+          label: `${category.name}: ${valueName}`
+        });
+      });
+    });
+    return chips;
+  }
+
   getProductCategoryLabel(product: ListingProductItem): string {
     return product?.__listing?.categoryLabel || this.hydrateListingProduct(product, 0).__listing?.categoryLabel || '';
   }
@@ -1943,6 +2162,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     const categoryPart = value?.categoryid ?? '';
     return `${categoryPart}::${idPart}::${this.getNormalizedCategoryValue(value)}`;
   };
+
+  readonly trackActiveFilterChip = (index: number, chip: ListingActiveFilterChip): string => chip.key;
 
   readonly trackProduct = (index: number, product: ListingProductItem): string =>
     product?.__trackKey || this.buildProductTrackKey(product, index);

@@ -62,7 +62,10 @@
   </div>
 
   <ng-container *ngIf="!isLoading && !errorMessage">
-    <mat-card class="listing-banner" [style.background-image]="bannerImageUrl ? 'url(' + bannerImageUrl + ')' : null">
+    <mat-card
+      class="listing-banner"
+      *ngIf="showListingBanner"
+      [style.background-image]="bannerImageUrl ? 'url(' + bannerImageUrl + ')' : null">
       <div class="overlay">
         <div class="banner-content">
           <h1>{{ productTitle }}</h1>
@@ -79,6 +82,11 @@
       <section class="listing-header">
         <div class="header-copy">
           <h1>{{ productTitle }}</h1>
+          <div class="header-breadcrumb" *ngIf="!showListingBanner">
+            <a [href]="homeUrl">Home</a>
+            <span>/</span>
+            <span>{{ productTitle }}</span>
+          </div>
           <p *ngIf="!isListLoading; else listingSummaryLoading">
             Showing {{ visibleResultCount }} of {{ activeResultCount }}
             {{ catalogViewMode === 'fabrics' ? 'fabrics' : 'products' }}
@@ -149,6 +157,29 @@
           </div>
         </div>
       </section>
+
+      <ng-container *ngIf="activeFilterChips as activeChips">
+        <section class="active-filters-bar" *ngIf="activeChips.length > 0" aria-label="Active filters">
+          <span class="active-filters-label">Active filters</span>
+          <div class="active-filter-chip-list">
+            <button
+              type="button"
+              class="active-filter-chip"
+              *ngFor="let chip of activeChips; trackBy: trackActiveFilterChip"
+              [attr.aria-label]="'Remove filter ' + chip.label"
+              (click)="removeActiveFilter(chip.categoryKey, chip.normalizedValue)">
+              <span>{{ chip.label }}</span>
+              <mat-icon aria-hidden="true">close</mat-icon>
+            </button>
+          </div>
+          <button
+            type="button"
+            class="active-filter-clear-btn"
+            (click)="clearAllFilters()">
+            Clear all
+          </button>
+        </section>
+      </ng-container>
 
     <ng-template #filtersContent>
       <div class="filter-sections">
