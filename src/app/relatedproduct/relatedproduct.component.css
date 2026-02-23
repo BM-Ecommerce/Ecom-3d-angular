@@ -83,15 +83,18 @@ mat-button-toggle.mat-button-toggle-checked {
 }
 
 .rp-info {
-  margin-top: 10px;
+  margin: 10px;
 }
 
 .rp-name {
   font-size: 14px;
   font-weight: 600;
-  line-height: 0;
   color: var(--dark-gray);
-  margin-top: 1rem;
+}
+
+span.rp-from {
+    font-size: 12px !important;
+    font-weight: 400 !important;
 }
 
 .rp-content {

@@ -68,7 +68,7 @@
               </p>
 
               <p class="rp-price" *ngIf="product.minprice">
-                From: {{currencySymbol}}{{ product.minprice }}
+               <span class="rp-from">From:</span> {{currencySymbol}}{{ product.minprice }}
               </p>
             </div>
           </a>
@@ -101,7 +101,7 @@
                   </p>
 
               <p class="rp-price" *ngIf="product.minprice">
-                <span>From:</span> {{ currencySymbol }}{{ product.minprice }}
+                <span class="rp-from">From:</span> {{ currencySymbol }}{{ product.minprice }}
               </p>
             </div>
           </a>
