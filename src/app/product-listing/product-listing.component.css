@@ -307,7 +307,7 @@
   border: 1px solid #d2ddea;
   border-radius: 999px;
   background: #fff;
-  color: #1f4473;
+  color: var(--primary-color);
   padding: 0 12px;
   display: inline-flex;
   align-items: center;
@@ -391,7 +391,7 @@
 
 :host ::ng-deep .sort-field.mat-focused .mat-mdc-text-field-wrapper {
   background: #e7edf4;
-  box-shadow: 0 0 0 2px rgba(31, 68, 115, 0.14);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.14);
 }
 
 :host ::ng-deep .sort-field .mat-mdc-select-value-text,
@@ -487,9 +487,9 @@
 }
 
 .view-switch .view-switch-btn.active {
-  background: #1f4473;
+  background: var(--primary-color);
   color: #fff;
-  box-shadow: 0 2px 6px rgba(22, 52, 87, 0.22);
+  box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.22);
 }
 
 .catalog-view-switch {
@@ -521,9 +521,9 @@
 }
 
 .catalog-view-btn.active {
-  background: #1f4473;
+  background: var(--primary-color);
   color: #fff;
-  box-shadow: 0 4px 10px rgba(22, 52, 87, 0.28);
+  box-shadow: 0 4px 10px rgba(var(--primary-color-rgb), 0.28);
 }
 
 .listing-content {
@@ -629,7 +629,7 @@
 .sidebar-head button {
   min-width: auto;
   padding: 0;
-  color: #214a79 !important;
+  color: var(--primary-color) !important;
   font-size: 14px !important;
   font-weight: 700;
 }
@@ -672,8 +672,8 @@
 }
 
 .color-chip.selected {
-  border-color: #193f6e;
-  box-shadow: 0 0 0 2px rgba(25, 63, 110, 0.2);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
 }
 
 .filter-group {
@@ -817,7 +817,7 @@
 }
 
 .product-card:focus-visible {
-  outline: 2px solid #1f4d7e;
+  outline: 2px solid var(--primary-color);
   outline-offset: 2px;
 }
 
@@ -833,7 +833,7 @@
 }
 
 .card-image-btn:focus-visible {
-  outline: 2px solid #1f4d7e;
+  outline: 2px solid var(--primary-color);
   outline-offset: -2px;
 }
 
@@ -874,7 +874,7 @@
   font-size: 12px !important;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #0b325f;
+  color: var(--primary-color);
   text-transform: uppercase;
   margin: 0 0 6px;
   line-height: 1.3;
@@ -885,7 +885,7 @@
   font-size: 18px !important;
   line-height: 1.24 !important;
   font-weight: 700;
-  color: #081f3d;
+  color: #272e36;
   letter-spacing: 0;
 }
 
@@ -906,7 +906,7 @@
 }
 
 .card-title-btn:focus-visible {
-  outline: 2px solid #1f4d7e;
+  outline: 2px solid var(--primary-color);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -1014,7 +1014,7 @@
 .price {
   margin-top: 4px;
   font-weight: 700;
-  color: #0b2f5a;
+  color: var(--primary-color);
   font-size: 18px !important;
   line-height: 1.18 !important;
 }
@@ -1054,8 +1054,8 @@
 }
 
 .fabric-color-chip.active {
-  border-color: #1f4473;
-  box-shadow: 0 0 0 2px rgba(31, 68, 115, 0.2);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
 }
 
 .fabric-color-chip-more {
@@ -1067,7 +1067,7 @@
 }
 
 .fabric-color-chip-more-dots {
-  color: #1f4473;
+  color: var(--primary-color);
   font-weight: 700;
   letter-spacing: 1px;
   line-height: 1;
@@ -1163,7 +1163,7 @@
 
 .fabric-color-popup-selected {
   margin-top: 12px;
-  color: #1f4473;
+  color: var(--primary-color);
   font-size: 13px !important;
   line-height: 1.3 !important;
   font-weight: 700;
@@ -1181,15 +1181,15 @@
 }
 
 .customize-btn {
-  background: #1f4473 !important;
+  background: var(--primary-color) !important;
   color: #fff !important;
-  border: 1px solid #1f4473 !important;
+  border: 1px solid var(--primary-color) !important;
 }
 
 .sample-btn {
   background: #fff !important;
-  color: #1f4473 !important;
-  border: 1px solid #1f4473 !important;
+  color: var(--primary-color) !important;
+  border: 1px solid var(--primary-color) !important;
 }
 
 .listing-pagination {
@@ -1206,9 +1206,9 @@
   height: 31px;
   padding: 0 8px;
   border-radius: 999px;
-  border: 2px solid #204573;
+  border: 2px solid var(--primary-color);
   background: #fff;
-  color: #204573;
+  color: var(--primary-color);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1220,13 +1220,13 @@
 }
 
 .listing-page-chip:not(.active):not(.ellipsis):hover:not([disabled]) {
-  background: #edf4ff;
+  background: rgba(var(--primary-color-rgb), 0.09);
   transform: translateY(-1px);
 }
 
 .listing-page-chip.active {
-  background: #1a3f70;
-  border-color: #1a3f70;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
   color: #fff;
 }
 
