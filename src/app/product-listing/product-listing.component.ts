@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Subject, Subscription, forkJoin, of } from 'rxjs';
-import { catchError, finalize, switchMap, takeUntil } from 'rxjs/operators';
+import { Subject, Subscription, forkJoin, from, of } from 'rxjs';
+import { catchError, finalize, map, mergeMap, reduce, switchMap, takeUntil } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
 import { environment } from '../../environments/environment';
 import { ProductPreloadService } from '../services/product-preload.service';
@@ -113,6 +113,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private shouldRestoreListingScroll = false;
   private readonly listingScrollStoragePrefix = 'listing_scroll::';
   private readonly listingScrollPendingStorageKey = 'listing_scroll_pending';
+  private listingScrollRestoreTimerId: ReturnType<typeof setTimeout> | null = null;
+  private listingScrollRestoreRafId: number | null = null;
 
   isLoading = false;
   isListLoading = false;
@@ -165,6 +167,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   readonly imgpath = `${environment.apiUrl}/api/public/storage/attachments/${environment.apiName}/material/colour/`;
   private readonly composedImageCacheLimit = 120;
+  private readonly imageLoadPromiseCacheLimit = 300;
+  private readonly frameTransparentRegionCacheLimit = 200;
   private readonly frameAlphaThreshold = 40;
   private composedListingImageMap = new Map<string, string>();
   private composingListingImageKeys = new Set<string>();
@@ -217,6 +221,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.listRequestSub?.unsubscribe();
+    this.clearListingScrollRestoreHandles();
     this.composingListingImageKeys.clear();
     this.failedListingImageKeys.clear();
     this.imageLoadPromiseCache.clear();
@@ -540,6 +545,25 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       perPage
     ).pipe(
       takeUntil(this.destroy$),
+      map((response: any) => this.parseListingResponse(response, page, perPage)),
+      switchMap((parsed) => {
+        if (!isFabricMode || parsed.totalPages <= 1) {
+          return of(parsed);
+        }
+        return this.fetchRemainingFabricPages(filterData, sort, perPage, parsed.totalPages, requestVersion).pipe(
+          map((remainingItems) => {
+            const mergedItems = [...parsed.items, ...remainingItems];
+            return {
+              ...parsed,
+              items: mergedItems,
+              total: Math.max(parsed.total, mergedItems.length),
+              totalPages: Math.max(parsed.totalPages, 1),
+              currentPage: 1,
+              perPage
+            };
+          })
+        );
+      }),
       catchError((err) => {
         if (requestVersion !== this.listRequestVersion) {
           return of(null);
@@ -562,13 +586,12 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         this.isListLoading = false;
         this.cd.markForCheck();
       })
-    ).subscribe((response: any) => {
-      if (requestVersion !== this.listRequestVersion || !response) {
+    ).subscribe((parsed) => {
+      if (requestVersion !== this.listRequestVersion || !parsed) {
         return;
       }
 
       this.listErrorMessage = null;
-      const parsed = this.parseListingResponse(response, page, perPage);
       this.paginatedProducts = parsed.items;
       this.rebuildFabricGroups(this.paginatedProducts);
       if (!isFabricMode) {
@@ -582,6 +605,54 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.prepareListingCardCompositions();
       this.restoreListingScrollPositionIfNeeded();
     });
+  }
+
+  private fetchRemainingFabricPages(
+    filterData: Record<string, string>,
+    sort: string,
+    perPage: number,
+    totalPages: number,
+    requestVersion: number
+  ) {
+    const pagesToLoad = Array.from({ length: Math.max(totalPages - 1, 0) }, (_, index) => index + 2);
+    if (!pagesToLoad.length) {
+      return of([] as ListingProductItem[]);
+    }
+
+    return from(pagesToLoad).pipe(
+      mergeMap((nextPage) =>
+        this.apiService.getFabricListView(
+          this.params,
+          this.fieldscategoryid,
+          {
+            page: nextPage,
+            filter_data: filterData,
+            sort
+          },
+          nextPage,
+          perPage
+        ).pipe(
+          takeUntil(this.destroy$),
+          map((response: any) => {
+            if (requestVersion !== this.listRequestVersion) {
+              return [] as ListingProductItem[];
+            }
+            return this.parseListingResponse(response, nextPage, perPage).items;
+          }),
+          catchError((err) => {
+            console.error(`Listing products load failed for page ${nextPage}:`, err);
+            return of([] as ListingProductItem[]);
+          })
+        ),
+        3
+      ),
+      reduce((allItems, pageItems) => {
+        if (pageItems?.length) {
+          allItems.push(...pageItems);
+        }
+        return allItems;
+      }, [] as ListingProductItem[])
+    );
   }
 
   private buildFilterPayload(): Record<string, string> {
@@ -819,6 +890,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (typeof window === 'undefined') {
       return;
     }
+    this.clearListingScrollRestoreHandles();
     const hasPendingRestore = this.hasPendingScrollRestore();
     if (!this.shouldRestoreListingScroll && !hasPendingRestore) {
       return;
@@ -843,6 +915,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
     if (!savedPosition) {
       this.clearPendingScrollRestore();
+      this.clearListingScrollRestoreHandles();
       return;
     }
 
@@ -859,13 +932,14 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       const reached = Math.abs((window.scrollY || 0) - savedPosition!.y) <= 2;
       if (reached || attempts >= maxAttempts) {
         this.clearPendingScrollRestore();
+        this.clearListingScrollRestoreHandles();
         return;
       }
 
-      setTimeout(restoreStep, 80);
+      this.listingScrollRestoreTimerId = setTimeout(restoreStep, 80);
     };
 
-    requestAnimationFrame(() => restoreStep());
+    this.listingScrollRestoreRafId = requestAnimationFrame(() => restoreStep());
   }
 
   private hasPendingScrollRestore(): boolean {
@@ -881,6 +955,17 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       sessionStorage.removeItem(this.listingScrollPendingStorageKey);
     } catch {
       // ignore storage errors
+    }
+  }
+
+  private clearListingScrollRestoreHandles(): void {
+    if (this.listingScrollRestoreTimerId !== null) {
+      clearTimeout(this.listingScrollRestoreTimerId);
+      this.listingScrollRestoreTimerId = null;
+    }
+    if (this.listingScrollRestoreRafId !== null) {
+      cancelAnimationFrame(this.listingScrollRestoreRafId);
+      this.listingScrollRestoreRafId = null;
     }
   }
 
@@ -1376,6 +1461,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
     const detectedRegion = this.detectTransparentHoleRegion(frameImage, this.frameAlphaThreshold);
     this.frameTransparentRegionCache.set(frameUrl, detectedRegion);
+    this.trimMapToSize(this.frameTransparentRegionCache, this.frameTransparentRegionCacheLimit);
     return detectedRegion;
   }
 
@@ -1488,6 +1574,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     });
 
     this.imageLoadPromiseCache.set(url, promise);
+    this.trimMapToSize(this.imageLoadPromiseCache, this.imageLoadPromiseCacheLimit);
     return promise;
   }
 
@@ -1501,12 +1588,16 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     }
     this.composedListingImageMap.set(key, dataUrl);
 
-    while (this.composedListingImageMap.size > this.composedImageCacheLimit) {
-      const oldestKey = this.composedListingImageMap.keys().next().value as string | undefined;
-      if (!oldestKey) {
+    this.trimMapToSize(this.composedListingImageMap, this.composedImageCacheLimit);
+  }
+
+  private trimMapToSize<K, V>(map: Map<K, V>, limit: number): void {
+    while (map.size > limit) {
+      const oldestKey = map.keys().next().value as K | undefined;
+      if (oldestKey === undefined) {
         break;
       }
-      this.composedListingImageMap.delete(oldestKey);
+      map.delete(oldestKey);
     }
   }
 
@@ -1587,17 +1678,17 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     return 'Stylish and versatile design for any space.';
   }
 
-  trackCategory(index: number): number {
-    return index;
-  }
+  readonly trackCategory = (index: number, category: ListingCategory): string =>
+    this.categoryKey(category);
 
-  trackCategoryValue(index: number): number {
-    return index;
-  }
+  readonly trackCategoryValue = (index: number, value: ListingCategoryValue): string => {
+    const idPart = value?.id ?? index;
+    const categoryPart = value?.categoryid ?? '';
+    return `${categoryPart}::${idPart}::${this.normalize(value?.name || '')}`;
+  };
 
-  trackProduct(index: number): number {
-    return index;
-  }
+  readonly trackProduct = (index: number, product: ListingProductItem): string =>
+    this.buildProductTrackKey(product, index);
 
   trackFabricGroup(index: number, group: ListingFabricGroup): string {
     return group.key;
@@ -1725,6 +1816,30 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.toNumber(product?.matmapid || product?.['mapid']),
       this.slugify(colorName || String(product?.['colorcode'] || product?.['color_code'] || ''))
     ].join('_');
+  }
+
+  private buildProductTrackKey(product: ListingProductItem | null | undefined, fallbackIndex: number): string {
+    if (!product) {
+      return `product_${fallbackIndex}`;
+    }
+
+    const idParts = [
+      this.toNumber(product?.pei_productid),
+      this.toNumber(product?.fd_id || product?.fabricid),
+      this.toNumber(product?.cd_id || product?.colorid),
+      this.toNumber(product?.groupid || product?.pricegroupid),
+      this.toNumber(product?.supplierid || product?.supplier_id),
+      this.toNumber(product?.matmapid || product?.['mapid'])
+    ];
+
+    if (idParts.some((part) => part > 0)) {
+      return idParts.join('_');
+    }
+
+    const fallbackLabel = this.slugify(
+      `${product?.productname || ''}-${product?.fabricname || product?.fabric_name || ''}-${product?.colorname || product?.color_name || ''}`
+    );
+    return fallbackLabel ? `product_${fallbackLabel}` : `product_${fallbackIndex}`;
   }
 
   private resolveFieldsCategoryId(categoryId: any): number {
