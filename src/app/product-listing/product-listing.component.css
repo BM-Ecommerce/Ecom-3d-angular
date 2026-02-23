@@ -901,10 +901,6 @@
   cursor: pointer;
 }
 
-.card-title-btn:hover {
-  text-decoration: underline;
-}
-
 .card-title-btn:focus-visible {
   outline: 2px solid var(--primary-color);
   outline-offset: 2px;
