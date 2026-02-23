@@ -13,15 +13,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 interface ListingCategoryValue {
   name: string;
   id: string | number;
   categoryid?: string | number;
   img?: string;
+  normalizedName?: string;
+  resolvedImg?: string;
 }
 
 interface ListingCategory {
@@ -60,7 +59,20 @@ interface ListingProductItem {
   price?: string | number;
   colorimage?: string;
   color_image?: string;
+  __listing?: ListingProductComputed;
+  __trackKey?: string;
+  __variantKey?: string;
   [key: string]: any;
+}
+
+interface ListingProductComputed {
+  imageUrl: string;
+  displayName: string;
+  swatchName: string;
+  colorName: string;
+  description: string;
+  categoryLabel: string;
+  price: number;
 }
 
 interface TransparentHoleRegion {
@@ -96,10 +108,7 @@ type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
     MatIconModule,
     MatFormFieldModule,
     MatSelectModule,
-    MatCheckboxModule,
-    MatExpansionModule,
-    MatPaginatorModule,
-    MatButtonToggleModule
+    MatCheckboxModule
   ],
   templateUrl: './product-listing.component.html',
   styleUrls: ['./product-listing.component.css'],
@@ -115,6 +124,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private readonly listingScrollPendingStorageKey = 'listing_scroll_pending';
   private listingScrollRestoreTimerId: ReturnType<typeof setTimeout> | null = null;
   private listingScrollRestoreRafId: number | null = null;
+  private resizeDebounceTimerId: ReturnType<typeof setTimeout> | null = null;
+  private listFetchDebounceTimerId: ReturnType<typeof setTimeout> | null = null;
 
   isLoading = false;
   isListLoading = false;
@@ -147,6 +158,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   catalogViewMode: 'products' | 'fabrics' = 'products';
 
   categories: ListingCategory[] = [];
+  hasSidebarFilters = false;
   paginatedProducts: ListingProductItem[] = [];
   fabricGroups: ListingFabricGroup[] = [];
   paginatedFabricGroups: ListingFabricGroup[] = [];
@@ -223,6 +235,14 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.listRequestSub?.unsubscribe();
+    if (this.resizeDebounceTimerId !== null) {
+      clearTimeout(this.resizeDebounceTimerId);
+      this.resizeDebounceTimerId = null;
+    }
+    if (this.listFetchDebounceTimerId !== null) {
+      clearTimeout(this.listFetchDebounceTimerId);
+      this.listFetchDebounceTimerId = null;
+    }
     this.clearListingScrollRestoreHandles();
     this.composingListingImageKeys.clear();
     this.failedListingImageKeys.clear();
@@ -237,7 +257,13 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   @HostListener('window:resize')
   onWindowResize(): void {
-    this.applyViewportMode();
+    if (this.resizeDebounceTimerId !== null) {
+      clearTimeout(this.resizeDebounceTimerId);
+    }
+    this.resizeDebounceTimerId = setTimeout(() => {
+      this.resizeDebounceTimerId = null;
+      this.applyViewportMode();
+    }, 120);
   }
 
   private applyViewportMode(): void {
@@ -249,7 +275,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.isMobileViewport = nextIsMobile;
       shouldMarkForCheck = true;
       // Recompute preview chips count when switching desktop/mobile.
-      if (this.paginatedProducts.length) {
+      if (this.catalogViewMode === 'fabrics' && this.paginatedProducts.length) {
         this.rebuildFabricGroups(this.paginatedProducts);
       }
     }
@@ -309,6 +335,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.paginatedProducts = [];
     this.fabricGroups = [];
     this.paginatedFabricGroups = [];
+    this.hasSidebarFilters = false;
     this.selectedFabricVariantByGroup = {};
     this.fabricColorPopupGroupKey = null;
     this.pageIndex = 0;
@@ -361,6 +388,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       }
 
       this.categories = this.prepareCategories(result?.categoryData?.result, result?.brandsData?.result);
+      this.hasSidebarFilters = this.categories.some((category) => Array.isArray(category.values) && category.values.length > 0);
       this.initializeSelectedFilters();
       this.applyQueryParamSelections();
       this.fetchListingProducts(false);
@@ -384,7 +412,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
           name: String(value.name),
           id: value.id,
           categoryid: value.categoryid,
-          img: value.img || ''
+          img: value.img || '',
+          normalizedName: this.normalize(value.name),
+          resolvedImg: this.resolveCategoryValueImage(value.img || '')
         }));
 
       if (!values.length) {
@@ -412,7 +442,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         name: String(supplierName),
         id: supplierId--,
         categoryid: '0',
-        img: ''
+        img: '',
+        normalizedName: this.normalize(supplierName),
+        resolvedImg: ''
       });
     });
 
@@ -480,13 +512,13 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const normalizedValue = this.normalize(value.name);
+    const normalizedValue = this.getNormalizedCategoryValue(value);
     if (checked) {
       selectedSet.add(normalizedValue);
     } else {
       selectedSet.delete(normalizedValue);
     }
-    this.fetchListingProducts(true);
+    this.scheduleListingFetch(true, 120);
   }
 
   isSelected(category: ListingCategory, value: ListingCategoryValue): boolean {
@@ -494,22 +526,44 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (!selectedSet) {
       return false;
     }
-    return selectedSet.has(this.normalize(value.name));
+    return selectedSet.has(this.getNormalizedCategoryValue(value));
   }
 
   clearAllFilters(): void {
     Object.values(this.selectedCategoryValues).forEach((set) => set.clear());
-    this.fetchListingProducts(true);
+    this.scheduleListingFetch(true);
   }
 
   onSortChange(rawValue: string): void {
     const validValues: SortKey[] = ['defaultsorting', 'bestselling', 'priceasc', 'pricedesc'];
     const nextSort = (validValues.includes(rawValue as SortKey) ? rawValue : 'defaultsorting') as SortKey;
     this.sortBy = nextSort;
-    this.fetchListingProducts(true);
+    this.scheduleListingFetch(true, 100);
+  }
+
+  private scheduleListingFetch(resetPage: boolean, delayMs = 0): void {
+    if (this.listFetchDebounceTimerId !== null) {
+      clearTimeout(this.listFetchDebounceTimerId);
+      this.listFetchDebounceTimerId = null;
+    }
+
+    if (delayMs <= 0) {
+      this.fetchListingProducts(resetPage);
+      return;
+    }
+
+    this.listFetchDebounceTimerId = setTimeout(() => {
+      this.listFetchDebounceTimerId = null;
+      this.fetchListingProducts(resetPage);
+    }, delayMs);
   }
 
   private fetchListingProducts(resetPage: boolean): void {
+    if (this.listFetchDebounceTimerId !== null) {
+      clearTimeout(this.listFetchDebounceTimerId);
+      this.listFetchDebounceTimerId = null;
+    }
+
     if (resetPage) {
       this.pageIndex = 0;
     }
@@ -682,7 +736,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private getSelectedCategoryNames(category: ListingCategory, selectedSet: Set<string>): string[] {
     const selectedNames: string[] = [];
     category.values.forEach((value) => {
-      if (selectedSet.has(this.normalize(value.name))) {
+      if (selectedSet.has(this.getNormalizedCategoryValue(value))) {
         selectedNames.push(String(value.name));
       }
     });
@@ -746,8 +800,12 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       fallbackPage
     );
 
+    const hydratedItems = items
+      .filter((item) => item && typeof item === 'object')
+      .map((item, index) => this.hydrateListingProduct(item as ListingProductItem, index));
+
     return {
-      items: items.filter((item) => item && typeof item === 'object'),
+      items: hydratedItems,
       total,
       totalPages,
       currentPage,
@@ -811,7 +869,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (this.isMobileViewport) {
       if (this.gridColumns !== 1) {
         this.gridColumns = 1;
-        if (this.paginatedProducts.length) {
+        if (this.catalogViewMode === 'fabrics' && this.paginatedProducts.length) {
           this.rebuildFabricGroups(this.paginatedProducts);
         }
         this.cd.markForCheck();
@@ -829,7 +887,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.gridColumns = normalizedColumns;
     this.forceListByMobileViewport = false;
     this.lastDesktopGridColumns = normalizedColumns;
-    if (this.paginatedProducts.length) {
+    if (this.catalogViewMode === 'fabrics' && this.paginatedProducts.length) {
       this.rebuildFabricGroups(this.paginatedProducts);
     }
     this.cd.markForCheck();
@@ -849,20 +907,6 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.fabricColorPopupGroupKey = null;
     }
     this.fetchListingProducts(true);
-  }
-
-  onPageChange(event: PageEvent): void {
-    if (this.catalogViewMode === 'fabrics') {
-      this.pageIndex = event.pageIndex;
-      this.pageSize = event.pageSize;
-      this.updateFabricGroupsPagination();
-      this.prepareListingCardCompositions();
-      this.cd.markForCheck();
-      return;
-    }
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.fetchListingProducts(false);
   }
 
   readonly paginationEllipsis = '...';
@@ -1282,33 +1326,76 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     };
   }
 
-  getProductDisplayName(product: ListingProductItem): string {
-    const fabricName = String(product.fabricname || product.fabric_name || '').trim();
-    const colorName = String(product.colorname || product.color_name || '').trim();
-    if (fabricName && colorName) {
-      return `${fabricName} ${colorName}`;
+  private hydrateListingProduct(product: ListingProductItem | null | undefined, fallbackIndex: number): ListingProductItem {
+    if (!product || typeof product !== 'object') {
+      return {} as ListingProductItem;
     }
-    return colorName || fabricName || this.productTitle;
+
+    const colorName = this.resolveRawFabricColorName(product);
+    const fabricName = String(product?.fabricname || product?.fabric_name || '').trim();
+    const swatchName = colorName || fabricName || this.productTitle || 'Swatch';
+    const displayName = fabricName && colorName
+      ? `${fabricName} ${colorName}`
+      : colorName || fabricName || this.productTitle;
+    const descriptionRaw = String(product?.['ecomdescription'] || '').trim();
+    const description = descriptionRaw
+      ? (descriptionRaw.length > 95 ? `${descriptionRaw.slice(0, 95)}...` : descriptionRaw)
+      : 'Stylish and versatile design for any space.';
+
+    product.__listing = {
+      imageUrl: this.resolveProductImageUrl(product),
+      displayName,
+      swatchName,
+      colorName: colorName || swatchName,
+      description,
+      categoryLabel: String(product?.['productname'] || this.productTitle || '').toUpperCase(),
+      price: this.toNumber(product?.minprice ?? product?.minimum_price ?? product?.price)
+    };
+    product.__trackKey = this.buildProductTrackKey(product, fallbackIndex);
+    product.__variantKey = this.computeFabricVariantKey(product);
+
+    return product;
+  }
+
+  private resolveRawFabricColorName(product: ListingProductItem): string {
+    return String(
+      product?.colorname || product?.color_name || product?.['color'] || product?.['colour'] || ''
+    ).trim();
+  }
+
+  private resolveProductImageUrl(product: ListingProductItem): string {
+    const colorImage = product?.colorimage || product?.color_image || '';
+    if (!colorImage) {
+      return 'assets/no-image.jpg';
+    }
+    if (this.isAbsoluteUrl(colorImage)) {
+      return colorImage;
+    }
+    if (String(colorImage).includes('/')) {
+      return this.resolveStorageImageUrl(String(colorImage));
+    }
+    return `${this.imgpath}${encodeURIComponent(String(colorImage).trim())}`;
+  }
+
+  getProductDisplayName(product: ListingProductItem): string {
+    if (!product?.__listing) {
+      this.hydrateListingProduct(product, 0);
+    }
+    return product?.__listing?.displayName || this.productTitle;
   }
 
   getProductSwatchName(product: ListingProductItem): string {
-    const colorName = String(product?.colorname || product?.color_name || '').trim();
-    if (colorName) {
-      return colorName;
+    if (!product?.__listing) {
+      this.hydrateListingProduct(product, 0);
     }
-
-    const fabricName = String(product?.fabricname || product?.fabric_name || '').trim();
-    return fabricName || this.productTitle || 'Swatch';
+    return product?.__listing?.swatchName || 'Swatch';
   }
 
   getFabricColorName(product: ListingProductItem): string {
-    const colorName = String(
-      product?.colorname || product?.color_name || product?.['color'] || product?.['colour'] || ''
-    ).trim();
-    if (colorName) {
-      return colorName;
+    if (!product?.__listing) {
+      this.hydrateListingProduct(product, 0);
     }
-    return this.getProductSwatchName(product);
+    return product?.__listing?.colorName || this.getProductSwatchName(product);
   }
 
   onFabricColorSelect(group: ListingFabricGroup, variant: ListingProductItem, event: Event): void {
@@ -1380,17 +1467,10 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   getProductImage(product: ListingProductItem): string {
-    const colorImage = product?.colorimage || product?.color_image || '';
-    if (!colorImage) {
-      return 'assets/no-image.jpg';
+    if (!product?.__listing) {
+      this.hydrateListingProduct(product, 0);
     }
-    if (this.isAbsoluteUrl(colorImage)) {
-      return colorImage;
-    }
-    if (String(colorImage).includes('/')) {
-      return this.resolveStorageImageUrl(String(colorImage));
-    }
-    return `${this.imgpath}${encodeURIComponent(String(colorImage).trim())}`;
+    return product?.__listing?.imageUrl || 'assets/no-image.jpg';
   }
 
   getListingCardImage(product: ListingProductItem): string {
@@ -1699,16 +1779,44 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   getCategoryValueImage(value: ListingCategoryValue): string {
-    if (!value?.img) {
+    if (!value) {
       return '';
     }
-    if (this.isAbsoluteUrl(value.img)) {
-      return value.img;
+    if (value.resolvedImg !== undefined) {
+      return value.resolvedImg;
     }
-    return this.resolveStorageImageUrl(String(value.img));
+    const resolved = this.resolveCategoryValueImage(value.img || '');
+    value.resolvedImg = resolved;
+    return resolved;
+  }
+
+  private resolveCategoryValueImage(img: any): string {
+    const rawValue = String(img || '').trim();
+    if (!rawValue) {
+      return '';
+    }
+    if (this.isAbsoluteUrl(rawValue)) {
+      return rawValue;
+    }
+    return this.resolveStorageImageUrl(rawValue);
+  }
+
+  private getNormalizedCategoryValue(value: ListingCategoryValue): string {
+    if (!value) {
+      return '';
+    }
+    if (value.normalizedName !== undefined) {
+      return value.normalizedName;
+    }
+    const normalized = this.normalize(value.name);
+    value.normalizedName = normalized;
+    return normalized;
   }
 
   getPrice(product: ListingProductItem): number {
+    if (Number.isFinite(product?.__listing?.price)) {
+      return Number(product.__listing?.price);
+    }
     return this.toNumber(product?.minprice ?? product?.minimum_price ?? product?.price);
   }
 
@@ -1722,7 +1830,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   get hasSidebar(): boolean {
-    return this.categories.some((category) => Array.isArray(category.values) && category.values.length > 0);
+    return this.hasSidebarFilters;
   }
 
   get activeResultCount(): number {
@@ -1754,15 +1862,11 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   getProductCategoryLabel(product: ListingProductItem): string {
-    return String(product?.['productname'] || this.productTitle || '').toUpperCase();
+    return product?.__listing?.categoryLabel || this.hydrateListingProduct(product, 0).__listing?.categoryLabel || '';
   }
 
   getProductDescription(product: ListingProductItem): string {
-    const fromItem = String(product?.['ecomdescription'] || '').trim();
-    if (fromItem) {
-      return fromItem.length > 95 ? `${fromItem.slice(0, 95)}...` : fromItem;
-    }
-    return 'Stylish and versatile design for any space.';
+    return product?.__listing?.description || this.hydrateListingProduct(product, 0).__listing?.description || '';
   }
 
   readonly trackCategory = (index: number, category: ListingCategory): string =>
@@ -1771,11 +1875,11 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   readonly trackCategoryValue = (index: number, value: ListingCategoryValue): string => {
     const idPart = value?.id ?? index;
     const categoryPart = value?.categoryid ?? '';
-    return `${categoryPart}::${idPart}::${this.normalize(value?.name || '')}`;
+    return `${categoryPart}::${idPart}::${this.getNormalizedCategoryValue(value)}`;
   };
 
   readonly trackProduct = (index: number, product: ListingProductItem): string =>
-    this.buildProductTrackKey(product, index);
+    product?.__trackKey || this.buildProductTrackKey(product, index);
 
   trackFabricGroup(index: number, group: ListingFabricGroup): string {
     return group.key;
@@ -1901,7 +2005,20 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   private buildFabricVariantKey(product: ListingProductItem): string {
-    const colorName = this.getFabricColorName(product);
+    if (product?.__variantKey) {
+      return product.__variantKey;
+    }
+    const key = this.computeFabricVariantKey(product);
+    if (product) {
+      product.__variantKey = key;
+    }
+    return key;
+  }
+
+  private computeFabricVariantKey(product: ListingProductItem): string {
+    const colorName =
+      this.resolveRawFabricColorName(product) ||
+      String(product?.fabricname || product?.fabric_name || product?.productname || '').trim();
     return [
       this.toNumber(product?.fd_id || product?.fabricid),
       this.toNumber(product?.cd_id || product?.colorid),

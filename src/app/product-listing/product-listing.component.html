@@ -172,8 +172,8 @@
               [checked]="isSelected(category, value)"
               (change)="onFilterToggle(category, value, $event.checked)">
               <img
-                *ngIf="getCategoryValueImage(value)"
-                [src]="getCategoryValueImage(value)"
+                *ngIf="getCategoryValueImage(value) as valueImage"
+                [src]="valueImage"
                 [alt]="value.name">
               <span>{{ value.name }}</span>
             </mat-checkbox>
