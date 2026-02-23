@@ -57,6 +57,8 @@ interface ListingProductItem {
   minprice?: string | number;
   minimum_price?: string | number;
   price?: string | number;
+  extraoffer?: string | number;
+  extra_offer?: string | number;
   colorimage?: string;
   color_image?: string;
   __listing?: ListingProductComputed;
@@ -73,6 +75,9 @@ interface ListingProductComputed {
   description: string;
   categoryLabel: string;
   price: number;
+  originalPrice: number;
+  offerPercent: number;
+  savingsAmount: number;
 }
 
 interface TransparentHoleRegion {
@@ -1341,6 +1346,17 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     const description = descriptionRaw
       ? (descriptionRaw.length > 95 ? `${descriptionRaw.slice(0, 95)}...` : descriptionRaw)
       : 'Stylish and versatile design for any space.';
+    const originalPrice = this.toNumber(product?.minprice ?? product?.minimum_price ?? product?.price);
+    const offerPercentRaw = this.toNumber(
+      product?.extraoffer ?? product?.extra_offer ?? product?.['extra offer']
+    );
+    const offerPercent = Math.max(0, Math.min(100, offerPercentRaw));
+    const discountedPrice = originalPrice > 0 && offerPercent > 0
+      ? this.roundCurrency(originalPrice * (1 - (offerPercent / 100)))
+      : originalPrice;
+    const savingsAmount = originalPrice > discountedPrice
+      ? this.roundCurrency(originalPrice - discountedPrice)
+      : 0;
 
     product.__listing = {
       imageUrl: this.resolveProductImageUrl(product),
@@ -1349,7 +1365,10 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       colorName: colorName || swatchName,
       description,
       categoryLabel: String(product?.['productname'] || this.productTitle || '').toUpperCase(),
-      price: this.toNumber(product?.minprice ?? product?.minimum_price ?? product?.price)
+      price: discountedPrice,
+      originalPrice,
+      offerPercent,
+      savingsAmount
     };
     product.__trackKey = this.buildProductTrackKey(product, fallbackIndex);
     product.__variantKey = this.computeFabricVariantKey(product);
@@ -1813,11 +1832,61 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     return normalized;
   }
 
+  private ensureListingComputed(product: ListingProductItem | null | undefined): ListingProductComputed | null {
+    if (!product || typeof product !== 'object') {
+      return null;
+    }
+    if (!product.__listing) {
+      this.hydrateListingProduct(product, 0);
+    }
+    return product.__listing || null;
+  }
+
   getPrice(product: ListingProductItem): number {
-    if (Number.isFinite(product?.__listing?.price)) {
-      return Number(product.__listing?.price);
+    const listing = this.ensureListingComputed(product);
+    if (Number.isFinite(listing?.price)) {
+      return Number(listing?.price);
     }
     return this.toNumber(product?.minprice ?? product?.minimum_price ?? product?.price);
+  }
+
+  getOriginalPrice(product: ListingProductItem): number {
+    const listing = this.ensureListingComputed(product);
+    if (Number.isFinite(listing?.originalPrice)) {
+      return Number(listing?.originalPrice);
+    }
+    return this.toNumber(product?.minprice ?? product?.minimum_price ?? product?.price);
+  }
+
+  getOfferPercent(product: ListingProductItem): number {
+    const listing = this.ensureListingComputed(product);
+    if (Number.isFinite(listing?.offerPercent)) {
+      return Number(listing?.offerPercent);
+    }
+    return 0;
+  }
+
+  hasExtraOffer(product: ListingProductItem): boolean {
+    return this.getOfferPercent(product) > 0 && this.getOriginalPrice(product) > 0;
+  }
+
+  getOfferBadgeLabel(product: ListingProductItem): string {
+    const offerPercent = this.getOfferPercent(product);
+    if (offerPercent <= 0) {
+      return '';
+    }
+    const normalizedOffer = Number.isInteger(offerPercent)
+      ? `${Math.trunc(offerPercent)}`
+      : `${this.roundCurrency(offerPercent)}`;
+    return `-${normalizedOffer}% OFF`;
+  }
+
+  getSavingsAmount(product: ListingProductItem): number {
+    const listing = this.ensureListingComputed(product);
+    if (Number.isFinite(listing?.savingsAmount)) {
+      return Number(listing?.savingsAmount);
+    }
+    return 0;
   }
 
   get productDescriptionPreview(): string {
@@ -2191,6 +2260,13 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     }
     const numeric = Number(String(value).replace(/[^0-9.-]/g, ''));
     return Number.isFinite(numeric) ? numeric : 0;
+  }
+
+  private roundCurrency(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+    return Math.round((value + Number.EPSILON) * 100) / 100;
   }
 
   private toBoolean(value: any): boolean {

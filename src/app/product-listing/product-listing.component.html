@@ -249,6 +249,9 @@
               [attr.aria-label]="'Open ' + getProductDisplayName(product)"
               (click)="openOrderForm(product)">
               <div class="card-image">
+                <span class="offer-badge" *ngIf="hasExtraOffer(product)">
+                  {{ getOfferBadgeLabel(product) }}
+                </span>
                 <img
                   class="product-frame"
                   [src]="getListingCardImage(product)"
@@ -284,9 +287,25 @@
                 </div>
               </div>
 
-              <div class="price-label" *ngIf="getPrice(product) > 0">Starting from</div>
-              <div class="price" *ngIf="getPrice(product) > 0">
-                {{ currencySymbol }}{{ getPrice(product) | number:'1.2-2' }}
+              <div
+                class="price-block"
+                *ngIf="getOriginalPrice(product) > 0"
+                [class.has-extra-price]="hasExtraOffer(product)"
+                [class.no-extra-price]="!hasExtraOffer(product)">
+                <div class="price-label">
+                  {{ hasExtraOffer(product) ? 'Offer price' : 'Starting from' }}
+                </div>
+                <div class="price-wrap">
+                  <span class="price">
+                    {{ currencySymbol }}{{ getPrice(product) | number:'1.2-2' }}
+                  </span>
+                  <span class="price-original" *ngIf="hasExtraOffer(product)">
+                    {{ currencySymbol }}{{ getOriginalPrice(product) | number:'1.2-2' }}
+                  </span>
+                </div>
+                <div class="offer-save" *ngIf="hasExtraOffer(product) && getSavingsAmount(product) > 0">
+                  You Save: {{ currencySymbol }}{{ getSavingsAmount(product) | number:'1.2-2' }}
+                </div>
               </div>
 
               <div class="card-actions">
@@ -325,6 +344,9 @@
               [attr.aria-label]="'Open ' + group.fabricName"
               (click)="openOrderForm(group.activeVariant)">
               <div class="card-image">
+                <span class="offer-badge" *ngIf="hasExtraOffer(group.activeVariant)">
+                  {{ getOfferBadgeLabel(group.activeVariant) }}
+                </span>
                 <img
                   class="product-frame"
                   [src]="getListingCardImage(group.activeVariant)"
@@ -376,9 +398,25 @@
                 Selected: {{ getFabricColorName(group.activeVariant) }}
               </div>
 
-              <div class="price-label" *ngIf="getPrice(group.activeVariant) > 0">Starting from</div>
-              <div class="price" *ngIf="getPrice(group.activeVariant) > 0">
-                {{ currencySymbol }}{{ getPrice(group.activeVariant) | number:'1.2-2' }}
+              <div
+                class="price-block"
+                *ngIf="getOriginalPrice(group.activeVariant) > 0"
+                [class.has-extra-price]="hasExtraOffer(group.activeVariant)"
+                [class.no-extra-price]="!hasExtraOffer(group.activeVariant)">
+                <div class="price-label">
+                  {{ hasExtraOffer(group.activeVariant) ? 'Offer price' : 'Starting from' }}
+                </div>
+                <div class="price-wrap">
+                  <span class="price">
+                    {{ currencySymbol }}{{ getPrice(group.activeVariant) | number:'1.2-2' }}
+                  </span>
+                  <span class="price-original" *ngIf="hasExtraOffer(group.activeVariant)">
+                    {{ currencySymbol }}{{ getOriginalPrice(group.activeVariant) | number:'1.2-2' }}
+                  </span>
+                </div>
+                <div class="offer-save" *ngIf="hasExtraOffer(group.activeVariant) && getSavingsAmount(group.activeVariant) > 0">
+                  You Save: {{ currencySymbol }}{{ getSavingsAmount(group.activeVariant) | number:'1.2-2' }}
+                </div>
               </div>
 
               <div class="card-actions">
