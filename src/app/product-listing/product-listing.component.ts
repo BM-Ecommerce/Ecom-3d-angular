@@ -142,6 +142,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   showSupplierBrandsCategory = false;
   // Component-level toggle: set true to enable grouped Fabric view switch.
   enableFabricGroupedView = true;
+  // Component-level toggle: set false to hide frame in listing cards.
+  showFrameInProductListing = true;
   catalogViewMode: 'products' | 'fabrics' = 'products';
 
   categories: ListingCategory[] = [];
@@ -1393,6 +1395,10 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   getListingCardImage(product: ListingProductItem): string {
     const colorUrl = this.getProductImage(product);
+    if (!this.showFrameInProductListing) {
+      return colorUrl;
+    }
+
     const frameUrl = this.listingFrameImageUrl;
 
     if (!frameUrl) {
@@ -1413,7 +1419,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   private prepareListingCardCompositions(): void {
-    if (!this.listingFrameImageUrl) {
+    if (!this.showFrameInProductListing || !this.listingFrameImageUrl) {
       return;
     }
 
@@ -1426,7 +1432,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   private prepareListingCardCompositionForProduct(product: ListingProductItem | null | undefined): void {
-    if (!product || !this.listingFrameImageUrl) {
+    if (!this.showFrameInProductListing || !product || !this.listingFrameImageUrl) {
       return;
     }
     const colorUrl = this.getProductImage(product);
