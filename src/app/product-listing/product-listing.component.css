@@ -1192,8 +1192,18 @@
   min-width: 0;
 }
 
+.card-actions app-freesample.sample-action {
+  width: calc((100% - var(--card-actions-gap)) / 2);
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
 .card-actions.single-action .customize-btn,
 .card-actions.single-action .sample-btn {
+  width: 100%;
+}
+
+.card-actions.single-action app-freesample.sample-action {
   width: 100%;
 }
 

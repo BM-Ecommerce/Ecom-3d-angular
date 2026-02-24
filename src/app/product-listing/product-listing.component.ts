@@ -6,11 +6,11 @@ import { catchError, finalize, map, mergeMap, reduce, switchMap, takeUntil } fro
 import { ApiService } from '../services/api.service';
 import { environment } from '../../environments/environment';
 import { ProductPreloadService } from '../services/product-preload.service';
-import Swal from 'sweetalert2';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { FreesampleComponent } from '../freesample/freesample.component';
 
 interface ListingCategoryValue {
   name: string;
@@ -118,7 +118,8 @@ type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    FreesampleComponent
   ],
   templateUrl: './product-listing.component.html',
   styleUrls: ['./product-listing.component.css'],
@@ -145,6 +146,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   params: any = {};
   productId = 0;
+  cartProductId = 0;
   productTitle = '';
   productDescription = '';
   productSlug = '';
@@ -185,7 +187,6 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   pageIndex = 0;
   totalProducts = 0;
   totalPages = 0;
-  submittingFreeSampleKey: string | null = null;
   private readonly fabricFetchPerPage = 2000;
   private readonly fabricColorPreviewLimitMobile = 10;
   private readonly fabricColorPreviewLimitDesktopGrid = 10;
@@ -244,7 +245,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         ...queryParams,
         ...routeParams,
         product_id: productId,
-        cart_productid: routeParams['cart_productid'] ?? queryParams['cart_productid'] ?? productId,
+        cart_productid: routeParams['cart_productid'] ?? queryParams['cart_productid'] ?? '',
         api_url: environment.apiUrl,
         api_key: environment.apiKey,
         api_name: environment.apiName,
@@ -403,6 +404,15 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
         this.productDataPayload = productData;
         this.productId = Number(product.pei_productid || this.params.product_id || 0);
+        const routeCartId = this.toNumber(this.params?.cart_productid);
+        const productCartId = this.toNumber(
+          product.pei_id || product.cart_productid || product.cartproductid || product.wp_product_id
+        );
+        this.cartProductId = routeCartId > 0 ? routeCartId : (productCartId > 0 ? productCartId : this.productId);
+        this.params = {
+          ...this.params,
+          cart_productid: String(this.cartProductId || '')
+        };
         this.productTitle = product.pei_ecomProductName || product.label || '';
         this.productSlug = this.slugify(product.label || this.productTitle);
         this.productDescription = String(product.pi_productdescription || '');
@@ -1356,7 +1366,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     const colorId = this.toNumber(product.cd_id || product.colorid);
     const pricingGroup = this.toNumber(product.groupid || product.pricegroupid);
     const supplier = this.toNumber(product.supplierid || product.supplier_id);
-    const cartProductId = this.params?.cart_productid || this.productId;
+    const cartProductId = this.cartProductId || this.toNumber(this.params?.cart_productid) || this.productId;
 
     this.saveListingScrollPosition();
     this.router.navigate(
@@ -1385,62 +1395,6 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.openOrderForm(product);
   }
 
-  onFreeSampleClick(product: ListingProductItem, event: Event): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (!this.canShowFreeSample(product)) {
-      return;
-    }
-
-    const submitKey = this.getFreeSampleSubmitKey(product);
-    this.submittingFreeSampleKey = submitKey;
-
-    const payload = this.buildFreeSampleRequestPayload(product);
-    this.apiService.addFreeSample(this.params?.site || environment.site, payload).pipe(
-      takeUntil(this.destroy$),
-      finalize(() => {
-        if (this.submittingFreeSampleKey === submitKey) {
-          this.submittingFreeSampleKey = null;
-          this.cd.markForCheck();
-        }
-      })
-    ).subscribe({
-      next: (response: any) => {
-        const successValue = String(response?.success ?? '').toLowerCase();
-        const isSuccess = successValue === 'true' || successValue === '1' || response?.success === true;
-        const nextUrl = response?.link_source || `${this.params?.site || environment.site}/cart`;
-
-        if (!isSuccess) {
-          Swal.fire({
-            icon: 'info',
-            title: 'Sample Already Added',
-            text: response?.value || 'This sample is already in your cart.'
-          });
-          return;
-        }
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Sample Added',
-          text: response?.value || 'Free sample has been added to cart.',
-          confirmButtonText: response?.button_text || 'View Cart'
-        }).then((result) => {
-          if (result.isConfirmed) {
-            window.location.href = nextUrl;
-          }
-        });
-      },
-      error: () => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Failed',
-          text: 'Unable to add free sample right now. Please try again.'
-        });
-      }
-    });
-  }
-
   canShowFreeSample(product: ListingProductItem): boolean {
     if (!this.ecomFreeSample) {
       return false;
@@ -1449,120 +1403,161 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     return colorId > 0;
   }
 
-  isFreeSampleSubmitting(product: ListingProductItem): boolean {
-    return this.submittingFreeSampleKey === this.getFreeSampleSubmitKey(product);
+  buildListingFreeSampleData(product: ListingProductItem): Record<string, any> {
+    const request = this.buildFreeSampleCartRequest(product);
+    return {
+      status: 1,
+      cart_productid: request.cartProductId,
+      product_id: request.productId,
+      type: 'free_sample',
+      free_sample_price: this.ecomSamplePrice,
+      form_data: request.formData,
+      cartproductName: request.cartProductName,
+      vatpercentage: 0,
+      vatname: '',
+      api_url: request.siteUrl,
+      current_url: window.location.href,
+      productname: request.productName,
+      catagory_id: request.categoryId,
+      color_id: request.colorId,
+      fabric_id: request.fabricId,
+      pei_ecomImage: request.visualizerImage,
+      currencySymbol: this.currencySymbol
+    };
   }
 
-  get freeSampleButtonLabel(): string {
-    return 'Add Sample';
-  }
-
-  private buildFreeSampleRequestPayload(product: ListingProductItem): Record<string, any> {
+  private buildFreeSampleCartRequest(product: ListingProductItem): {
+    formData: Record<string, any>[];
+    cartProductId: string;
+    productId: number;
+    siteUrl: string;
+    cartProductName: string;
+    productName: string;
+    categoryId: number;
+    visualizerImage: string;
+    colorId: number;
+    fabricId: number;
+  } {
     const colorId = this.toNumber(product.cd_id || product.colorid);
     const fabricId = this.toNumber(product.fd_id || product.fabricid);
     const pricingGroupId = this.toNumber(product.groupid || product.pricegroupid);
     const supplierId = this.toNumber(product.supplierid || product.supplier_id);
-    const matmapId = this.toNumber(product.matmapid);
     const productDisplayName = this.getProductDisplayName(product);
-    const freeSampleData = this.buildFreeSampleData(product, {
+    const categoryId = this.fieldscategoryid || this.resolveFieldsCategoryId(this.productCategory);
+    const siteUrl = this.params?.site || environment.site;
+    const cartProductId = String(
+      this.cartProductId || this.toNumber(this.params?.cart_productid) || this.productId || this.toNumber(this.params?.product_id) || ''
+    );
+    const resolvedProductId = this.productId || this.toNumber(this.params?.product_id);
+    const productName = String(product.productname || this.productTitle || '').trim() || this.productTitle;
+
+    const formData = this.buildFreeSampleFormData(product, {
       colorId,
       fabricId,
       pricingGroupId,
-      supplierId,
-      matmapId,
-      productDisplayName
+      supplierId
     });
 
     return {
-      color_id: colorId,
-      fabric_id: fabricId,
-      pricing_grp_id: pricingGroupId,
-      fabricname: productDisplayName,
-      free_sample_data: freeSampleData,
-      fabric_img_url: this.getProductImage(product)
+      formData,
+      cartProductId,
+      productId: resolvedProductId,
+      siteUrl,
+      cartProductName: productDisplayName ? `${this.productTitle} - ${productDisplayName}` : this.productTitle,
+      productName,
+      categoryId,
+      visualizerImage: this.getProductImage(product),
+      colorId,
+      fabricId
     };
   }
 
-  private buildFreeSampleData(
+  private buildFreeSampleFormData(
     product: ListingProductItem,
     ids: {
       colorId: number;
       fabricId: number;
       pricingGroupId: number;
       supplierId: number;
-      matmapId: number;
-      productDisplayName: string;
     }
-  ): Record<string, any> {
+  ): Record<string, any>[] {
     const categoryId = this.toNumber(product.category || this.productCategory);
     const pricingType = String(product.prices || '').trim();
-    const supplierName = String(product.pricetablesupplier || '').trim();
-    const normalizedApiUrl = String(environment.apiUrl || '').replace(/\/+$/, '');
+    const supplierName = String(
+      product.pricetablesupplier || product.suppliername || product.supplier_name || ''
+    ).trim();
 
-    const width = this.buildFreeSampleParameter('11', 'Width', 0);
-    const drop = this.buildFreeSampleParameter('12', 'Drop', 0);
-    const productType = this.buildFreeSampleParameter('13', 'Pricing Group', pricingType);
-    const quantity = this.buildFreeSampleParameter('14', 'Quantity', 1);
+    const data: Record<string, any>[] = [
+      this.buildFreeSampleOrderItem(11, 'Width', '0'),
+      this.buildFreeSampleOrderItem(12, 'Drop', '0'),
+      this.buildFreeSampleOrderItem(13, 'Pricing Group', pricingType || '', ids.pricingGroupId || null, ids.pricingGroupId || null),
+      this.buildFreeSampleOrderItem(14, 'Quantity', 1, 1, 1, 1)
+    ];
 
-    const data: Record<string, any> = {
-      pid: this.productId,
-      free_sample_price: this.ecomSamplePrice,
-      type: 'free_sample',
-      product_with_fabric_and_color: `${this.productTitle} - ${ids.productDisplayName}`,
-      ProductName: this.productTitle,
-      sid: ids.supplierId || '',
-      matmapid: ids.matmapId || '',
-      Measurement: '',
-      Quantity: 1,
-      categoryid: categoryId || '',
-      ProductCode: '',
-      Supplier: supplierName,
-      pricing_group_type: pricingType,
-      width,
-      drop,
-      product_type: productType,
-      quantity,
-      Seqno: '',
-      fittedbywho: '',
-      fittingheight: '',
-      chainfraction: '',
-      childfraction: '',
-      totalchainfraction: '',
-      childsafetyrequired: '',
-      chaincordsystem: '',
-      additionalchaincorddeduction: '',
-      wandlength: '',
-      chaincorddrop: '',
-      totalchaincorddrop: '',
-      itemno: '',
-      itemid: '',
-      cus_seq: '',
-      ordertransfertype: '',
-      OverridePrice: '',
-      api_url: normalizedApiUrl
-    };
+    if (ids.supplierId > 0 || supplierName) {
+      data.push(
+        this.buildFreeSampleOrderItem(
+          17,
+          'Supplier',
+          supplierName || String(ids.supplierId),
+          ids.supplierId || null,
+          ids.supplierId || null
+        )
+      );
+    }
 
     const fabricName = String(product.fabricname || product.fabric_name || '').trim();
     const colorName = String(product.colorname || product.color_name || '').trim();
     if (ids.fabricId > 0 && categoryId === 3) {
-      data['fabric'] = this.buildFreeSampleParameter('5', 'Fabric', fabricName);
-      data['color'] = this.buildFreeSampleParameter('5', 'Color', colorName);
+      data.push(this.buildFreeSampleOrderItem(5, 'Fabric', fabricName, ids.fabricId || null, ids.fabricId || null));
+      data.push(this.buildFreeSampleOrderItem(5, 'Color', colorName, ids.colorId || null, ids.colorId || null));
     } else {
-      data['color'] = this.buildFreeSampleParameter('20', 'Color', colorName);
+      data.push(this.buildFreeSampleOrderItem(20, 'Color', colorName, ids.colorId || null, ids.colorId || null));
     }
 
     return data;
   }
 
-  private buildFreeSampleParameter(type: string, name: string, option: string | number): Record<string, any> {
+  private buildFreeSampleOrderItem(
+    fieldType: number,
+    fieldName: string,
+    value: string | number,
+    optionId: number | null = null,
+    valueId: string | number | null = null,
+    optionQuantity: number | null = null
+  ): Record<string, any> {
     return {
-      ParameterType: type,
-      ParameterName: name,
-      ParameterOption: option,
-      fieldCode: '',
-      ParameterFraction: '',
-      DualSeq: '',
-      ParameterSelectType: '0'
+      id: fieldType,
+      labelname: fieldName,
+      value,
+      valueid: valueId,
+      type: fieldType,
+      optionid: optionId,
+      optionvalue: [],
+      optionquantity: optionQuantity,
+      issubfabric: 0,
+      labelnamecode: this.slugify(fieldName),
+      fabricorcolor: fieldType === 5 || fieldType === 20 ? 1 : 0,
+      widthfraction: null,
+      widthfractiontext: null,
+      dropfraction: null,
+      dropfractiontext: null,
+      showfieldonjob: 1,
+      subchild: [],
+      showFieldOnCustomerPortal: 1,
+      globaledit: false,
+      numberfraction: null,
+      numberfractiontext: null,
+      fieldlevel: 0,
+      mandatory: 0,
+      fieldInformation: null,
+      ruleoverride: null,
+      optiondefault: optionId,
+      optionsvalue: [],
+      editruleoverride: 0,
+      fieldtypeid: fieldType,
+      fieldid: fieldType,
+      fieldname: fieldName
     };
   }
 
@@ -1708,16 +1703,6 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       return null;
     }
     return this.paginatedFabricGroups.find((group) => group.key === popupKey) || null;
-  }
-
-  private getFreeSampleSubmitKey(product: ListingProductItem): string {
-    return [
-      this.productId || 0,
-      this.toNumber(product.fd_id || product.fabricid),
-      this.toNumber(product.cd_id || product.colorid),
-      this.toNumber(product.groupid || product.pricegroupid),
-      this.toNumber(product.supplierid || product.supplier_id)
-    ].join('_');
   }
 
   getProductImage(product: ListingProductItem): string {

@@ -361,16 +361,17 @@
                   <span class="btn-label">Customize</span>
                   <mat-icon aria-hidden="true">arrow_forward</mat-icon>
                 </button>
-                <button
+                <app-freesample
+                  class="sample-action"
                   *ngIf="canShowFreeSample(product)"
-                  mat-stroked-button
-                  type="button"
-                  class="sample-btn"
-                  [disabled]="isFreeSampleSubmitting(product)"
-                  (click)="onFreeSampleClick(product, $event)">
-                  <mat-icon *ngIf="!isFreeSampleSubmitting(product)" aria-hidden="true">shopping_cart</mat-icon>
-                  <span class="btn-label">{{ isFreeSampleSubmitting(product) ? 'Adding...' : freeSampleButtonLabel }}</span>
-                </button>
+                  mode="button"
+                  buttonStyle="stroked"
+                  buttonClass="sample-btn"
+                  buttonIcon="shopping_cart"
+                  buttonLabel="Add Sample"
+                  buttonLoadingLabel="Adding..."
+                  [freesampledata]="buildListingFreeSampleData(product)">
+                </app-freesample>
               </div>
             </mat-card-content>
           </mat-card>
@@ -473,16 +474,17 @@
                   <span class="btn-label">Customize</span>
                   <mat-icon aria-hidden="true">arrow_forward</mat-icon>
                 </button>
-                <button
+                <app-freesample
+                  class="sample-action"
                   *ngIf="canShowFreeSample(group.activeVariant)"
-                  mat-stroked-button
-                  type="button"
-                  class="sample-btn"
-                  [disabled]="isFreeSampleSubmitting(group.activeVariant)"
-                  (click)="onFreeSampleClick(group.activeVariant, $event)">
-                  <mat-icon *ngIf="!isFreeSampleSubmitting(group.activeVariant)" aria-hidden="true">shopping_cart</mat-icon>
-                  <span class="btn-label">{{ isFreeSampleSubmitting(group.activeVariant) ? 'Adding...' : freeSampleButtonLabel }}</span>
-                </button>
+                  mode="button"
+                  buttonStyle="stroked"
+                  buttonClass="sample-btn"
+                  buttonIcon="shopping_cart"
+                  buttonLabel="Add Sample"
+                  buttonLoadingLabel="Adding..."
+                  [freesampledata]="buildListingFreeSampleData(group.activeVariant)">
+                </app-freesample>
               </div>
             </mat-card-content>
           </mat-card>
