@@ -370,7 +370,7 @@
                   buttonIcon="shopping_cart"
                   buttonLabel="Add Sample"
                   buttonLoadingLabel="Adding..."
-                  [freesampledata]="buildListingFreeSampleData(product)">
+                  [freesampledata]="product.__freeSampleData">
                 </app-freesample>
               </div>
             </mat-card-content>
@@ -483,7 +483,7 @@
                   buttonIcon="shopping_cart"
                   buttonLabel="Add Sample"
                   buttonLoadingLabel="Adding..."
-                  [freesampledata]="buildListingFreeSampleData(group.activeVariant)">
+                  [freesampledata]="group.activeVariant.__freeSampleData">
                 </app-freesample>
               </div>
             </mat-card-content>

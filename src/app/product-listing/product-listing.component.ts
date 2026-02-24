@@ -62,6 +62,7 @@ interface ListingProductItem {
   __listing?: ListingProductComputed;
   __trackKey?: string;
   __variantKey?: string;
+  __freeSampleData?: Record<string, any>;
   [key: string]: any;
 }
 
@@ -1403,7 +1404,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     return colorId > 0;
   }
 
-  buildListingFreeSampleData(product: ListingProductItem): Record<string, any> {
+  private buildListingFreeSampleData(product: ListingProductItem): Record<string, any> {
     const request = this.buildFreeSampleCartRequest(product);
     return {
       status: 1,
@@ -1602,6 +1603,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     };
     product.__trackKey = this.buildProductTrackKey(product, fallbackIndex);
     product.__variantKey = this.computeFabricVariantKey(product);
+    product.__freeSampleData = this.buildListingFreeSampleData(product);
 
     return product;
   }
