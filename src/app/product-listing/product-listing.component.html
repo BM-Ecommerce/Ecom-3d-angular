@@ -1,6 +1,6 @@
 <div class="listing-page">
   <div class="listing-skeleton" *ngIf="isLoading" aria-hidden="true">
-    <div class="skeleton skeleton-banner"></div>
+    <div class="skeleton skeleton-banner" *ngIf="showListingBanner"></div>
 
     <div class="listing-page-inner listing-main">
       <section class="listing-header skeleton-header">
