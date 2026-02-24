@@ -784,6 +784,18 @@
   padding: 4px;
 }
 
+/* Use the listing gradient for checked checkbox backgrounds (legacy + MDC). */
+:host ::ng-deep .filter-option.mat-checkbox-checked.mat-accent .mat-checkbox-background,
+:host ::ng-deep .filter-option.mat-checkbox-indeterminate.mat-accent .mat-checkbox-background {
+  background: var(--primary-gradient) !important;
+}
+
+:host ::ng-deep .filter-option .mdc-checkbox__native-control:enabled:checked ~ .mdc-checkbox__background,
+:host ::ng-deep .filter-option .mdc-checkbox__native-control:enabled:indeterminate ~ .mdc-checkbox__background {
+  background: var(--primary-gradient) !important;
+  border-color: var(--primary-color) !important;
+}
+
 .filter-option img {
   width: 20px;
   height: 20px;
