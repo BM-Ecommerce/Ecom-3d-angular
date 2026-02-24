@@ -302,7 +302,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('document:keydown.escape', ['$event'])
-  onEscapeKeydown(event: KeyboardEvent): void {
+  onEscapeKeydown(event: Event): void {
     if (!this.isSortMenuOpen) {
       return;
     }
