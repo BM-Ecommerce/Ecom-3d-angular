@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject, Subscription, forkJoin, from, of } from 'rxjs';
@@ -10,8 +10,6 @@ import Swal from 'sweetalert2';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 
 interface ListingCategoryValue {
@@ -120,8 +118,6 @@ type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatFormFieldModule,
-    MatSelectModule,
     MatCheckboxModule
   ],
   templateUrl: './product-listing.component.html',
@@ -129,6 +125,7 @@ type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductListingComponent implements OnInit, OnDestroy {
+  @ViewChild('sortDropdownRef') sortDropdownRef?: ElementRef<HTMLElement>;
   private destroy$ = new Subject<void>();
   private listRequestSub: Subscription | null = null;
   private listRequestVersion = 0;
@@ -161,6 +158,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   gridColumns = 3;
   isMobileViewport = false;
   isMobileFilterDrawerOpen = false;
+  isSortMenuOpen = false;
   sortBy: SortKey = 'defaultsorting';
   currencySymbol = '\u00A3';
   // Component-level toggle: set true to show Supplier/Brands filter category.
@@ -195,6 +193,12 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   readonly skeletonCards = Array.from({ length: 6 });
   readonly skeletonFilterBlocks = Array.from({ length: 3 });
   readonly skeletonFilterLines = Array.from({ length: 4 });
+  readonly sortOptions: Array<{ value: SortKey; label: string }> = [
+    { value: 'defaultsorting', label: 'Featured' },
+    { value: 'bestselling', label: 'Bestselling' },
+    { value: 'priceasc', label: 'Price: Low to High' },
+    { value: 'pricedesc', label: 'Price: High to Low' }
+  ];
 
   readonly imgpath = `${environment.apiUrl}/api/public/storage/attachments/${environment.apiName}/material/colour/`;
   private readonly composedImageCacheLimit = 120;
@@ -284,6 +288,29 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     }, 120);
   }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    if (!this.isSortMenuOpen) {
+      return;
+    }
+    const dropdownElement = this.sortDropdownRef?.nativeElement;
+    const targetNode = event.target as Node | null;
+    if (!dropdownElement || !targetNode || !dropdownElement.contains(targetNode)) {
+      this.isSortMenuOpen = false;
+      this.cd.markForCheck();
+    }
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscapeKeydown(event: KeyboardEvent): void {
+    if (!this.isSortMenuOpen) {
+      return;
+    }
+    event.preventDefault();
+    this.isSortMenuOpen = false;
+    this.cd.markForCheck();
+  }
+
   private applyViewportMode(): void {
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1280;
     const nextIsMobile = viewportWidth <= this.mobileViewportMaxWidth;
@@ -303,6 +330,10 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         this.lastDesktopGridColumns = this.gridColumns;
         this.gridColumns = 1;
         this.forceListByMobileViewport = true;
+        shouldMarkForCheck = true;
+      }
+      if (this.isSortMenuOpen) {
+        this.isSortMenuOpen = false;
         shouldMarkForCheck = true;
       }
     } else {
@@ -332,6 +363,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (this.isMobileFilterDrawerOpen) {
       return;
     }
+    this.isSortMenuOpen = false;
     this.isMobileFilterDrawerOpen = true;
     this.cd.markForCheck();
   }
@@ -347,6 +379,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   private loadListingData(): void {
+    this.isSortMenuOpen = false;
     this.isLoading = true;
     this.errorMessage = null;
     this.listErrorMessage = null;
@@ -710,9 +743,31 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   onSortChange(rawValue: string): void {
     const validValues: SortKey[] = ['defaultsorting', 'bestselling', 'priceasc', 'pricedesc'];
     const nextSort = (validValues.includes(rawValue as SortKey) ? rawValue : 'defaultsorting') as SortKey;
+    this.isSortMenuOpen = false;
+    if (this.sortBy === nextSort) {
+      this.cd.markForCheck();
+      return;
+    }
     this.sortBy = nextSort;
     this.syncListingStateToQueryParams({ resetPage: true });
     this.scheduleListingFetch(true, 100);
+  }
+
+  toggleSortMenu(event?: Event): void {
+    event?.preventDefault();
+    this.isSortMenuOpen = !this.isSortMenuOpen;
+    this.cd.markForCheck();
+  }
+
+  onSortOptionSelect(value: SortKey, event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.onSortChange(value);
+  }
+
+  getSortLabel(sortBy: SortKey): string {
+    const option = this.sortOptions.find((sortOption) => sortOption.value === sortBy);
+    return option?.label || 'Featured';
   }
 
   private scheduleListingFetch(resetPage: boolean, delayMs = 0): void {
@@ -1148,6 +1203,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   readonly trackPaginationToken = (index: number, token: number | string): string => `${token}_${index}`;
+  readonly trackSortOption = (index: number, option: { value: SortKey; label: string }): string => option.value;
 
   private goToPage(pageNumber: number): void {
     const nextPage = this.toPositiveInt(pageNumber, 1);

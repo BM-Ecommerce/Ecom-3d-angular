@@ -106,17 +106,30 @@
             <span>Filters</span>
           </button>
 
-          <mat-form-field appearance="outline" class="sort-field">
-            <mat-select
-              [value]="sortBy"
-              panelClass="listing-sort-panel"
-              (selectionChange)="onSortChange($event.value)">
-              <mat-option value="defaultsorting">Featured</mat-option>
-              <mat-option value="bestselling">Bestselling</mat-option>
-              <mat-option value="priceasc">Price: Low to High</mat-option>
-              <mat-option value="pricedesc">Price: High to Low</mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="sort-field" [class.open]="isSortMenuOpen" #sortDropdownRef>
+            <button
+              type="button"
+              class="sort-toggle-btn"
+              aria-haspopup="listbox"
+              [attr.aria-expanded]="isSortMenuOpen"
+              aria-label="Sort listing"
+              (click)="toggleSortMenu($event)">
+              <span class="sort-toggle-label">{{ getSortLabel(sortBy) }}</span>
+            </button>
+
+            <div class="sort-menu" role="listbox" aria-label="Sort options" *ngIf="isSortMenuOpen">
+              <button
+                type="button"
+                class="sort-menu-option"
+                *ngFor="let option of sortOptions; trackBy: trackSortOption"
+                [class.active]="sortBy === option.value"
+                [attr.aria-selected]="sortBy === option.value"
+                (click)="onSortOptionSelect(option.value, $event)">
+                <span>{{ option.label }}</span>
+                <mat-icon *ngIf="sortBy === option.value" aria-hidden="true">check</mat-icon>
+              </button>
+            </div>
+          </div>
 
           <div class="view-switch" role="group" aria-label="Listing view mode" *ngIf="!isMobileViewport">
             <button
