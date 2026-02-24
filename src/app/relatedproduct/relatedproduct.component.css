@@ -1,4 +1,19 @@
 
+:host {
+  --primary-color: #1540fc;
+  --primary-color-rgb: 21, 64, 252;
+  --primary-gradient: linear-gradient(90deg, #1540fc 0%, #3985f6 100%);
+  --card-bg: #ffffff;
+  --border-radius: 0.5rem;
+  --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+  --border-color: #dee2e6;
+}
+
+:host,
+:host *:not(mat-icon):not(.mat-icon):not(.material-icons):not(.material-symbols-outlined) {
+  font-family: Arial, sans-serif !important;
+}
+
 .related-products-container {
   margin-top: 10px;
   padding: 10px 0;
@@ -21,6 +36,10 @@
 
 .rp-title {
   color: var(--primary-color);
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   font-size: 17px;
   margin-bottom: 15px;
 }
@@ -67,9 +86,27 @@
   overflow: hidden;
 }
 mat-button-toggle.mat-button-toggle-checked {
-  background-color:var(--primary-color) !important; 
+  background: var(--primary-gradient) !important;
   color: #fff !important;              
   border-color: var(--primary-color) !important;     
+}
+
+.related-products-view-controls mat-button-toggle {
+  background: #fff;
+}
+
+.related-products-view-controls mat-button-toggle .mat-icon {
+  color: var(--primary-color);
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.related-products-view-controls mat-button-toggle.mat-button-toggle-checked .mat-icon {
+  color: #fff;
+  background: none;
+  -webkit-text-fill-color: currentColor;
 }
 
 .rp-image-box img {
@@ -103,11 +140,17 @@ mat-button-toggle.mat-button-toggle-checked {
   margin-top: 6px;
   font-weight: 700;
   color: var(--primary-color);
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .related-products-container .owl-prev,
 .related-products-container .owl-next {
-  background: var(--primary-color) !important;
+  background: var(--primary-gradient) !important;
+  border: 1px solid var(--primary-color);
+  color: #fff !important;
 }
 
 .owl-nav button {

@@ -602,7 +602,7 @@ hasDescriptionContent = false;
         this.isCalculatingPrice = true;
         const { grossprice } = res.fullpriceobject;
         this.pricedata = res.fullpriceobject;
-        this.currencySymbol = res.currencysymbol;
+        this.currencySymbol = this.normalizeCurrencySymbol(res.currencysymbol);
         this.grossPrice = `${this.currencySymbol}${Number(grossprice).toFixed(2)}`;
         this.grossPricenum = Number(grossprice);
       } else {
@@ -631,6 +631,21 @@ hasDescriptionContent = false;
     if (this.wheelListener && this.containerRef?.nativeElement) {
       this.containerRef.nativeElement.removeEventListener('wheel', this.wheelListener);
     }
+  }
+
+  private normalizeCurrencySymbol(symbol: unknown): string {
+    const raw = String(symbol ?? '').trim();
+    if (!raw) {
+      return this.currencySymbol || '£';
+    }
+
+    // Handle common encoding/entity variants from backend responses.
+    const normalized = raw
+      .replace(/&pound;?/gi, '£')
+      .replace(/\u00c2£/g, '£')
+      .replace(/Â£/g, '£');
+
+    return normalized || this.currencySymbol || '£';
   }
 
   ngAfterViewInit(): void {

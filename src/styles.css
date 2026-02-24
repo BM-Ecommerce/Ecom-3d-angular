@@ -1,9 +1,9 @@
 /* You can add global styles to this file, and also import other style files */
 
 html, body { height: 100%; }
-body { margin: 0; font-family: 'Poppins', sans-serif!important; }
+body { margin: 0; font-family: Arial, sans-serif !important; }
 .mat-h1, .mat-headline, .mat-typography h1,.mat-expansion-panel-header,.show-order-details-contents{
-    font-family: 'Poppins', sans-serif!important; 
+    font-family: Arial, sans-serif !important;
 }
 .mat-input-element {
     caret-color: var(--primary-color) !important;
