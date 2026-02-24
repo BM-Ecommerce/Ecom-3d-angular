@@ -1262,7 +1262,7 @@ mat-button-toggle-group:disabled {
     cursor: pointer !important;
     box-shadow: 0 0 10px rgb(46 53 71 / 50%);
     background-color: var(--color-white);
-    border-radius: 2px;
+    border-radius: 14px;
     border: 2px solid transparent;
     margin: 5px 2px;
     vertical-align: top;
@@ -1296,6 +1296,8 @@ mat-button-toggle-group:disabled {
   transition: border-color 0.25s ease;
   cursor: pointer;
   border: 1px solid #d4d3cf;
+  border-radius: 14px;
+  display: flex;
 }
 .list_view_name_section{
   width: 85px;
@@ -1356,7 +1358,9 @@ mat-button-toggle-group:disabled {
 #unit_type_section_wrapper{
   margin-bottom:2rem;
 }
-
+.mat-button-toggle-group {
+    border-radius: 14px;
+}
 #materials_section_wrapper  .color_list_view_wrapper,
 #list_section_wrapper .list_view_wrapper{
   position:absolute;
