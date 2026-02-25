@@ -1381,8 +1381,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         fabricId,
         colorId,
         pricingGroup,
-        supplier,
-        cartProductId
+        supplier
       ],
       {
         state: {
