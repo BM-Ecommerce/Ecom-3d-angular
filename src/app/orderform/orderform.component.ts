@@ -2040,10 +2040,10 @@ public onToggleLoopAnimate(): void {
     const cartProductId = this.resolveCartProductId();
 
     if (productId && cartProductId) {
-      return ['/listing', productId, productSlug, cartProductId];
+      return ['/product-listing', productId, productSlug, cartProductId];
     }
     if (productId) {
-      return ['/listing', productId, productSlug];
+      return ['/product-listing', productId, productSlug];
     }
     return ['/'];
   }

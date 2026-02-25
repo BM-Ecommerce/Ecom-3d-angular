@@ -5,8 +5,8 @@ import { OrderformComponent } from './orderform/orderform.component';
 import { ProductListingComponent } from './product-listing/product-listing.component';
 
 const routes: Routes = [
-  { path: 'listing/:product_id/:product/:cart_productid', component: ProductListingComponent },
-  { path: 'listing/:product_id/:product', component: ProductListingComponent },
+  { path: 'product-listing/:product_id/:product/:cart_productid', component: ProductListingComponent },
+  { path: 'product-listing/:product_id/:product', component: ProductListingComponent },
   { path: '', component: OrderformComponent },
   { path: ':product_id/:product/:fabric/:fabric_id/:color_id/:pricing_group/:supplier/:cart_productid', component: OrderformComponent },
   { path: ':product_id/:product/:fabric/:fabric_id/:color_id/:pricing_group/:supplier', component: OrderformComponent },
