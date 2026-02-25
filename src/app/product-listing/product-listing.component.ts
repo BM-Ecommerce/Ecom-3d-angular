@@ -168,12 +168,14 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   showSupplierBrandsCategory = false;
   // Component-level toggle: set true to enable grouped Fabric view switch.
   enableFabricGroupedView = true;
+  // Only listing category 3 supports grouped fabric view.
+  private readonly fabricViewCategoryId = 3;
   // Component-level toggle: set false to hide frame in listing cards.
   showFrameInProductListing = true;
   // Component-level toggle: set false to hide top banner.
   // When hidden, breadcrumb is shown under the listing page title.
   showListingBanner = false;
-  catalogViewMode: 'products' | 'fabrics' = 'fabrics';
+  catalogViewMode: 'products' | 'fabrics' = 'products';
 
   categories: ListingCategory[] = [];
   hasSidebarFilters = false;
@@ -218,6 +220,14 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private readonly mobileViewportMaxWidth = 640;
   private forceListByMobileViewport = false;
   private lastDesktopGridColumns = this.gridColumns;
+
+  get canUseFabricView(): boolean {
+    return this.enableFabricGroupedView && this.productCategory === this.fabricViewCategoryId;
+  }
+
+  get isFabricViewMode(): boolean {
+    return this.canUseFabricView && this.catalogViewMode === 'fabrics';
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -323,7 +333,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.isMobileViewport = nextIsMobile;
       shouldMarkForCheck = true;
       // Recompute preview chips count when switching desktop/mobile.
-      if (this.catalogViewMode === 'fabrics' && this.paginatedProducts.length) {
+      if (this.isFabricViewMode && this.paginatedProducts.length) {
         this.rebuildFabricGroups(this.paginatedProducts);
       }
     }
@@ -426,6 +436,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         }
         this.listingFrameImageUrl = nextFrameUrl;
         this.productCategory = this.toNumber(product.pi_category);
+        this.catalogViewMode = this.canUseFabricView ? 'fabrics' : 'products';
         this.ecomFreeSample = this.toBoolean(product.pei_ecomFreeSample);
         this.ecomSamplePrice = this.toNumber(product.pei_ecomsampleprice);
         this.fieldscategoryid = this.resolveFieldsCategoryId(product.pi_category);
@@ -571,7 +582,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     const catalogFromQuery = String(
       queryParams['catalog'] ?? queryParams['catalog_view'] ?? queryParams['view_mode'] ?? ''
     ).trim().toLowerCase();
-    if (this.enableFabricGroupedView && (catalogFromQuery === 'products' || catalogFromQuery === 'fabrics')) {
+    if (this.canUseFabricView && (catalogFromQuery === 'products' || catalogFromQuery === 'fabrics')) {
       this.catalogViewMode = catalogFromQuery as 'products' | 'fabrics';
     }
 
@@ -643,7 +654,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
     delete nextQueryParams['catalog_view'];
     delete nextQueryParams['view_mode'];
-    if (this.enableFabricGroupedView) {
+    if (this.canUseFabricView) {
       nextQueryParams['catalog'] = this.catalogViewMode;
     } else {
       delete nextQueryParams['catalog'];
@@ -821,7 +832,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const isFabricMode = this.catalogViewMode === 'fabrics';
+    const isFabricMode = this.isFabricViewMode;
     const page = isFabricMode ? 1 : this.pageIndex + 1;
     const perPage = isFabricMode ? this.fabricFetchPerPage : this.pageSize;
     const sort = this.sortBy === 'defaultsorting' ? '' : this.sortBy;
@@ -1111,7 +1122,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     if (this.isMobileViewport) {
       if (this.gridColumns !== 1) {
         this.gridColumns = 1;
-        if (this.catalogViewMode === 'fabrics' && this.paginatedProducts.length) {
+        if (this.isFabricViewMode && this.paginatedProducts.length) {
           this.rebuildFabricGroups(this.paginatedProducts);
         }
         this.cd.markForCheck();
@@ -1129,7 +1140,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.gridColumns = normalizedColumns;
     this.forceListByMobileViewport = false;
     this.lastDesktopGridColumns = normalizedColumns;
-    if (this.catalogViewMode === 'fabrics' && this.paginatedProducts.length) {
+    if (this.isFabricViewMode && this.paginatedProducts.length) {
       this.rebuildFabricGroups(this.paginatedProducts);
     }
     this.syncListingStateToQueryParams();
@@ -1137,7 +1148,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   setCatalogViewMode(mode: 'products' | 'fabrics'): void {
-    if (!this.enableFabricGroupedView) {
+    if (!this.canUseFabricView) {
       this.catalogViewMode = 'products';
       this.fabricColorPopupGroupKey = null;
       return;
@@ -1227,7 +1238,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
     this.pageIndex = clampedPage - 1;
     this.syncListingStateToQueryParams();
-    if (this.catalogViewMode === 'fabrics') {
+    if (this.isFabricViewMode) {
       this.updateFabricGroupsPagination();
       this.prepareListingCardCompositions();
       this.cd.markForCheck();
@@ -1744,7 +1755,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     }
 
     const sourceProducts =
-      this.catalogViewMode === 'fabrics'
+      this.isFabricViewMode
         ? this.paginatedFabricGroups.map((group) => group.activeVariant)
         : this.paginatedProducts;
 
@@ -2124,7 +2135,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   get activeResultCount(): number {
-    if (this.catalogViewMode === 'fabrics') {
+    if (this.isFabricViewMode) {
       return this.fabricGroups.length;
     }
     return this.totalProducts;
@@ -2135,7 +2146,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   }
 
   get visibleResultCount(): number {
-    if (this.catalogViewMode === 'fabrics') {
+    if (this.isFabricViewMode) {
       return this.paginatedFabricGroups.length;
     }
     return this.paginatedProducts.length;
@@ -2281,7 +2292,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     groups.sort((a, b) => a.fabricName.localeCompare(b.fabricName));
     this.selectedFabricVariantByGroup = nextSelected;
     this.fabricGroups = groups;
-    if (this.catalogViewMode === 'fabrics') {
+    if (this.isFabricViewMode) {
       this.updateFabricGroupsPagination();
       return;
     }
