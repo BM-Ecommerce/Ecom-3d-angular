@@ -9,7 +9,9 @@ const routes: Routes = [
   { path: 'listing/:product_id/:product', component: ProductListingComponent },
   { path: '', component: OrderformComponent },
   { path: ':product_id/:product/:fabric/:fabric_id/:color_id/:pricing_group/:supplier/:cart_productid', component: OrderformComponent },
+  { path: ':product_id/:product/:fabric/:fabric_id/:color_id/:pricing_group/:supplier', component: OrderformComponent },
   { path: ':product_id/:fabric_id/:cart_productid', component: OrderformComponent },
+  { path: ':product_id/:fabric_id', component: OrderformComponent },
   { path: '404', component: NotFoundComponent },
   { path: '**', redirectTo: '404' }
 ];

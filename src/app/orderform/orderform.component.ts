@@ -333,10 +333,29 @@ hasDescriptionContent = false;
     this.updateSkeletonState();
   }
 
+  private resolveCartProductId(params?: any): string {
+    const candidates = [
+      this.route.snapshot.params['cart_productid'],
+      params?.cart_productid,
+      this.route.snapshot.queryParams['cart_productid'],
+      this.routeParams?.cart_productid,
+      environment.cart_productid
+    ];
+
+    for (const candidate of candidates) {
+      const value = String(candidate ?? '').trim();
+      if (value) {
+        return value;
+      }
+    }
+
+    return '';
+  }
+
   get_freesample() {
     this.freesample = {
       "status": this?.freesameple_status,
-      "cart_productid": this?.routeParams?.cart_productid,
+      "cart_productid": this.resolveCartProductId(),
       "product_id": this.product_id,
       "type": "free_sample",
       "free_sample_price": this?.freesample_price,
@@ -563,6 +582,7 @@ hasDescriptionContent = false;
       ).subscribe(paramsFromRoute => {
         const params = {
           ...paramsFromRoute,
+          cart_productid: this.resolveCartProductId(paramsFromRoute),
           api_url: environment.apiUrl,
           api_key: environment.apiKey,
           api_name: environment.apiName,
@@ -577,6 +597,7 @@ hasDescriptionContent = false;
       ).subscribe(queryParams => {
         const params = {
           ...queryParams,
+          cart_productid: this.resolveCartProductId(queryParams),
           api_url: environment.apiUrl,
           api_key: environment.apiKey,
           api_name: environment.apiName,
@@ -1997,8 +2018,9 @@ public onToggleLoopAnimate(): void {
     const slug1 = product.productname.toLowerCase().replace(/ /g, '-');
     const slug2 = (product.fabricname + '-' + product.colorname)
                     .toLowerCase().replace(/ /g, '-');
+    const cartProductId = this.resolveCartProductId();
 
-    return `${this.siteurl}/visualizer/${this.product_id}/${slug1}/${slug2}/${product.fd_id}/${product.cd_id}/${product.groupid}/${product.supplierid}/${this.routeParams.cart_productid}`;
+    return `${this.siteurl}/visualizer/${this.product_id}/${slug1}/${slug2}/${product.fd_id}/${product.cd_id}/${product.groupid}/${product.supplierid}/${cartProductId}`;
   }
   get canGoBackToListing(): boolean {
     const isListingCategory = this.category === 3 || this.category === 4;
@@ -2030,7 +2052,7 @@ public onToggleLoopAnimate(): void {
     const productId = this.route.snapshot.params['product_id'] || this.routeParams?.product_id || this.product_id;
     const routeProductSlug = this.route.snapshot.params['product'] || this.routeParams?.product;
     const productSlug = this.toRouteSlug(routeProductSlug || this.productslug || this.productname || this.ecomproductname);
-    const cartProductId = this.route.snapshot.params['cart_productid'] || this.routeParams?.cart_productid;
+    const cartProductId = this.resolveCartProductId();
 
     if (productId && cartProductId) {
       return ['/listing', productId, productSlug, cartProductId];
@@ -3159,7 +3181,8 @@ public onToggleLoopAnimate(): void {
     //console.log(this.jsondata);
    
 
-    if (!this.routeParams || !this.routeParams.site || !this.routeParams.cart_productid) {
+    const cartProductId = this.resolveCartProductId();
+    if (!this.routeParams || !this.routeParams.site || !cartProductId) {
       this.errorMessage = 'Missing required route parameters for cart submission.';
       this.isSubmitting = false;
       this.cd.markForCheck();
@@ -3175,7 +3198,7 @@ public onToggleLoopAnimate(): void {
       visualizerImage = this.threeService.getCanvasDataURL(); // string already
     }
 
-    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid,Number(this.product_id), environment.site,
+    this.apiService.addToCart(this.jsondata, cartProductId,Number(this.product_id), environment.site,
       this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname),
       this.pricedata,
       this.vatpercentage,
