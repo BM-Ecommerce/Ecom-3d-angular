@@ -1986,6 +1986,11 @@ public onToggleLoopAnimate(): void {
     return `${this.siteurl}/visualizer/${this.product_id}/${slug1}/${slug2}/${product.fd_id}/${product.cd_id}/${product.groupid}/${product.supplierid}/${this.routeParams.cart_productid}`;
   }
   get canGoBackToListing(): boolean {
+    const isListingCategory = this.category === 3 || this.category === 4;
+    if (!isListingCategory) {
+      return false;
+    }
+
     if (this.listingReturnUrl) {
       return true;
     }
