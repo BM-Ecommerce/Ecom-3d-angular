@@ -173,7 +173,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   // Component-level toggle: set false to hide top banner.
   // When hidden, breadcrumb is shown under the listing page title.
   showListingBanner = false;
-  catalogViewMode: 'products' | 'fabrics' = 'products';
+  catalogViewMode: 'products' | 'fabrics' = 'fabrics';
 
   categories: ListingCategory[] = [];
   hasSidebarFilters = false;
@@ -643,8 +643,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
     delete nextQueryParams['catalog_view'];
     delete nextQueryParams['view_mode'];
-    if (this.enableFabricGroupedView && this.catalogViewMode === 'fabrics') {
-      nextQueryParams['catalog'] = 'fabrics';
+    if (this.enableFabricGroupedView) {
+      nextQueryParams['catalog'] = this.catalogViewMode;
     } else {
       delete nextQueryParams['catalog'];
     }
