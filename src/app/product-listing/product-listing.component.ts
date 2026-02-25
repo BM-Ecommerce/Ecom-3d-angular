@@ -233,6 +233,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe((routeParams) => {
       const queryParams = this.route.snapshot.queryParams || {};
       const productId = routeParams['product_id'] ?? queryParams['product_id'];
+      const routeCartProductId = this.resolveCartProductId(routeParams, queryParams);
       this.shouldRestoreListingScroll =
         this.router.getCurrentNavigation()?.trigger === 'popstate' || this.hasPendingScrollRestore();
 
@@ -246,7 +247,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         ...queryParams,
         ...routeParams,
         product_id: productId,
-        cart_productid: routeParams['cart_productid'] ?? queryParams['cart_productid'] ?? '',
+        cart_productid: routeCartProductId,
         api_url: environment.apiUrl,
         api_key: environment.apiKey,
         api_name: environment.apiName,
@@ -405,14 +406,15 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
         this.productDataPayload = productData;
         this.productId = Number(product.pei_productid || this.params.product_id || 0);
-        const routeCartId = this.toNumber(this.params?.cart_productid);
+        const resolvedCartProductId = this.resolveCartProductId();
+        const routeCartId = this.toNumber(resolvedCartProductId);
         const productCartId = this.toNumber(
           product.pei_id || product.cart_productid || product.cartproductid || product.wp_product_id
         );
         this.cartProductId = routeCartId > 0 ? routeCartId : (productCartId > 0 ? productCartId : this.productId);
         this.params = {
           ...this.params,
-          cart_productid: String(this.cartProductId || '')
+          cart_productid: resolvedCartProductId || String(this.cartProductId || '')
         };
         this.productTitle = product.pei_ecomProductName || product.label || '';
         this.productSlug = this.slugify(product.label || this.productTitle);
@@ -1367,7 +1369,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     const colorId = this.toNumber(product.cd_id || product.colorid);
     const pricingGroup = this.toNumber(product.groupid || product.pricegroupid);
     const supplier = this.toNumber(product.supplierid || product.supplier_id);
-    const cartProductId = this.cartProductId || this.toNumber(this.params?.cart_productid) || this.productId;
+    const cartProductId = this.getEffectiveCartProductId();
 
     this.saveListingScrollPosition();
     this.router.navigate(
@@ -1446,9 +1448,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     const productDisplayName = this.getProductDisplayName(product);
     const categoryId = this.fieldscategoryid || this.resolveFieldsCategoryId(this.productCategory);
     const siteUrl = this.params?.site || environment.site;
-    const cartProductId = String(
-      this.cartProductId || this.toNumber(this.params?.cart_productid) || this.productId || this.toNumber(this.params?.product_id) || ''
-    );
+    const cartProductId = this.getEffectiveCartProductId();
     const resolvedProductId = this.productId || this.toNumber(this.params?.product_id);
     const productName = String(product.productname || this.productTitle || '').trim() || this.productTitle;
 
@@ -2521,6 +2521,40 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     }
     const numeric = Number(String(value).replace(/[^0-9.-]/g, ''));
     return Number.isFinite(numeric) ? numeric : 0;
+  }
+
+  private resolveCartProductId(routeParams?: any, queryParams?: any): string {
+    const candidates = [
+      routeParams?.['cart_productid'],
+      queryParams?.['cart_productid'],
+      this.route.snapshot.params['cart_productid'],
+      this.route.snapshot.queryParams['cart_productid'],
+      this.params?.cart_productid,
+      environment.cart_productid
+    ];
+
+    for (const candidate of candidates) {
+      const value = String(candidate ?? '').trim();
+      if (value) {
+        return value;
+      }
+    }
+
+    return '';
+  }
+
+  private getEffectiveCartProductId(): string {
+    const routeOrEnvironmentCartId = this.resolveCartProductId();
+    if (routeOrEnvironmentCartId) {
+      return routeOrEnvironmentCartId;
+    }
+
+    if (this.cartProductId > 0) {
+      return String(this.cartProductId);
+    }
+
+    const fallbackProductId = this.productId || this.toNumber(this.params?.product_id);
+    return fallbackProductId > 0 ? String(fallbackProductId) : '';
   }
 
   private roundCurrency(value: number): number {
