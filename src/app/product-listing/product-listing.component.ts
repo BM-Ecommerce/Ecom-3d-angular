@@ -230,6 +230,10 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     return this.canUseFabricView && this.catalogViewMode === 'fabrics';
   }
 
+  get showListGridViewToggle(): boolean {
+    return !this.forceListByMobileViewport;
+  }
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -243,6 +247,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.applyViewportMode();
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe((routeParams) => {
       const queryParams = this.route.snapshot.queryParams || {};
+      this.applyGridColumnsFromQueryParams(queryParams);
       const productId = routeParams['product_id'] ?? queryParams['product_id'];
       const routeCartProductId = this.resolveCartProductId(routeParams, queryParams);
       this.shouldRestoreListingScroll =
@@ -595,20 +600,27 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.catalogViewMode = catalogFromQuery as 'products' | 'fabrics';
     }
 
+    this.applyGridColumnsFromQueryParams(queryParams);
+  }
+
+  private applyGridColumnsFromQueryParams(queryParams: Record<string, any>): void {
     const gridFromQuery = this.toPositiveInt(
       queryParams['grid'] ?? queryParams['cols'] ?? queryParams['columns'],
       0
     );
-    if ([1, 2, 3, 4].includes(gridFromQuery)) {
-      this.lastDesktopGridColumns = gridFromQuery;
-      if (this.shouldForceListByViewport()) {
-        this.gridColumns = 1;
-        this.forceListByMobileViewport = true;
-      } else {
-        this.gridColumns = gridFromQuery;
-        this.forceListByMobileViewport = false;
-      }
+    if (![1, 2, 3, 4].includes(gridFromQuery)) {
+      return;
     }
+
+    this.lastDesktopGridColumns = gridFromQuery;
+    if (this.shouldForceListByViewport()) {
+      this.gridColumns = 1;
+      this.forceListByMobileViewport = true;
+      return;
+    }
+
+    this.gridColumns = gridFromQuery;
+    this.forceListByMobileViewport = false;
   }
 
   private syncListingStateToQueryParams(options: { resetPage?: boolean } = {}): void {
