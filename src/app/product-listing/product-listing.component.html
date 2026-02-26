@@ -108,6 +108,19 @@
             <span>Filters</span>
           </button>
 
+          <button
+            type="button"
+            class="wishlist-launch-btn"
+            *ngIf="enableWishlist"
+            [class.has-items]="wishlistCount > 0"
+            aria-haspopup="dialog"
+            [attr.aria-label]="'Open wishlist with ' + wishlistCount + ' items'"
+            (click)="openWishlistPopup($event)">
+            <mat-icon>favorite_border</mat-icon>
+            <span>Wishlist</span>
+            <span class="wishlist-launch-count" *ngIf="wishlistCount > 0">{{ wishlistCount }}</span>
+          </button>
+
           <div class="sort-field" [class.open]="isSortMenuOpen" #sortDropdownRef>
             <button
               type="button"
@@ -356,6 +369,15 @@
                   loading="lazy">
               </div>
             </button>
+            <button
+              type="button"
+              class="wishlist-btn"
+              *ngIf="enableWishlist"
+              [class.active]="isWishlisted(product)"
+              [attr.aria-label]="getWishlistAriaLabel(product)"
+              (click)="toggleWishlist(product, $event)">
+              <mat-icon aria-hidden="true">{{ isWishlisted(product) ? 'favorite' : 'favorite_border' }}</mat-icon>
+            </button>
             <mat-card-content class="card-content">
               <div class="card-info-row">
                 <div class="card-copy">
@@ -452,6 +474,15 @@
                   [alt]="group.fabricName"
                   loading="lazy">
               </div>
+            </button>
+            <button
+              type="button"
+              class="wishlist-btn"
+              *ngIf="enableWishlist"
+              [class.active]="isWishlisted(group.activeVariant)"
+              [attr.aria-label]="getWishlistAriaLabel(group.activeVariant)"
+              (click)="toggleWishlist(group.activeVariant, $event)">
+              <mat-icon aria-hidden="true">{{ isWishlisted(group.activeVariant) ? 'favorite' : 'favorite_border' }}</mat-icon>
             </button>
             <mat-card-content class="card-content">
               <div class="card-info-row">
@@ -581,6 +612,117 @@
 
             <div class="fabric-color-popup-selected">
               Selected: {{ getFabricColorName(popupGroup.activeVariant) }}
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="wishlist-popup-backdrop"
+          *ngIf="enableWishlist && isWishlistPopupOpen"
+          (click)="closeWishlistPopup($event)">
+          <div
+            class="wishlist-popup-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Wishlist"
+            (click)="onWishlistPopupPanelClick($event)">
+            <div class="wishlist-popup-head">
+              <div class="wishlist-popup-title">
+                <span class="wishlist-popup-title-icon" aria-hidden="true">
+                  <mat-icon>favorite</mat-icon>
+                </span>
+                <div class="wishlist-popup-title-copy">
+                  <h3>Wishlist</h3>
+                  <div class="wishlist-popup-subtitle">
+                    {{ wishlistCount }} saved item{{ wishlistCount === 1 ? '' : 's' }}
+                  </div>
+                </div>
+              </div>
+              <div class="wishlist-popup-head-actions">
+                <button
+                  mat-button
+                  type="button"
+                  *ngIf="wishlistCount > 0"
+                  (click)="clearWishlist($event)">
+                  Clear all
+                </button>
+                <button
+                  type="button"
+                  class="wishlist-popup-close"
+                  aria-label="Close wishlist"
+                  (click)="closeWishlistPopup($event)">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="wishlist-refresh-state" *ngIf="isWishlistRefreshing">
+              Refreshing latest prices and details...
+            </div>
+            <div class="wishlist-refresh-error" *ngIf="!isWishlistRefreshing && wishlistRefreshError">
+              {{ wishlistRefreshError }}
+            </div>
+
+            <div class="wishlist-popup-empty" *ngIf="wishlistItems.length === 0">
+              <mat-icon aria-hidden="true">favorite_border</mat-icon>
+              Your wishlist is empty.
+            </div>
+
+            <div class="wishlist-popup-list-wrap" *ngIf="wishlistItems.length > 0">
+              <div class="wishlist-popup-list">
+                <article
+                  class="wishlist-item-row"
+                  *ngFor="let item of wishlistItems; trackBy: trackWishlistItem">
+                  <button
+                    type="button"
+                    class="wishlist-item-image-btn"
+                    [attr.aria-label]="'Open ' + (item.displayName || item.productName)"
+                    (click)="openWishlistItem(item, $event)">
+                    <img
+                      [src]="item.imageUrl || 'assets/no-image.jpg'"
+                      [alt]="item.displayName || item.productName || 'Wishlist item'">
+                  </button>
+
+                  <div class="wishlist-item-copy">
+                    <div class="wishlist-item-product">{{ item.productName || 'Product' }}</div>
+                    <h4>{{ item.displayName || 'Saved item' }}</h4>
+                    <ng-container *ngIf="getWishlistMetaParts(item) as metaParts">
+                      <div class="wishlist-item-meta" *ngIf="metaParts.length > 0">
+                        <span *ngFor="let metaPart of metaParts">{{ metaPart }}</span>
+                      </div>
+                    </ng-container>
+                    <div class="wishlist-item-added">
+                      Saved {{ item.addedAt | date:'d MMM y' }}
+                    </div>
+                  </div>
+
+                  <div class="wishlist-item-price-wrap">
+                    <div class="wishlist-item-price-label">Price</div>
+                    <div class="wishlist-item-price" *ngIf="item.price > 0; else noWishlistPrice">
+                      {{ currencySymbol }}{{ item.price | number:'1.2-2' }}
+                    </div>
+                    <ng-template #noWishlistPrice>
+                      <div class="wishlist-item-price wishlist-item-price-muted">-</div>
+                    </ng-template>
+                  </div>
+
+                  <div class="wishlist-item-actions">
+                    <button
+                      type="button"
+                      class="wishlist-item-open-btn"
+                      (click)="openWishlistItem(item, $event)">
+                      Open
+                    </button>
+                    <button
+                      type="button"
+                      class="wishlist-item-remove-btn"
+                      [attr.aria-label]="'Remove ' + (item.displayName || item.productName) + ' from wishlist'"
+                      (click)="removeWishlistItem(item, $event)">
+                      <mat-icon aria-hidden="true">delete_outline</mat-icon>
+                    </button>
+                  </div>
+                </article>
+              </div>
             </div>
           </div>
         </div>
