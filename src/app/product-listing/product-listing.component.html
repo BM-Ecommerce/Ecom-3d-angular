@@ -353,12 +353,12 @@
           <mat-card
             class="product-card"
             *ngFor="let product of paginatedProducts; trackBy: trackProduct">
-            <button
-              type="button"
-              class="card-image-btn"
-              [attr.aria-label]="'Open ' + getProductDisplayName(product)"
-              (click)="openOrderForm(product)">
               <div class="card-image">
+                <button
+                  type="button"
+                  class="card-image-btn"
+                  [attr.aria-label]="'Open ' + getProductDisplayName(product)"
+                  (click)="openOrderForm(product)">
                 <span class="offer-badge" *ngIf="hasExtraOffer(product)">
                   {{ getOfferBadgeLabel(product) }}
                 </span>
@@ -367,17 +367,17 @@
                   [src]="getListingCardImage(product)"
                   [alt]="getProductDisplayName(product)"
                   loading="lazy">
+                </button>
+                <button
+                  type="button"
+                  class="wishlist-btn"
+                  *ngIf="enableWishlist"
+                  [class.active]="isWishlisted(product)"
+                  [attr.aria-label]="getWishlistAriaLabel(product)"
+                  (click)="toggleWishlist(product, $event)">
+                  <mat-icon aria-hidden="true">{{ isWishlisted(product) ? 'favorite' : 'favorite_border' }}</mat-icon>
+                </button>
               </div>
-            </button>
-            <button
-              type="button"
-              class="wishlist-btn"
-              *ngIf="enableWishlist"
-              [class.active]="isWishlisted(product)"
-              [attr.aria-label]="getWishlistAriaLabel(product)"
-              (click)="toggleWishlist(product, $event)">
-              <mat-icon aria-hidden="true">{{ isWishlisted(product) ? 'favorite' : 'favorite_border' }}</mat-icon>
-            </button>
             <mat-card-content class="card-content">
               <div class="card-info-row">
                 <div class="card-copy">
@@ -459,12 +459,12 @@
           <mat-card
             class="product-card fabric-group-card"
             *ngFor="let group of paginatedFabricGroups; trackBy: trackFabricGroup">
-            <button
-              type="button"
-              class="card-image-btn"
-              [attr.aria-label]="'Open ' + group.fabricName"
-              (click)="openOrderForm(group.activeVariant)">
               <div class="card-image">
+                <button
+                  type="button"
+                  class="card-image-btn"
+                  [attr.aria-label]="'Open ' + group.fabricName"
+                  (click)="openOrderForm(group.activeVariant)">
                 <span class="offer-badge" *ngIf="hasExtraOffer(group.activeVariant)">
                   {{ getOfferBadgeLabel(group.activeVariant) }}
                 </span>
@@ -473,17 +473,17 @@
                   [src]="getListingCardImage(group.activeVariant)"
                   [alt]="group.fabricName"
                   loading="lazy">
+                </button>
+                <button
+                  type="button"
+                  class="wishlist-btn"
+                  *ngIf="enableWishlist"
+                  [class.active]="isWishlisted(group.activeVariant)"
+                  [attr.aria-label]="getWishlistAriaLabel(group.activeVariant)"
+                  (click)="toggleWishlist(group.activeVariant, $event)">
+                  <mat-icon aria-hidden="true">{{ isWishlisted(group.activeVariant) ? 'favorite' : 'favorite_border' }}</mat-icon>
+                </button>
               </div>
-            </button>
-            <button
-              type="button"
-              class="wishlist-btn"
-              *ngIf="enableWishlist"
-              [class.active]="isWishlisted(group.activeVariant)"
-              [attr.aria-label]="getWishlistAriaLabel(group.activeVariant)"
-              (click)="toggleWishlist(group.activeVariant, $event)">
-              <mat-icon aria-hidden="true">{{ isWishlisted(group.activeVariant) ? 'favorite' : 'favorite_border' }}</mat-icon>
-            </button>
             <mat-card-content class="card-content">
               <div class="card-info-row">
                 <div class="card-copy">
