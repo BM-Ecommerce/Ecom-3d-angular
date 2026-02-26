@@ -161,4 +161,18 @@ span.rp-from {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     justify-items: center;
   }
+
+      .related-products-container {
+        margin: 10px !important;
+    }
+
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+
+.related-products-container {
+    margin: 30px !important;
+  }
+
+
 }

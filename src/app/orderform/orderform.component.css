@@ -550,7 +550,6 @@ textarea {
     padding-bottom: unset!important;
     background: var(--card-bg);
     border-radius: var(--border-radius);
-    margin-top: 25px;
 }
 
 .product_preview.zooming {
@@ -655,7 +654,7 @@ canvas {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
-  padding: 0 1.5rem;
+  padding: 1rem;
   background: var(--card-bg);
   margin-bottom: 5px;
   border-radius: var(--border-radius);
@@ -757,9 +756,11 @@ mat-button-toggle.mat-button-toggle-checked {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
+
+
 @media (max-width: 991px) {
     .configuratorpreviewimage{
-      height: 310px!important;
+      height: 310px !important;
     }
     .slider-container{
       bottom: 10px;
@@ -840,6 +841,17 @@ mat-button-toggle.mat-button-toggle-checked {
     .configuratorpreviewimage { height: auto; }
     /* 3D: keep previous static height on mobile */
     #main-img.view3d.configuratorpreviewimage { height: 55vh; }
+
+    .visualizer-container {
+      margin: 10px;
+    }
+
+      .mat-tab-group {
+   
+    margin: 10px !important;
+  
+  }
+    
 }
 
 @media (min-width: 768px) and (max-width: 991px) {
@@ -853,10 +865,17 @@ mat-button-toggle.mat-button-toggle-checked {
   .configuratorpreviewimage { height: auto; }
   /* 3D: keep original tablet height */
   #main-img.view3d.configuratorpreviewimage { height: min(55vh, 560px); }
-}
 
+     .visualizer-container {
+       padding: 0 30px;
+    }
 
-@media (min-width: 992px) and (max-width: 1199px) {
+  .mat-tab-group {
+   
+    margin: 30px !important;
+  
+  }
+
     .visualizer-main {
         flex: 1 1 60%;
     }
@@ -864,7 +883,11 @@ mat-button-toggle.mat-button-toggle-checked {
     .product-wrapper {
         flex: 1 1 40%;
     }
+
 }
+
+
+
 
 @media (min-width: 1200px) {
     .blinds.container {
