@@ -11,12 +11,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FreesampleComponent } from '../freesample/freesample.component';
+import { WishlistItem, WishlistService } from '../services/wishlist.service';
 
 interface ListingCategoryValue {
   name: string;
   id: string | number;
   categoryid?: string | number;
   img?: string;
+  optionCount?: number | null;
   normalizedName?: string;
   resolvedImg?: string;
 }
@@ -62,6 +64,7 @@ interface ListingProductItem {
   __listing?: ListingProductComputed;
   __trackKey?: string;
   __variantKey?: string;
+  __wishlistKey?: string;
   __freeSampleData?: Record<string, any>;
   [key: string]: any;
 }
@@ -108,6 +111,18 @@ interface ListingActiveFilterChip {
   label: string;
 }
 
+interface ListingFilterCategoryView {
+  category: ListingCategory;
+  values: ListingCategoryValue[];
+  totalOptionCount: number;
+  selectedOptionCount: number;
+}
+
+interface WishlistRefreshProductData {
+  productId: number;
+  items: ListingProductItem[];
+}
+
 type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
 
 @Component({
@@ -139,6 +154,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private listingScrollRestoreRafId: number | null = null;
   private resizeDebounceTimerId: ReturnType<typeof setTimeout> | null = null;
   private listFetchDebounceTimerId: ReturnType<typeof setTimeout> | null = null;
+  private wishlistRefreshSub: Subscription | null = null;
 
   isLoading = false;
   isListLoading = false;
@@ -161,6 +177,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   gridColumns = 3;
   isMobileViewport = false;
   isMobileFilterDrawerOpen = false;
+  isWishlistPopupOpen = false;
+  isWishlistRefreshing = false;
+  wishlistRefreshError: string | null = null;
   isSortMenuOpen = false;
   sortBy: SortKey = 'defaultsorting';
   currencySymbol = '\u00A3';
@@ -175,6 +194,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   // Component-level toggle: set false to hide top banner.
   // When hidden, breadcrumb is shown under the listing page title.
   showListingBanner = false;
+  // Component-level toggle: set false to disable wishlist feature entirely.
+  enableWishlist = true;
   catalogViewMode: 'products' | 'fabrics' = 'products';
 
   categories: ListingCategory[] = [];
@@ -185,6 +206,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private selectedFabricVariantByGroup: Record<string, string> = {};
   fabricColorPopupGroupKey: string | null = null;
   selectedCategoryValues: Record<string, Set<string>> = {};
+  collapsedFilterGroups: Record<string, boolean> = {};
+  filterSearchTerm = '';
   pageSizeOptions: number[] = [12, 24, 48, 96];
   pageSize = 24;
   pageIndex = 0;
@@ -240,11 +263,17 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     private location: Location,
     private apiService: ApiService,
     private productPreloadService: ProductPreloadService,
+    private wishlistService: WishlistService,
     private cd: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.applyViewportMode();
+    if (this.enableWishlist) {
+      this.wishlistService.items$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.cd.markForCheck();
+      });
+    }
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe((routeParams) => {
       const queryParams = this.route.snapshot.queryParams || {};
       this.applyGridColumnsFromQueryParams(queryParams);
@@ -276,6 +305,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.listRequestSub?.unsubscribe();
+    this.wishlistRefreshSub?.unsubscribe();
     if (this.resizeDebounceTimerId !== null) {
       clearTimeout(this.resizeDebounceTimerId);
       this.resizeDebounceTimerId = null;
@@ -322,6 +352,18 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape', ['$event'])
   onEscapeKeydown(event: Event): void {
+    if (this.isWishlistPopupOpen) {
+      event.preventDefault();
+      this.isWishlistPopupOpen = false;
+      this.cd.markForCheck();
+      return;
+    }
+    if (this.fabricColorPopupGroupKey) {
+      event.preventDefault();
+      this.fabricColorPopupGroupKey = null;
+      this.cd.markForCheck();
+      return;
+    }
     if (!this.isSortMenuOpen) {
       return;
     }
@@ -391,6 +433,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       return;
     }
     this.isSortMenuOpen = false;
+    this.isWishlistPopupOpen = false;
     this.isMobileFilterDrawerOpen = true;
     this.cd.markForCheck();
   }
@@ -416,6 +459,13 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.hasSidebarFilters = false;
     this.selectedFabricVariantByGroup = {};
     this.fabricColorPopupGroupKey = null;
+    this.isWishlistPopupOpen = false;
+    this.isWishlistRefreshing = false;
+    this.wishlistRefreshError = null;
+    this.wishlistRefreshSub?.unsubscribe();
+    this.wishlistRefreshSub = null;
+    this.filterSearchTerm = '';
+    this.collapsedFilterGroups = {};
     this.pageIndex = 0;
     this.totalProducts = 0;
     this.totalPages = 0;
@@ -502,6 +552,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
           id: value.id,
           categoryid: value.categoryid,
           img: value.img || '',
+          optionCount: this.resolveCategoryValueCount(value),
           normalizedName: this.normalize(value.name),
           resolvedImg: this.resolveCategoryValueImage(value.img || '')
         }));
@@ -554,9 +605,39 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   private initializeSelectedFilters(): void {
     this.selectedCategoryValues = {};
+    this.collapsedFilterGroups = {};
     this.categories.forEach((category) => {
-      this.selectedCategoryValues[this.categoryKey(category)] = new Set<string>();
+      const key = this.categoryKey(category);
+      this.selectedCategoryValues[key] = new Set<string>();
+      this.collapsedFilterGroups[key] = false;
     });
+  }
+
+  private resolveCategoryValueCount(value: any): number | null {
+    if (!value || typeof value !== 'object') {
+      return null;
+    }
+
+    const candidates = [
+      value.count,
+      value.option_count,
+      value.optioncount,
+      value.product_count,
+      value.productcount,
+      value.total
+    ];
+
+    for (const candidate of candidates) {
+      if (candidate === null || candidate === undefined || candidate === '') {
+        continue;
+      }
+      const parsed = Number(candidate);
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return Math.floor(parsed);
+      }
+    }
+
+    return null;
   }
 
   private applyQueryParamSelections(): void {
@@ -783,6 +864,74 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     Object.values(this.selectedCategoryValues).forEach((set) => set.clear());
     this.syncListingStateToQueryParams({ resetPage: true });
     this.scheduleListingFetch(true);
+  }
+
+  onFilterSearchInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.filterSearchTerm = String(target?.value || '');
+    this.cd.markForCheck();
+  }
+
+  clearFilterSearch(): void {
+    if (!this.filterSearchTerm) {
+      return;
+    }
+    this.filterSearchTerm = '';
+    this.cd.markForCheck();
+  }
+
+  get hasFilterSearch(): boolean {
+    return this.normalize(this.filterSearchTerm).length > 0;
+  }
+
+  get visibleFilterCategories(): ListingFilterCategoryView[] {
+    const normalizedSearch = this.normalize(this.filterSearchTerm);
+    const hasSearch = normalizedSearch.length > 0;
+
+    return this.categories
+      .map((category) => {
+        const allValues = Array.isArray(category?.values) ? category.values : [];
+        if (!allValues.length) {
+          return null;
+        }
+
+        const categoryMatches = hasSearch && this.normalize(category.name).includes(normalizedSearch);
+        const values = !hasSearch || categoryMatches
+          ? allValues
+          : allValues.filter((value) => this.getNormalizedCategoryValue(value).includes(normalizedSearch));
+
+        if (!values.length) {
+          return null;
+        }
+
+        return {
+          category,
+          values,
+          totalOptionCount: values.length,
+          selectedOptionCount: this.selectedCategoryValues[this.categoryKey(category)]?.size || 0
+        } as ListingFilterCategoryView;
+      })
+      .filter((view): view is ListingFilterCategoryView => !!view);
+  }
+
+  toggleFilterGroup(category: ListingCategory): void {
+    if (!category || this.hasFilterSearch) {
+      return;
+    }
+    const key = this.categoryKey(category);
+    this.collapsedFilterGroups[key] = !this.collapsedFilterGroups[key];
+    this.cd.markForCheck();
+  }
+
+  isFilterGroupCollapsed(category: ListingCategory): boolean {
+    if (this.hasFilterSearch) {
+      return false;
+    }
+    return !!this.collapsedFilterGroups[this.categoryKey(category)];
+  }
+
+  hasOptionCount(value: ListingCategoryValue): boolean {
+    return typeof value?.optionCount === 'number' && Number.isFinite(value.optionCount) && value.optionCount >= 0;
   }
 
   onSortChange(rawValue: string): void {
@@ -1427,6 +1576,435 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     event.preventDefault();
     event.stopPropagation();
     this.openOrderForm(product);
+  }
+
+  isWishlisted(product: ListingProductItem): boolean {
+    if (!this.enableWishlist) {
+      return false;
+    }
+    return this.wishlistService.has(this.getWishlistKey(product));
+  }
+
+  toggleWishlist(product: ListingProductItem, event?: Event): void {
+    if (!this.enableWishlist) {
+      return;
+    }
+    event?.preventDefault();
+    event?.stopPropagation();
+    const wishlistItem = this.buildWishlistItem(product);
+    this.wishlistService.toggle(wishlistItem);
+    this.cd.markForCheck();
+  }
+
+  getWishlistAriaLabel(product: ListingProductItem): string {
+    if (!this.enableWishlist) {
+      return 'Wishlist is disabled';
+    }
+    const productName = this.getProductDisplayName(product);
+    if (this.isWishlisted(product)) {
+      return `Remove ${productName} from wishlist`;
+    }
+    return `Add ${productName} to wishlist`;
+  }
+
+  getWishlistMetaParts(item: WishlistItem): string[] {
+    if (!item) {
+      return [];
+    }
+
+    const display = this.normalize(String(item.displayName || ''));
+    const rawParts = [item.fabricName, item.colorName]
+      .map((part) => String(part || '').trim())
+      .filter((part) => !!part);
+
+    const seen = new Set<string>();
+    const uniqueParts: string[] = [];
+    rawParts.forEach((part) => {
+      const normalizedPart = this.normalize(part);
+      if (!normalizedPart || seen.has(normalizedPart)) {
+        return;
+      }
+      seen.add(normalizedPart);
+      if (display && display.includes(normalizedPart)) {
+        return;
+      }
+      uniqueParts.push(part);
+    });
+
+    return uniqueParts;
+  }
+
+  get wishlistItems(): WishlistItem[] {
+    if (!this.enableWishlist) {
+      return [];
+    }
+    return this.wishlistService.getItems();
+  }
+
+  get wishlistCount(): number {
+    return this.wishlistItems.length;
+  }
+
+  openWishlistPopup(event?: Event): void {
+    if (!this.enableWishlist) {
+      return;
+    }
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (this.isWishlistPopupOpen) {
+      return;
+    }
+    this.isSortMenuOpen = false;
+    this.isMobileFilterDrawerOpen = false;
+    this.isWishlistPopupOpen = true;
+    this.wishlistRefreshError = null;
+    this.refreshWishlistItemsFromApi();
+    this.cd.markForCheck();
+  }
+
+  closeWishlistPopup(event?: Event): void {
+    if (!this.enableWishlist) {
+      return;
+    }
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!this.isWishlistPopupOpen) {
+      return;
+    }
+    this.isWishlistPopupOpen = false;
+    this.cd.markForCheck();
+  }
+
+  onWishlistPopupPanelClick(event: Event): void {
+    event.stopPropagation();
+  }
+
+  removeWishlistItem(item: WishlistItem, event?: Event): void {
+    if (!this.enableWishlist) {
+      return;
+    }
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!item?.key) {
+      return;
+    }
+    this.wishlistService.remove(item.key);
+    this.cd.markForCheck();
+  }
+
+  clearWishlist(event?: Event): void {
+    if (!this.enableWishlist) {
+      return;
+    }
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.wishlistService.clear();
+    this.cd.markForCheck();
+  }
+
+  openWishlistItem(item: WishlistItem, event?: Event): void {
+    if (!this.enableWishlist) {
+      return;
+    }
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!item) {
+      return;
+    }
+
+    const productId = this.toNumber(item.productId);
+    if (productId <= 0) {
+      return;
+    }
+
+    const ids = this.resolveWishlistVariantIds(item);
+
+    const productSlug = this.slugify(item.productSlug || item.productName || 'product');
+    const selectionSlug = this.slugify(
+      item.selectionSlug || item.displayName || `${item.fabricName || ''}-${item.colorName || ''}` || 'single_view'
+    );
+
+    this.isWishlistPopupOpen = false;
+    this.saveListingScrollPosition();
+    this.router.navigate(
+      [
+        '/',
+        productId,
+        productSlug || 'product',
+        selectionSlug || 'single-view',
+        ids.fabricId,
+        ids.colorId,
+        ids.pricingGroupId,
+        ids.supplierId
+      ],
+      {
+        state: {
+          listingReturnUrl: this.router.url
+        }
+      }
+    );
+  }
+
+  private refreshWishlistItemsFromApi(): void {
+    if (!this.enableWishlist) {
+      return;
+    }
+
+    const currentItems = this.wishlistService.getItems();
+    if (!currentItems.length) {
+      return;
+    }
+
+    const productIds = Array.from(
+      new Set(
+        currentItems
+          .map((item) => this.toNumber(item?.productId))
+          .filter((productId) => productId > 0)
+      )
+    );
+
+    if (!productIds.length) {
+      return;
+    }
+
+    this.wishlistRefreshSub?.unsubscribe();
+    this.isWishlistRefreshing = true;
+    this.wishlistRefreshError = null;
+    this.cd.markForCheck();
+
+    const refreshRequests = productIds.map((productId) => this.fetchWishlistProductData(productId));
+    this.wishlistRefreshSub = forkJoin(refreshRequests).pipe(
+      map((productDataBuckets) => this.mergeWishlistWithRefreshedData(currentItems, productDataBuckets)),
+      catchError((error) => {
+        console.error('Wishlist auto-refresh failed:', error);
+        this.wishlistRefreshError = 'Unable to refresh latest wishlist values.';
+        return of(currentItems);
+      }),
+      finalize(() => {
+        this.isWishlistRefreshing = false;
+        this.cd.markForCheck();
+      })
+    ).subscribe((nextItems) => {
+      this.wishlistService.replaceItems(nextItems);
+      this.cd.markForCheck();
+    });
+  }
+
+  private fetchWishlistProductData(productId: number) {
+    const params = this.buildWishlistApiParams(productId);
+    const fallbackFieldsCategoryId = this.resolveFieldsCategoryId(this.productCategory);
+
+    return this.apiService.getProductData(params).pipe(
+      map((productData: any) => {
+        const product = productData?.result?.EcomProductlist?.[0];
+        return this.resolveFieldsCategoryId(product?.pi_category);
+      }),
+      catchError(() => of(fallbackFieldsCategoryId)),
+      switchMap((fieldsCategoryId) =>
+        this.apiService.getFabricListView(
+          params,
+          fieldsCategoryId,
+          { page: 1 },
+          1,
+          this.fabricFetchPerPage
+        ).pipe(
+          map((response: any) => ({
+            productId,
+            items: this.extractWishlistListingItems(response)
+          } as WishlistRefreshProductData)),
+          catchError((error) => {
+            console.error(`Wishlist refresh failed for product ${productId}:`, error);
+            return of({
+              productId,
+              items: [] as ListingProductItem[]
+            } as WishlistRefreshProductData);
+          })
+        )
+      )
+    );
+  }
+
+  private buildWishlistApiParams(productId: number): any {
+    return {
+      api_url: this.params?.api_url || environment.apiUrl,
+      api_key: this.params?.api_key || environment.apiKey,
+      api_name: this.params?.api_name || environment.apiName,
+      site: this.params?.site || environment.site,
+      product_id: productId
+    };
+  }
+
+  private extractWishlistListingItems(response: any): ListingProductItem[] {
+    const nestedResult = response?.result && !Array.isArray(response.result) ? response.result : null;
+    if (Array.isArray(response?.result)) {
+      return response.result.filter((item: any) => item && typeof item === 'object') as ListingProductItem[];
+    }
+    if (Array.isArray(nestedResult?.Ecomfabiclist)) {
+      return nestedResult.Ecomfabiclist.filter((item: any) => item && typeof item === 'object') as ListingProductItem[];
+    }
+    if (Array.isArray(response?.Ecomfabiclist)) {
+      return response.Ecomfabiclist.filter((item: any) => item && typeof item === 'object') as ListingProductItem[];
+    }
+    return [];
+  }
+
+  private mergeWishlistWithRefreshedData(
+    currentItems: WishlistItem[],
+    productDataBuckets: WishlistRefreshProductData[]
+  ): WishlistItem[] {
+    const bucketMap = new Map<number, ListingProductItem[]>();
+    productDataBuckets.forEach((bucket) => {
+      bucketMap.set(this.toNumber(bucket.productId), Array.isArray(bucket.items) ? bucket.items : []);
+    });
+
+    return currentItems.map((item) => {
+      const productId = this.toNumber(item?.productId);
+      const candidates = bucketMap.get(productId) || [];
+      const matched = this.findMatchingWishlistVariant(item, candidates);
+      if (!matched) {
+        return item;
+      }
+      return this.buildRefreshedWishlistItem(item, matched);
+    });
+  }
+
+  private findMatchingWishlistVariant(
+    item: WishlistItem,
+    candidates: ListingProductItem[]
+  ): ListingProductItem | null {
+    if (!item || !Array.isArray(candidates) || !candidates.length) {
+      return null;
+    }
+
+    const ids = this.resolveWishlistVariantIds(item);
+    const matched = candidates.find((candidate) => this.matchesWishlistVariantIds(ids, candidate));
+    if (matched) {
+      return matched;
+    }
+
+    const normalizedVariantKey = String(item.variantKey || '').trim();
+    if (!normalizedVariantKey) {
+      return null;
+    }
+
+    return (
+      candidates.find((candidate) => this.buildWishlistVariantKeyFromProduct(candidate) === normalizedVariantKey) || null
+    );
+  }
+
+  private matchesWishlistVariantIds(
+    targetIds: { fabricId: number; colorId: number; pricingGroupId: number; supplierId: number; matmapId: number; },
+    candidate: ListingProductItem
+  ): boolean {
+    const candidateIds = this.getVariantIdsFromProduct(candidate);
+    if (targetIds.fabricId > 0 && targetIds.fabricId !== candidateIds.fabricId) {
+      return false;
+    }
+    if (targetIds.colorId > 0 && targetIds.colorId !== candidateIds.colorId) {
+      return false;
+    }
+    if (targetIds.pricingGroupId > 0 && targetIds.pricingGroupId !== candidateIds.pricingGroupId) {
+      return false;
+    }
+    if (targetIds.supplierId > 0 && targetIds.supplierId !== candidateIds.supplierId) {
+      return false;
+    }
+    if (targetIds.matmapId > 0 && targetIds.matmapId !== candidateIds.matmapId) {
+      return false;
+    }
+    return true;
+  }
+
+  private buildRefreshedWishlistItem(existing: WishlistItem, latest: ListingProductItem): WishlistItem {
+    const latestIds = this.getVariantIdsFromProduct(latest);
+    const fabricName = String(latest?.fabricname || latest?.fabric_name || existing.fabricName || '').trim();
+    const colorName = String(latest?.colorname || latest?.color_name || existing.colorName || '').trim();
+    const displayName = this.resolveWishlistDisplayName(latest, existing, fabricName, colorName);
+    const latestProductName = String(latest?.productname || existing.productName || '').trim();
+
+    return {
+      ...existing,
+      variantKey: this.buildWishlistVariantKeyFromProduct(latest),
+      productSlug: this.slugify(existing.productSlug || latestProductName || 'product'),
+      selectionSlug: this.slugify(
+        this.buildSelectionLabel(latest) || existing.selectionSlug || displayName || 'single_view'
+      ),
+      fabricId: latestIds.fabricId,
+      colorId: latestIds.colorId,
+      pricingGroupId: latestIds.pricingGroupId,
+      supplierId: latestIds.supplierId,
+      matmapId: latestIds.matmapId,
+      productName: latestProductName || existing.productName,
+      displayName,
+      fabricName: fabricName || existing.fabricName,
+      colorName: colorName || existing.colorName,
+      imageUrl: this.resolveProductImageUrl(latest) || existing.imageUrl,
+      price: this.resolveWishlistPrice(latest, existing.price),
+      addedAt: existing.addedAt
+    };
+  }
+
+  private getVariantIdsFromProduct(product: ListingProductItem): {
+    fabricId: number;
+    colorId: number;
+    pricingGroupId: number;
+    supplierId: number;
+    matmapId: number;
+  } {
+    return {
+      fabricId: this.toNumber(product?.fd_id || product?.fabricid),
+      colorId: this.toNumber(product?.cd_id || product?.colorid),
+      pricingGroupId: this.toNumber(product?.groupid || product?.pricegroupid),
+      supplierId: this.toNumber(product?.supplierid || product?.supplier_id),
+      matmapId: this.toNumber(product?.matmapid || product?.['mapid'])
+    };
+  }
+
+  private buildWishlistVariantKeyFromProduct(product: ListingProductItem): string {
+    const ids = this.getVariantIdsFromProduct(product);
+    const colorName = String(
+      product?.colorname || product?.color_name || product?.fabricname || product?.fabric_name || product?.productname || ''
+    ).trim();
+    return [
+      ids.fabricId,
+      ids.colorId,
+      ids.pricingGroupId,
+      ids.supplierId,
+      ids.matmapId,
+      this.slugify(colorName)
+    ].join('_');
+  }
+
+  private resolveWishlistDisplayName(
+    latest: ListingProductItem,
+    existing: WishlistItem,
+    fabricName: string,
+    colorName: string
+  ): string {
+    if (fabricName && colorName) {
+      return `${fabricName} ${colorName}`;
+    }
+    if (colorName) {
+      return colorName;
+    }
+    if (fabricName) {
+      return fabricName;
+    }
+    const latestName = String(latest?.productname || '').trim();
+    return latestName || existing.displayName || existing.productName || 'Saved item';
+  }
+
+  private resolveWishlistPrice(latest: ListingProductItem, fallbackPrice: number): number {
+    const originalPrice = this.toNumber(latest?.minprice ?? latest?.minimum_price ?? latest?.price);
+    const offerPercentRaw = this.toNumber(latest?.extraoffer ?? latest?.extra_offer ?? latest?.['extra offer']);
+    const offerPercent = Math.max(0, Math.min(100, offerPercentRaw));
+    const discountedPrice = originalPrice > 0 && offerPercent > 0
+      ? this.roundCurrency(originalPrice * (1 - (offerPercent / 100)))
+      : originalPrice;
+    if (discountedPrice > 0) {
+      return discountedPrice;
+    }
+    return this.toNumber(fallbackPrice);
   }
 
   canShowFreeSample(product: ListingProductItem): boolean {
@@ -2231,6 +2809,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   readonly trackCategory = (index: number, category: ListingCategory): string =>
     this.categoryKey(category);
 
+  readonly trackFilterCategory = (index: number, categoryView: ListingFilterCategoryView): string =>
+    this.categoryKey(categoryView.category);
+
   readonly trackCategoryValue = (index: number, value: ListingCategoryValue): string => {
     const idPart = value?.id ?? index;
     const categoryPart = value?.categoryid ?? '';
@@ -2238,6 +2819,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   };
 
   readonly trackActiveFilterChip = (index: number, chip: ListingActiveFilterChip): string => chip.key;
+  readonly trackWishlistItem = (index: number, item: WishlistItem): string => item?.key || `${index}`;
 
   readonly trackProduct = (index: number, product: ListingProductItem): string =>
     product?.__trackKey || this.buildProductTrackKey(product, index);
@@ -2260,6 +2842,88 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       return `${fabricName}-${colorName}`;
     }
     return colorName || fabricName || 'single_view';
+  }
+
+  private getWishlistKey(product: ListingProductItem): string {
+    if (!product) {
+      return '';
+    }
+    if (product.__wishlistKey) {
+      return product.__wishlistKey;
+    }
+
+    const rootProductId = this.productId || this.toNumber(this.params?.product_id) || this.toNumber(product.pei_productid);
+    const variantKey = this.buildFabricVariantKey(product);
+    const key = `${rootProductId}_${variantKey}`;
+    product.__wishlistKey = key;
+    return key;
+  }
+
+  private buildWishlistItem(product: ListingProductItem): WishlistItem {
+    const rootProductId = this.productId || this.toNumber(this.params?.product_id) || this.toNumber(product?.pei_productid);
+    const fabricName = String(product?.fabricname || product?.fabric_name || '').trim();
+    const productSlug = this.productSlug || this.slugify(this.productTitle || product?.productname || 'product');
+    const selectionSlug = this.slugify(this.buildSelectionLabel(product) || 'single_view');
+    return {
+      key: this.getWishlistKey(product),
+      productId: rootProductId,
+      variantKey: this.buildFabricVariantKey(product),
+      productSlug,
+      selectionSlug,
+      fabricId: this.toNumber(product?.fd_id || product?.fabricid),
+      colorId: this.toNumber(product?.cd_id || product?.colorid),
+      pricingGroupId: this.toNumber(product?.groupid || product?.pricegroupid),
+      supplierId: this.toNumber(product?.supplierid || product?.supplier_id),
+      matmapId: this.toNumber(product?.matmapid || product?.['mapid']),
+      productName: String(this.productTitle || product?.productname || '').trim(),
+      displayName: this.getProductDisplayName(product),
+      fabricName,
+      colorName: this.getFabricColorName(product),
+      imageUrl: this.getProductImage(product),
+      price: this.getPrice(product),
+      addedAt: new Date().toISOString()
+    };
+  }
+
+  private resolveWishlistVariantIds(item: WishlistItem): {
+    fabricId: number;
+    colorId: number;
+    pricingGroupId: number;
+    supplierId: number;
+    matmapId: number;
+  } {
+    const fromVariantKey = this.parseVariantKeyIds(item.variantKey);
+    return {
+      fabricId: this.pickPositiveNumber(this.toNumber(item.fabricId), fromVariantKey.fabricId),
+      colorId: this.pickPositiveNumber(this.toNumber(item.colorId), fromVariantKey.colorId),
+      pricingGroupId: this.pickPositiveNumber(this.toNumber(item.pricingGroupId), fromVariantKey.pricingGroupId),
+      supplierId: this.pickPositiveNumber(this.toNumber(item.supplierId), fromVariantKey.supplierId),
+      matmapId: this.pickPositiveNumber(this.toNumber(item.matmapId), fromVariantKey.matmapId)
+    };
+  }
+
+  private parseVariantKeyIds(variantKey: string): {
+    fabricId: number;
+    colorId: number;
+    pricingGroupId: number;
+    supplierId: number;
+    matmapId: number;
+  } {
+    const parts = String(variantKey || '').split('_');
+    return {
+      fabricId: this.toNumber(parts[0]),
+      colorId: this.toNumber(parts[1]),
+      pricingGroupId: this.toNumber(parts[2]),
+      supplierId: this.toNumber(parts[3]),
+      matmapId: this.toNumber(parts[4])
+    };
+  }
+
+  private pickPositiveNumber(primary: number, fallback: number): number {
+    if (primary > 0) {
+      return primary;
+    }
+    return fallback > 0 ? fallback : 0;
   }
 
   private rebuildFabricGroups(products: ListingProductItem[]): void {
