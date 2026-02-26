@@ -17,6 +17,7 @@ interface ListingCategoryValue {
   id: string | number;
   categoryid?: string | number;
   img?: string;
+  optionCount?: number | null;
   normalizedName?: string;
   resolvedImg?: string;
 }
@@ -108,6 +109,13 @@ interface ListingActiveFilterChip {
   label: string;
 }
 
+interface ListingFilterCategoryView {
+  category: ListingCategory;
+  values: ListingCategoryValue[];
+  totalOptionCount: number;
+  selectedOptionCount: number;
+}
+
 type SortKey = 'defaultsorting' | 'bestselling' | 'priceasc' | 'pricedesc';
 
 @Component({
@@ -185,6 +193,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private selectedFabricVariantByGroup: Record<string, string> = {};
   fabricColorPopupGroupKey: string | null = null;
   selectedCategoryValues: Record<string, Set<string>> = {};
+  collapsedFilterGroups: Record<string, boolean> = {};
+  filterSearchTerm = '';
   pageSizeOptions: number[] = [12, 24, 48, 96];
   pageSize = 24;
   pageIndex = 0;
@@ -416,6 +426,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.hasSidebarFilters = false;
     this.selectedFabricVariantByGroup = {};
     this.fabricColorPopupGroupKey = null;
+    this.filterSearchTerm = '';
+    this.collapsedFilterGroups = {};
     this.pageIndex = 0;
     this.totalProducts = 0;
     this.totalPages = 0;
@@ -502,6 +514,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
           id: value.id,
           categoryid: value.categoryid,
           img: value.img || '',
+          optionCount: this.resolveCategoryValueCount(value),
           normalizedName: this.normalize(value.name),
           resolvedImg: this.resolveCategoryValueImage(value.img || '')
         }));
@@ -554,9 +567,39 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   private initializeSelectedFilters(): void {
     this.selectedCategoryValues = {};
+    this.collapsedFilterGroups = {};
     this.categories.forEach((category) => {
-      this.selectedCategoryValues[this.categoryKey(category)] = new Set<string>();
+      const key = this.categoryKey(category);
+      this.selectedCategoryValues[key] = new Set<string>();
+      this.collapsedFilterGroups[key] = false;
     });
+  }
+
+  private resolveCategoryValueCount(value: any): number | null {
+    if (!value || typeof value !== 'object') {
+      return null;
+    }
+
+    const candidates = [
+      value.count,
+      value.option_count,
+      value.optioncount,
+      value.product_count,
+      value.productcount,
+      value.total
+    ];
+
+    for (const candidate of candidates) {
+      if (candidate === null || candidate === undefined || candidate === '') {
+        continue;
+      }
+      const parsed = Number(candidate);
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return Math.floor(parsed);
+      }
+    }
+
+    return null;
   }
 
   private applyQueryParamSelections(): void {
@@ -783,6 +826,74 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     Object.values(this.selectedCategoryValues).forEach((set) => set.clear());
     this.syncListingStateToQueryParams({ resetPage: true });
     this.scheduleListingFetch(true);
+  }
+
+  onFilterSearchInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.filterSearchTerm = String(target?.value || '');
+    this.cd.markForCheck();
+  }
+
+  clearFilterSearch(): void {
+    if (!this.filterSearchTerm) {
+      return;
+    }
+    this.filterSearchTerm = '';
+    this.cd.markForCheck();
+  }
+
+  get hasFilterSearch(): boolean {
+    return this.normalize(this.filterSearchTerm).length > 0;
+  }
+
+  get visibleFilterCategories(): ListingFilterCategoryView[] {
+    const normalizedSearch = this.normalize(this.filterSearchTerm);
+    const hasSearch = normalizedSearch.length > 0;
+
+    return this.categories
+      .map((category) => {
+        const allValues = Array.isArray(category?.values) ? category.values : [];
+        if (!allValues.length) {
+          return null;
+        }
+
+        const categoryMatches = hasSearch && this.normalize(category.name).includes(normalizedSearch);
+        const values = !hasSearch || categoryMatches
+          ? allValues
+          : allValues.filter((value) => this.getNormalizedCategoryValue(value).includes(normalizedSearch));
+
+        if (!values.length) {
+          return null;
+        }
+
+        return {
+          category,
+          values,
+          totalOptionCount: allValues.length,
+          selectedOptionCount: this.selectedCategoryValues[this.categoryKey(category)]?.size || 0
+        } as ListingFilterCategoryView;
+      })
+      .filter((view): view is ListingFilterCategoryView => !!view);
+  }
+
+  toggleFilterGroup(category: ListingCategory): void {
+    if (!category || this.hasFilterSearch) {
+      return;
+    }
+    const key = this.categoryKey(category);
+    this.collapsedFilterGroups[key] = !this.collapsedFilterGroups[key];
+    this.cd.markForCheck();
+  }
+
+  isFilterGroupCollapsed(category: ListingCategory): boolean {
+    if (this.hasFilterSearch) {
+      return false;
+    }
+    return !!this.collapsedFilterGroups[this.categoryKey(category)];
+  }
+
+  hasOptionCount(value: ListingCategoryValue): boolean {
+    return typeof value?.optionCount === 'number' && Number.isFinite(value.optionCount) && value.optionCount >= 0;
   }
 
   onSortChange(rawValue: string): void {
@@ -2230,6 +2341,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
   readonly trackCategory = (index: number, category: ListingCategory): string =>
     this.categoryKey(category);
+
+  readonly trackFilterCategory = (index: number, categoryView: ListingFilterCategoryView): string =>
+    this.categoryKey(categoryView.category);
 
   readonly trackCategoryValue = (index: number, value: ListingCategoryValue): string => {
     const idPart = value?.id ?? index;

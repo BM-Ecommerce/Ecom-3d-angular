@@ -197,40 +197,91 @@
       </ng-container>
 
     <ng-template #filtersContent>
-      <div class="filter-sections">
-        <div class="filter-section" *ngFor="let category of categories; trackBy: trackCategory">
-          <h3>{{ category.name }}</h3>
-
-          <div class="color-chip-group" *ngIf="isColorCategory(category)">
-            <ng-container *ngFor="let value of category.values; trackBy: trackCategoryValue">
-              <button
-                *ngIf="getCategoryValueImage(value) as colorImage"
-                type="button"
-                class="color-chip"
-                [class.selected]="isSelected(category, value)"
-                [style.background-image]="'url(' + colorImage + ')'"
-                [attr.aria-label]="value.name"
-                [title]="value.name"
-                (click)="toggleColorFilter(category, value)">
-              </button>
-            </ng-container>
-          </div>
-
-          <div class="filter-group" *ngIf="!isColorCategory(category)">
-            <mat-checkbox
-              class="filter-option"
-              *ngFor="let value of category.values; trackBy: trackCategoryValue"
-              [checked]="isSelected(category, value)"
-              (change)="onFilterToggle(category, value, $event.checked)">
-              <img
-                *ngIf="getCategoryValueImage(value) as valueImage"
-                [src]="valueImage"
-                [alt]="value.name">
-              <span>{{ value.name }}</span>
-            </mat-checkbox>
-          </div>
+      <div class="filter-search">
+        <label class="filter-search-label" for="listing-filter-search">Search filters</label>
+        <div class="filter-search-field">
+          <mat-icon aria-hidden="true">search</mat-icon>
+          <input
+            id="listing-filter-search"
+            type="text"
+            placeholder="Search options"
+            autocomplete="off"
+            [value]="filterSearchTerm"
+            (input)="onFilterSearchInput($event)">
+          <button
+            *ngIf="filterSearchTerm"
+            type="button"
+            class="filter-search-clear-btn"
+            aria-label="Clear filter search"
+            (click)="clearFilterSearch()">
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
       </div>
+
+      <ng-container *ngIf="visibleFilterCategories as categoryViews">
+        <div class="filter-empty-state" *ngIf="categoryViews.length === 0">
+          No matching filters found.
+        </div>
+
+        <div class="filter-sections" *ngIf="categoryViews.length > 0">
+          <div class="filter-section" *ngFor="let categoryView of categoryViews; trackBy: trackFilterCategory">
+            <button
+              type="button"
+              class="filter-section-toggle"
+              [class.search-active]="hasFilterSearch"
+              [attr.aria-expanded]="!isFilterGroupCollapsed(categoryView.category)"
+              (click)="toggleFilterGroup(categoryView.category)">
+              <span class="filter-section-title">{{ categoryView.category.name }}</span>
+              <span class="filter-section-meta">
+                <span class="filter-section-selected" *ngIf="categoryView.selectedOptionCount > 0">
+                  {{ categoryView.selectedOptionCount }} selected
+                </span>
+                <span class="filter-section-count">{{ categoryView.totalOptionCount }}</span>
+              </span>
+              <mat-icon
+                class="filter-section-caret"
+                [class.collapsed]="isFilterGroupCollapsed(categoryView.category)">
+                expand_more
+              </mat-icon>
+            </button>
+
+            <div class="filter-section-body" *ngIf="!isFilterGroupCollapsed(categoryView.category)">
+              <div class="color-chip-group" *ngIf="isColorCategory(categoryView.category)">
+                <ng-container *ngFor="let value of categoryView.values; trackBy: trackCategoryValue">
+                  <button
+                    *ngIf="getCategoryValueImage(value) as colorImage"
+                    type="button"
+                    class="color-chip"
+                    [class.selected]="isSelected(categoryView.category, value)"
+                    [style.background-image]="'url(' + colorImage + ')'"
+                    [attr.aria-label]="value.name"
+                    [title]="hasOptionCount(value) ? (value.name + ' (' + value.optionCount + ')') : value.name"
+                    (click)="toggleColorFilter(categoryView.category, value)">
+                  </button>
+                </ng-container>
+              </div>
+
+              <div class="filter-group" *ngIf="!isColorCategory(categoryView.category)">
+                <mat-checkbox
+                  class="filter-option"
+                  *ngFor="let value of categoryView.values; trackBy: trackCategoryValue"
+                  [checked]="isSelected(categoryView.category, value)"
+                  (change)="onFilterToggle(categoryView.category, value, $event.checked)">
+                  <img
+                    *ngIf="getCategoryValueImage(value) as valueImage"
+                    [src]="valueImage"
+                    [alt]="value.name">
+                  <span>{{ value.name }}</span>
+                  <span class="filter-option-count" *ngIf="hasOptionCount(value)">
+                    ({{ value.optionCount }})
+                  </span>
+                </mat-checkbox>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
     </ng-template>
 
       <section class="listing-content" [class.no-sidebar]="!hasSidebar || isMobileViewport">
