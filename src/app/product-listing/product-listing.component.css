@@ -18,11 +18,7 @@
   font-family: var(--listing-font-family);
   color: #0b2242;
 }
-.list-view-selected .wishlist-btn {
-    bottom: 15px;
-    right: 15px;
-    top: unset;
-}
+
 .listing-page-inner {
   width: min(1240px, 100%);
   margin: 0 auto;
@@ -1202,7 +1198,12 @@
 
 .card-image-btn {
   width: 100%;
-  display: block;
+  height: 100%;
+  min-height: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   border: 0;
   margin: 0;
   padding: 0;
@@ -1219,9 +1220,6 @@
 .card-image {
   min-height: 252px;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
 }
 
@@ -1252,8 +1250,8 @@
 
 .wishlist-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 5px;
+  right: 5px;
   z-index: 4;
   width: 34px;
   height: 34px;
@@ -2657,11 +2655,7 @@
     padding: 10px 0;
     gap: 12px;
   }
-.list-view-selected .wishlist-btn {
-      bottom: unset;
-      right: 10px;
-      top: 10px;
-  }
+
   .listing-page-inner {
     padding: 10px;
   }
