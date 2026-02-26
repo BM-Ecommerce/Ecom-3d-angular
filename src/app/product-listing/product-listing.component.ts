@@ -907,7 +907,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         return {
           category,
           values,
-          totalOptionCount: allValues.length,
+          totalOptionCount: values.length,
           selectedOptionCount: this.selectedCategoryValues[this.categoryKey(category)]?.size || 0
         } as ListingFilterCategoryView;
       })
