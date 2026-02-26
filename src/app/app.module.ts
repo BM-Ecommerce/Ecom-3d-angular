@@ -12,6 +12,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NotFoundComponent } from './not-found/not-found.component';
 import { HttpLoadingInterceptor } from './services/http-loading.interceptor';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { ProductListingComponent } from './product-listing/product-listing.component';
 
 @NgModule({
   declarations: [
@@ -24,6 +25,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
     RouterModule,
     AppRoutingModule,
     OrderformComponent,
+    ProductListingComponent,
     NotFoundComponent,
     BrowserAnimationsModule,
     MatProgressBarModule

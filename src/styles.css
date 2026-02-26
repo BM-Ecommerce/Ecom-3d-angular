@@ -126,3 +126,10 @@ body { margin: 0; font-family: 'Inter', sans-serif !important; }
     font-weight: 600 !important;
 }
 
+.header-tools .mat-form-field-wrapper {
+  padding: 0;
+  margin: 0;
+}
+.header-tools .mat-form-field-infix {
+  padding: .5em 0!important;
+}

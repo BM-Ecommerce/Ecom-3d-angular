@@ -1,4 +1,8 @@
 /* Free sample card */
+:host {
+  display: block;
+}
+
 .fs-card {
   margin: 20px auto;
 }
@@ -174,6 +178,51 @@
  }
 
 .fs-actions button mat-icon { margin-right: 6px; }
+
+.sample-btn {
+  width: 100%;
+  min-height: 38px;
+  border-radius: 999px;
+  font-size: 13px !important;
+  font-weight: 700;
+  padding: 0 16px;
+  white-space: nowrap;
+  line-height: 1 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #fff !important;
+  color: var(--primary-color) !important;
+  border: 1px solid var(--primary-color) !important;
+}
+
+.sample-btn .btn-label,
+.sample-btn .mat-icon {
+  transition: color 0.14s ease;
+}
+
+.sample-btn .mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px !important;
+  line-height: 18px;
+}
+
+.sample-btn:hover,
+.sample-btn:focus-visible,
+.sample-btn:active {
+  background: #fff !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+.sample-btn:hover .btn-label,
+.sample-btn:hover .mat-icon,
+.sample-btn:focus-visible .btn-label,
+.sample-btn:focus-visible .mat-icon {
+  color: rgba(var(--primary-color-rgb), 0.85);
+}
 
 /* Disabled state */
 .buttom-inactive-class {

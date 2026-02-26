@@ -32,6 +32,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconRegistry } from '@angular/material/icon';
 import * as htmlToImage from 'html-to-image';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
+import { ProductPreloadService } from '../services/product-preload.service';
 
 
 // Interfaces (kept as you had them)
@@ -333,10 +334,29 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     this.updateSkeletonState();
   }
 
+  private resolveCartProductId(params?: any): string {
+    const candidates = [
+      this.route.snapshot.params['cart_productid'],
+      params?.cart_productid,
+      this.route.snapshot.queryParams['cart_productid'],
+      this.routeParams?.cart_productid,
+      environment.cart_productid
+    ];
+
+    for (const candidate of candidates) {
+      const value = String(candidate ?? '').trim();
+      if (value) {
+        return value;
+      }
+    }
+
+    return '';
+  }
+
   get_freesample() {
     this.freesample = {
       "status": this?.freesameple_status,
-      "cart_productid": this?.routeParams?.cart_productid,
+      "cart_productid": this.resolveCartProductId(),
       "product_id": this.product_id,
       "type": "free_sample",
       "free_sample_price": this?.freesample_price,
@@ -464,6 +484,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   selected_option_data: SelectProductOption[] = [];
   accordionData: { label: string, value: any }[] = [];
   routeParams: any;
+  listingReturnUrl: string = '';
   unittype: number = 1;
   pricegroup: string = "";
   show_image_icons = false;
@@ -497,6 +518,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
     };
   constructor(
     private apiService: ApiService,
+    private productPreloadService: ProductPreloadService,
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
@@ -543,6 +565,12 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         this.cd.markForCheck();
       });
     const queryParams = this.route.snapshot.queryParams;
+    const currentNavigation = this.router.getCurrentNavigation();
+    const navigationState = currentNavigation?.extras?.state;
+    const backLinkFromState = navigationState?.['listingReturnUrl'] || history.state?.listingReturnUrl;
+    if (typeof backLinkFromState === 'string' && backLinkFromState.trim()) {
+      this.listingReturnUrl = backLinkFromState.trim();
+    }
     // Check if running on localhost
     const isLocalhost = window.location.hostname === 'localhost';
     const pathParams = this.route.snapshot.params;
@@ -555,6 +583,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       ).subscribe(paramsFromRoute => {
         const params = {
           ...paramsFromRoute,
+          cart_productid: this.resolveCartProductId(paramsFromRoute),
           api_url: environment.apiUrl,
           api_key: environment.apiKey,
           api_name: environment.apiName,
@@ -569,6 +598,7 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       ).subscribe(queryParams => {
         const params = {
           ...queryParams,
+          cart_productid: this.resolveCartProductId(queryParams),
           api_url: environment.apiUrl,
           api_key: environment.apiKey,
           api_name: environment.apiName,
@@ -1273,8 +1303,12 @@ public onToggleLoopAnimate(): void {
     this.optionsLoaded = false;
     this.updateSkeletonState();
     this.errorMessage = null;
+    const preloadedProductData = this.productPreloadService.consume(params?.product_id);
+    const productData$ = preloadedProductData
+      ? of(preloadedProductData)
+      : this.apiService.getProductData(params);
 
-    this.apiService.getProductData(params).pipe(
+    productData$.pipe(
       takeUntil(this.destroy$),
       switchMap((productData: any) => {
         if (productData.result?.EcomProductlist?.length > 0) {
@@ -1971,8 +2005,58 @@ public onToggleLoopAnimate(): void {
     const slug1 = product.productname.toLowerCase().replace(/ /g, '-');
     const slug2 = (product.fabricname + '-' + product.colorname)
                     .toLowerCase().replace(/ /g, '-');
+    const cartProductId = this.resolveCartProductId();
 
-    return `${this.siteurl}/visualizer/${this.product_id}/${slug1}/${slug2}/${product.fd_id}/${product.cd_id}/${product.groupid}/${product.supplierid}/${this.routeParams.cart_productid}`;
+    return `${this.siteurl}/visualizer/${this.product_id}/${slug1}/${slug2}/${product.fd_id}/${product.cd_id}/${product.groupid}/${product.supplierid}/${cartProductId}`;
+  }
+  get canGoBackToListing(): boolean {
+    const isListingCategory = this.category === 3 || this.category === 4;
+    if (!isListingCategory) {
+      return false;
+    }
+
+    if (this.listingReturnUrl) {
+      return true;
+    }
+    const productId = this.route.snapshot.params['product_id'] || this.routeParams?.product_id || this.product_id;
+    return !!productId;
+  }
+
+  goBackToListing(): void {
+    if (this.listingReturnUrl) {
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        this.router.navigateByUrl(this.listingReturnUrl);
+      }
+      return;
+    }
+
+    this.router.navigate(this.getListingRouteCommands());
+  }
+
+  private getListingRouteCommands(): any[] {
+    const productId = this.route.snapshot.params['product_id'] || this.routeParams?.product_id || this.product_id;
+    const routeProductSlug = this.route.snapshot.params['product'] || this.routeParams?.product;
+    const productSlug = this.toRouteSlug(routeProductSlug || this.productslug || this.productname || this.ecomproductname);
+    const cartProductId = this.resolveCartProductId();
+
+    if (productId && cartProductId) {
+      return ['/product-listing', productId, productSlug, cartProductId];
+    }
+    if (productId) {
+      return ['/product-listing', productId, productSlug];
+    }
+    return ['/'];
+  }
+
+  private toRouteSlug(value: string): string {
+    const normalized = String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return normalized || 'product';
   }
   onImageError(event: Event) {
     const img = event.target as HTMLImageElement;
@@ -3084,7 +3168,8 @@ public onToggleLoopAnimate(): void {
     //console.log(this.jsondata);
    
 
-    if (!this.routeParams || !this.routeParams.site || !this.routeParams.cart_productid) {
+    const cartProductId = this.resolveCartProductId();
+    if (!this.routeParams || !this.routeParams.site || !cartProductId) {
       this.errorMessage = 'Missing required route parameters for cart submission.';
       this.isSubmitting = false;
       this.cd.markForCheck();
@@ -3100,7 +3185,7 @@ public onToggleLoopAnimate(): void {
       visualizerImage = this.threeService.getCanvasDataURL(); // string already
     }
 
-    this.apiService.addToCart(this.jsondata, this.routeParams.cart_productid,Number(this.product_id), environment.site,
+    this.apiService.addToCart(this.jsondata, cartProductId,Number(this.product_id), environment.site,
       this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname),
       this.pricedata,
       this.vatpercentage,

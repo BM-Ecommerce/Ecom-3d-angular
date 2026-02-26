@@ -1,61 +1,87 @@
-<mat-card class="fs-card" appearance="outlined">
-  <div class="fs-row">
-    <div class="fs-media">
-      <div class="fs-swatch">
-        <img class="fs-swatch-img"
-             [src]="freesampledata?.pei_ecomImage"
-             [alt]="freesampledata?.productname || 'Product image'"
-             (error)="onImageError($event)" />
-        <span class="fs-swatch-hole" aria-hidden="true"></span>
-        <span class="fs-swatch-eyelet" aria-hidden="true"></span>
-        <span class="fs-swatch-size">{{ swatchSizeLabel }}</span>
+<ng-container *ngIf="mode === 'button'; else freeSampleCardMode">
+  <button
+    *ngIf="buttonStyle === 'stroked'; else freeSampleRaisedButton"
+    mat-stroked-button
+    type="button"
+    [disabled]="button_disable"
+    [ngClass]="[buttonClass, button_disable ? 'buttom-inactive-class' : '']"
+    (click)="buyFreeSample($event)">
+    <mat-icon *ngIf="buttonIcon" aria-hidden="true">{{ buttonIcon }}</mat-icon>
+    <span class="btn-label">{{ button_disable ? activeLoadingLabel : activeButtonLabel }}</span>
+  </button>
+
+  <ng-template #freeSampleRaisedButton>
+    <button
+      mat-raised-button
+      type="button"
+      color="primary"
+      [disabled]="button_disable"
+      [ngClass]="[buttonClass, button_disable ? 'buttom-inactive-class' : '']"
+      (click)="buyFreeSample($event)">
+      <mat-icon *ngIf="buttonIcon" aria-hidden="true">{{ buttonIcon }}</mat-icon>
+      <span class="btn-label">{{ button_disable ? activeLoadingLabel : activeButtonLabel }}</span>
+    </button>
+  </ng-template>
+</ng-container>
+
+<ng-template #freeSampleCardMode>
+  <mat-card class="fs-card" appearance="outlined">
+    <div class="fs-row">
+      <div class="fs-media">
+        <div class="fs-swatch">
+          <img class="fs-swatch-img"
+               [src]="freesampledata?.pei_ecomImage"
+               [alt]="freesampledata?.productname || 'Product image'"
+               (error)="onImageError($event)" />
+          <span class="fs-swatch-hole" aria-hidden="true"></span>
+          <span class="fs-swatch-eyelet" aria-hidden="true"></span>
+          <span class="fs-swatch-size">{{ swatchSizeLabel }}</span>
+        </div>
+      </div>
+
+      <div class="fs-body">
+        <div class="fs-header">
+          <div class="fs-headline">
+            <h3 class="fs-title">{{ freesampledata?.productname }}</h3>
+            <div class="fs-badge">Free Sample</div>
+          </div>
+          <div class="fs-subtitle" *ngIf="freesampledata?.cartproductName">
+            {{ freesampledata.cartproductName }}
+          </div>
+        </div>
+
+        <div class="fs-meta">
+          <div class="fs-price" *ngIf="isPaidSample">
+            <span class="fs-price-label">Price</span>
+            <span class="fs-price-value">
+              {{ freesampledata?.currencySymbol }} {{ freesampledata?.free_sample_price }}
+            </span>
+          </div>
+          <div class="fs-price" *ngIf="!isPaidSample">
+            <span class="fs-price-label">Price</span>
+            <span class="fs-price-value">Free</span>
+          </div>
+        </div>
+
+        <p class="fs-desc">
+          We'll send a fabric swatch of the selected product so you can feel the material and check the color at home.
+        </p>
+
+        <div class="fs-chips">
+          <span class="fs-chip"><mat-icon aria-hidden="true">inventory_2</mat-icon> Sample-size swatch</span>
+          <span class="fs-chip"><mat-icon aria-hidden="true">visibility</mat-icon> View color & texture</span>
+        </div>
+
+        <div class="fs-actions">
+          <button class="fs-cta" mat-raised-button color="primary"
+                  [disabled]="button_disable"
+                  [ngClass]="{ 'buttom-inactive-class': button_disable }"
+                  (click)="buyFreeSample($event)">
+            <mat-icon>shopping_bag</mat-icon>
+            <span>{{ button_disable ? activeLoadingLabel : activeButtonLabel }}</span>
+          </button>
+        </div>
       </div>
     </div>
-
-    <div class="fs-body">
-      <div class="fs-header">
-        <div class="fs-headline">
-          <h3 class="fs-title">{{ freesampledata?.productname }}</h3>
-          <div class="fs-badge">Free Sample</div>
-        </div>
-        <div class="fs-subtitle" *ngIf="freesampledata?.cartproductName">
-          {{ freesampledata.cartproductName }}
-        </div>
-      </div>
-
-      <div class="fs-meta">
-        <div class="fs-price" *ngIf="(freesampledata?.free_sample_price ?? 0) > 0">
-          <span class="fs-price-label">Price</span>
-          <span class="fs-price-value">
-            {{ freesampledata?.currencySymbol }} {{ freesampledata?.free_sample_price }}
-          </span>
-        </div>
-        <div class="fs-price" *ngIf="(freesampledata?.free_sample_price ?? 0) == 0">
-          <span class="fs-price-label">Price</span>
-          <span class="fs-price-value">Free</span>
-        </div>
-      </div>
-
-      <p class="fs-desc">
-        We’ll send a fabric swatch of the selected product so you can feel the material and check the color at home.
-      </p>
-
-      <div class="fs-chips">
-        <span class="fs-chip"><mat-icon aria-hidden="true">inventory_2</mat-icon> Sample-size swatch</span>
-        <span class="fs-chip"><mat-icon aria-hidden="true">visibility</mat-icon> View color & texture</span>
-      </div>
-
-      <div class="fs-actions">
-        <button class="fs-cta" mat-raised-button color="primary"
-                [disabled]="button_disable"
-                [ngClass]="{ 'buttom-inactive-class': button_disable }"
-                (click)="buyFreeSample()">
-          <mat-icon>shopping_bag</mat-icon>
-          <span>
-            {{ button_disable ? 'Adding…' : ((freesampledata?.free_sample_price ?? 0) > 0 ? 'Buy Sample' : 'Get Free Sample') }}
-          </span>
-        </button>
-      </div>
-    </div>
-  </div>
-</mat-card>
+  </mat-card>
+</ng-template>
