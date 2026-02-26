@@ -217,7 +217,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private listingCompositionQueue: Array<{ key: string; frameUrl: string; colorUrl: string }> = [];
   private activeListingCompositions = 0;
   private readonly maxParallelListingCompositions = 4;
-  private readonly mobileViewportMaxWidth = 640;
+  private readonly mobileViewportMaxWidth = 1100;
+  private readonly forceListViewportMaxWidth = 640;
   private forceListByMobileViewport = false;
   private lastDesktopGridColumns = this.gridColumns;
 
@@ -327,6 +328,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private applyViewportMode(): void {
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1280;
     const nextIsMobile = viewportWidth <= this.mobileViewportMaxWidth;
+    const shouldForceListByViewport = this.shouldForceListByViewport(viewportWidth);
     let shouldMarkForCheck = false;
 
     if (this.isMobileViewport !== nextIsMobile) {
@@ -338,33 +340,40 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       }
     }
 
-    if (nextIsMobile) {
+    if (nextIsMobile && this.isSortMenuOpen) {
+      this.isSortMenuOpen = false;
+      shouldMarkForCheck = true;
+    }
+
+    if (shouldForceListByViewport) {
       if (this.gridColumns !== 1) {
         this.lastDesktopGridColumns = this.gridColumns;
         this.gridColumns = 1;
         this.forceListByMobileViewport = true;
         shouldMarkForCheck = true;
       }
-      if (this.isSortMenuOpen) {
-        this.isSortMenuOpen = false;
-        shouldMarkForCheck = true;
-      }
-    } else {
-      if (this.forceListByMobileViewport) {
-        const restoreColumns = [1, 2, 3, 4].includes(this.lastDesktopGridColumns) ? this.lastDesktopGridColumns : 3;
-        this.gridColumns = restoreColumns;
-        this.forceListByMobileViewport = false;
-        shouldMarkForCheck = true;
-      }
-      if (this.isMobileFilterDrawerOpen) {
-        this.isMobileFilterDrawerOpen = false;
-        shouldMarkForCheck = true;
-      }
+    } else if (this.forceListByMobileViewport) {
+      const restoreColumns = [1, 2, 3, 4].includes(this.lastDesktopGridColumns) ? this.lastDesktopGridColumns : 3;
+      this.gridColumns = restoreColumns;
+      this.forceListByMobileViewport = false;
+      shouldMarkForCheck = true;
+    }
+
+    if (!nextIsMobile && this.isMobileFilterDrawerOpen) {
+      this.isMobileFilterDrawerOpen = false;
+      shouldMarkForCheck = true;
     }
 
     if (shouldMarkForCheck) {
       this.cd.markForCheck();
     }
+  }
+
+  private shouldForceListByViewport(viewportWidth?: number): boolean {
+    const width = typeof viewportWidth === 'number'
+      ? viewportWidth
+      : (typeof window !== 'undefined' ? window.innerWidth : 1280);
+    return width <= this.forceListViewportMaxWidth;
   }
 
   openMobileFilterDrawer(event?: Event): void {
@@ -592,7 +601,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     );
     if ([1, 2, 3, 4].includes(gridFromQuery)) {
       this.lastDesktopGridColumns = gridFromQuery;
-      if (this.isMobileViewport) {
+      if (this.shouldForceListByViewport()) {
         this.gridColumns = 1;
         this.forceListByMobileViewport = true;
       } else {
