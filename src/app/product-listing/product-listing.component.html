@@ -250,7 +250,9 @@
                 <span class="filter-section-selected" *ngIf="categoryView.selectedOptionCount > 0">
                   {{ categoryView.selectedOptionCount }} selected
                 </span>
-                <span class="filter-section-count">{{ categoryView.totalOptionCount }}</span>
+                <span class="filter-section-count">
+                  <span class="filter-section-count-value">{{ categoryView.totalOptionCount }}</span>
+                </span>
               </span>
               <mat-icon
                 class="filter-section-caret"

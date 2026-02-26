@@ -237,7 +237,16 @@
 
 .sample-btn .btn-label,
 .sample-btn .mat-icon {
-  transition: color 0.14s ease;
+  transition: color 0.14s ease, opacity 0.14s ease;
+}
+
+.sample-btn:not(.buttom-inactive-class) .btn-label,
+.sample-btn:not(.buttom-inactive-class) .mat-icon {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 .sample-btn .mat-icon {
@@ -259,7 +268,7 @@
 .sample-btn:hover .mat-icon,
 .sample-btn:focus-visible .btn-label,
 .sample-btn:focus-visible .mat-icon {
-  color: rgba(var(--primary-color-rgb), 0.85);
+  opacity: 0.88;
 }
 
 /* Disabled state */
