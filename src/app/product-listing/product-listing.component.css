@@ -15,7 +15,11 @@
   font-family: var(--listing-font-family);
   color: #0b2242;
 }
-
+.list-view-selected .wishlist-btn {
+    bottom: 15px;
+    right: 15px;
+    top: unset;
+}
 .listing-page-inner {
   width: min(1240px, 100%);
   margin: 0 auto;
@@ -2584,7 +2588,11 @@
     padding: 10px 0;
     gap: 12px;
   }
-
+.list-view-selected .wishlist-btn {
+      bottom: unset;
+      right: 10px;
+      top: 10px;
+  }
   .listing-page-inner {
     padding: 10px;
   }
