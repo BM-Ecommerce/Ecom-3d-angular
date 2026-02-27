@@ -215,7 +215,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   totalPages = 0;
   private readonly fabricFetchPerPage = 2000;
   private readonly fabricColorPreviewLimitMobile = 10;
-  private readonly fabricColorPreviewLimitDesktopGrid = 10;
+  private readonly fabricColorPreviewLimitDesktopGrid = 5;
   private readonly fabricColorPreviewLimitDesktopList = 18;
   readonly skeletonCards = Array.from({ length: 6 });
   readonly skeletonFilterBlocks = Array.from({ length: 3 });

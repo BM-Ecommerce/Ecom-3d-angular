@@ -1492,7 +1492,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
-  min-height: 70px;
 }
 .fabric-color-chip {
   width: 30px;
