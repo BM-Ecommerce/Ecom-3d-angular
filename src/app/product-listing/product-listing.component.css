@@ -1,8 +1,5 @@
 .listing-page {
-  --primary-color: #1540fc;
-  --primary-color-rgb: 21, 64, 252;
-  --primary-gradient: linear-gradient(90deg, #1540fc 0%, #3985f6 100%);
-  --listing-font-family: 'Manrope', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --listing-font-family: 'Arial', sans-serif;
   --listing-surface: #ffffff;
   --listing-surface-muted: #f8fbff;
   --listing-border: #d8e1ec;

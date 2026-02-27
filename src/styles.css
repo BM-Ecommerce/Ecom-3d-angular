@@ -48,6 +48,11 @@ body { margin: 0; font-family: Arial, sans-serif !important; }
   - Applies to icons in visualizer controls and related-products toggles.
 */
 :root {
+  /* Brand color tokens (single source of truth) */
+  --primary-color: #1540fc;
+  --primary-color-rgb: 21, 64, 252;
+  --primary-gradient: linear-gradient(90deg, #1540fc 0%, #3985f6 100%);
+
   --app-action-icon-size-desktop: 20px;
   --app-action-icon-size-tablet: 18px;
   --app-action-icon-size-mobile: 18px;

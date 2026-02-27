@@ -1,7 +1,4 @@
 :host {
-  --primary-color: #1540fc;
-  --primary-color-rgb: 21, 64, 252;
-  --primary-gradient: linear-gradient(90deg, #1540fc 0%, #3985f6 100%);
   --secondary-color: #6c757d;
   --secondary-hover: #5a6268;
   --light-gray: #f8f9fa;

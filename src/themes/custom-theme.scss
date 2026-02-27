@@ -34,8 +34,3 @@ $custom-theme: mat.define-light-theme((
 
 @include mat.all-component-themes($custom-theme);
 
-:root {
-  --primary-color: #{$brand-primary}; 
-  --primary-color-rgb: #{red($brand-primary)}, #{green($brand-primary)}, #{blue($brand-primary)};
-
-}
