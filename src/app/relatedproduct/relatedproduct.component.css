@@ -20,6 +20,7 @@
 }
 
 .rp-title {
+  font-weight: 500;
   color: var(--primary-color);
   font-size: 17px;
   margin-bottom: 15px;
