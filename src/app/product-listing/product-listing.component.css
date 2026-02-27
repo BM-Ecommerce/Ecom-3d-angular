@@ -1610,11 +1610,6 @@ button.sort-menu-option {
   border-color: #eee;
   box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
 }
-
-.list-view-selected .card-actions {
-    width: 350px;
-    margin-left: auto;
-}
 .fabric-color-chip-more {
   display: inline-flex;
   align-items: center;
