@@ -2345,7 +2345,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.queueListingImageComposition(frameUrl, colorUrl);
     }
 
-    return frameUrl;
+    // Use color image as fallback while composition is in flight to avoid white-frame flash.
+    return colorUrl;
   }
 
   private prepareListingCardCompositions(): void {
