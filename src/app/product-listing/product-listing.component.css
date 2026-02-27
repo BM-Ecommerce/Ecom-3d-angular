@@ -1592,7 +1592,9 @@
   cursor: pointer;
   transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
-
+button.sort-menu-option {
+    margin: 5px 0;
+}
 .fabric-color-chip:hover {
   transform: translateY(-1px);
 }
