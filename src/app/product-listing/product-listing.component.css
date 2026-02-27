@@ -1198,6 +1198,16 @@
   object-fit: contain;
 }
 
+.product-frame {
+  opacity: 1;
+  transition: opacity 160ms ease;
+  will-change: opacity;
+}
+
+.product-frame.frame-loading {
+  opacity: 0;
+}
+
 .offer-badge {
     position: absolute;
     top: 5px;

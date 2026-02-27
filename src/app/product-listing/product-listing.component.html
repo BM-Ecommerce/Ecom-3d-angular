@@ -354,7 +354,7 @@
           *ngIf="!isListLoading && !isFabricViewMode && paginatedProducts.length > 0">
           <mat-card
             class="product-card"
-            *ngFor="let product of paginatedProducts; trackBy: trackProduct">
+            *ngFor="let product of paginatedProducts; let cardIndex = index; trackBy: trackProduct">
               <div class="card-image">
                 <button
                   type="button"
@@ -366,8 +366,11 @@
                 </span>
                 <img
                   class="product-frame"
-                  [src]="getListingCardImage(product)"
+                  [src]="getListingCardImageForSlot(getListingCardSlotKeyForProduct(product, cardIndex), product)"
+                  [class.frame-loading]="isListingCardImageLoading(getListingCardSlotKeyForProduct(product, cardIndex))"
                   [alt]="getProductDisplayName(product)"
+                  (load)="onListingCardImageLoad(getListingCardSlotKeyForProduct(product, cardIndex))"
+                  (error)="onListingCardImageLoad(getListingCardSlotKeyForProduct(product, cardIndex))"
                   loading="lazy">
                 </button>
                 <button
@@ -472,8 +475,11 @@
                 </span>
                 <img
                   class="product-frame"
-                  [src]="getListingCardImage(group.activeVariant)"
+                  [src]="getListingCardImageForSlot(getListingCardSlotKeyForGroup(group), group.activeVariant)"
+                  [class.frame-loading]="isListingCardImageLoading(getListingCardSlotKeyForGroup(group))"
                   [alt]="group.fabricName"
+                  (load)="onListingCardImageLoad(getListingCardSlotKeyForGroup(group))"
+                  (error)="onListingCardImageLoad(getListingCardSlotKeyForGroup(group))"
                   loading="lazy">
                 </button>
                 <button
