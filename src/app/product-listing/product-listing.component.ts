@@ -231,12 +231,17 @@ export class ProductListingComponent implements OnInit, OnDestroy {
   private readonly composedImageCacheLimit = 120;
   private readonly imageLoadPromiseCacheLimit = 300;
   private readonly frameTransparentRegionCacheLimit = 200;
+  private readonly lastRenderedFabricGroupImageCacheLimit = 400;
+  private readonly listingCardImageStateCacheLimit = 500;
   private readonly frameAlphaThreshold = 40;
   private composedListingImageMap = new Map<string, string>();
   private composingListingImageKeys = new Set<string>();
   private failedListingImageKeys = new Set<string>();
   private imageLoadPromiseCache = new Map<string, Promise<HTMLImageElement>>();
   private frameTransparentRegionCache = new Map<string, TransparentHoleRegion>();
+  private lastRenderedFabricGroupImageMap = new Map<string, string>();
+  private listingCardImageSrcBySlot = new Map<string, string>();
+  private listingCardImageLoadedBySlot = new Map<string, boolean>();
   private listingCompositionQueue: Array<{ key: string; frameUrl: string; colorUrl: string }> = [];
   private activeListingCompositions = 0;
   private readonly maxParallelListingCompositions = 4;
@@ -459,6 +464,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.hasSidebarFilters = false;
     this.selectedFabricVariantByGroup = {};
     this.fabricColorPopupGroupKey = null;
+    this.lastRenderedFabricGroupImageMap.clear();
+    this.listingCardImageSrcBySlot.clear();
+    this.listingCardImageLoadedBySlot.clear();
     this.isWishlistPopupOpen = false;
     this.isWishlistRefreshing = false;
     this.wishlistRefreshError = null;
@@ -997,6 +1005,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.paginatedFabricGroups = [];
       this.selectedFabricVariantByGroup = {};
       this.fabricColorPopupGroupKey = null;
+      this.lastRenderedFabricGroupImageMap.clear();
+      this.listingCardImageSrcBySlot.clear();
+      this.listingCardImageLoadedBySlot.clear();
       this.totalProducts = 0;
       this.totalPages = 0;
       return;
@@ -1054,6 +1065,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         this.paginatedFabricGroups = [];
         this.selectedFabricVariantByGroup = {};
         this.fabricColorPopupGroupKey = null;
+        this.lastRenderedFabricGroupImageMap.clear();
+        this.listingCardImageSrcBySlot.clear();
+        this.listingCardImageLoadedBySlot.clear();
         this.totalProducts = 0;
         this.totalPages = 0;
         return of(null);
@@ -2262,6 +2276,11 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     event.preventDefault();
     event.stopPropagation();
 
+    const previouslyRenderedImage = this.getListingCardImage(group.activeVariant);
+    if (previouslyRenderedImage) {
+      this.setLastRenderedFabricGroupImage(group.key, previouslyRenderedImage);
+    }
+
     const variantKey = this.buildFabricVariantKey(variant);
     this.selectedFabricVariantByGroup[group.key] = variantKey;
     this.fabricGroups = this.fabricGroups.map((item) =>
@@ -2270,7 +2289,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         : item
     );
     this.updateFabricGroupsPagination();
-    this.prepareListingCardCompositionForProduct(variant);
+    const updatedGroup = this.fabricGroups.find((item) => item.key === group.key) || null;
+    this.prepareListingCardCompositionsForGroup(updatedGroup);
     this.cd.markForCheck();
   }
 
@@ -2278,6 +2298,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     event.preventDefault();
     event.stopPropagation();
     this.fabricColorPopupGroupKey = group.key;
+    this.prepareListingCardCompositionsForGroup(group, true);
     this.cd.markForCheck();
   }
 
@@ -2323,6 +2344,52 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     return product?.__listing?.imageUrl || 'assets/no-image.jpg';
   }
 
+  getListingCardSlotKeyForProduct(product: ListingProductItem, index: number): string {
+    return `product::${this.trackProduct(index, product)}`;
+  }
+
+  getListingCardSlotKeyForGroup(group: ListingFabricGroup): string {
+    return `fabric::${group?.key || ''}`;
+  }
+
+  getListingCardImageForSlot(slotKey: string, product: ListingProductItem): string {
+    const normalizedSlotKey = String(slotKey || '').trim();
+    const nextImageSrc = this.getListingCardImage(product);
+    if (!normalizedSlotKey) {
+      return nextImageSrc;
+    }
+
+    const previousImageSrc = this.listingCardImageSrcBySlot.get(normalizedSlotKey) || '';
+    if (previousImageSrc !== nextImageSrc) {
+      this.listingCardImageSrcBySlot.set(normalizedSlotKey, nextImageSrc);
+      this.listingCardImageLoadedBySlot.set(normalizedSlotKey, false);
+      this.trimMapToSize(this.listingCardImageSrcBySlot, this.listingCardImageStateCacheLimit);
+      this.trimMapToSize(this.listingCardImageLoadedBySlot, this.listingCardImageStateCacheLimit);
+    } else if (!this.listingCardImageLoadedBySlot.has(normalizedSlotKey)) {
+      this.listingCardImageLoadedBySlot.set(normalizedSlotKey, false);
+      this.trimMapToSize(this.listingCardImageLoadedBySlot, this.listingCardImageStateCacheLimit);
+    }
+
+    return nextImageSrc;
+  }
+
+  isListingCardImageLoading(slotKey: string): boolean {
+    const normalizedSlotKey = String(slotKey || '').trim();
+    if (!normalizedSlotKey) {
+      return false;
+    }
+    return this.listingCardImageLoadedBySlot.get(normalizedSlotKey) !== true;
+  }
+
+  onListingCardImageLoad(slotKey: string): void {
+    const normalizedSlotKey = String(slotKey || '').trim();
+    if (!normalizedSlotKey) {
+      return;
+    }
+    this.listingCardImageLoadedBySlot.set(normalizedSlotKey, true);
+    this.trimMapToSize(this.listingCardImageLoadedBySlot, this.listingCardImageStateCacheLimit);
+  }
+
   getListingCardImage(product: ListingProductItem): string {
     const colorUrl = this.getProductImage(product);
     if (!this.showFrameInProductListing) {
@@ -2338,6 +2405,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     const key = this.composeListingImageKey(frameUrl, colorUrl);
     const composedImage = this.composedListingImageMap.get(key);
     if (composedImage) {
+      if (this.isFabricViewMode) {
+        this.setLastRenderedFabricGroupImage(this.buildFabricGroupKey(product), composedImage);
+      }
       return composedImage;
     }
 
@@ -2345,7 +2415,15 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       this.queueListingImageComposition(frameUrl, colorUrl);
     }
 
-    return frameUrl;
+    if (this.isFabricViewMode) {
+      const previousImage = this.getLastRenderedFabricGroupImage(product);
+      if (previousImage) {
+        return previousImage;
+      }
+    }
+
+    // Use color image as fallback while composition is in flight to avoid white-frame flash.
+    return colorUrl;
   }
 
   private prepareListingCardCompositions(): void {
@@ -2353,12 +2431,25 @@ export class ProductListingComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const sourceProducts =
-      this.isFabricViewMode
-        ? this.paginatedFabricGroups.map((group) => group.activeVariant)
-        : this.paginatedProducts;
+    if (this.isFabricViewMode) {
+      this.paginatedFabricGroups.forEach((group) => this.prepareListingCardCompositionsForGroup(group));
+      return;
+    }
 
-    sourceProducts.forEach((product) => this.prepareListingCardCompositionForProduct(product));
+    this.paginatedProducts.forEach((product) => this.prepareListingCardCompositionForProduct(product));
+  }
+
+  private prepareListingCardCompositionsForGroup(
+    group: ListingFabricGroup | null | undefined,
+    includeAllVariants = false
+  ): void {
+    if (!group) {
+      return;
+    }
+
+    this.prepareListingCardCompositionForProduct(group.activeVariant);
+    const variants = includeAllVariants ? group.variants : group.previewVariants;
+    variants.forEach((variant) => this.prepareListingCardCompositionForProduct(variant));
   }
 
   private prepareListingCardCompositionForProduct(product: ListingProductItem | null | undefined): void {
@@ -2412,7 +2503,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
           }
         })
         .catch(() => {
-          // Keep original frame fallback when composition fails.
+          // Keep cached previous image / color fallback when composition fails.
           this.failedListingImageKeys.add(next.key);
         })
         .finally(() => {
@@ -2608,6 +2699,31 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.trimMapToSize(this.composedListingImageMap, this.composedImageCacheLimit);
   }
 
+  private setLastRenderedFabricGroupImage(groupKey: string, imageUrl: string | null | undefined): void {
+    const normalizedGroupKey = String(groupKey || '').trim();
+    const normalizedImageUrl = String(imageUrl || '').trim();
+    if (!normalizedGroupKey || !normalizedImageUrl) {
+      return;
+    }
+
+    if (this.lastRenderedFabricGroupImageMap.has(normalizedGroupKey)) {
+      this.lastRenderedFabricGroupImageMap.delete(normalizedGroupKey);
+    }
+    this.lastRenderedFabricGroupImageMap.set(normalizedGroupKey, normalizedImageUrl);
+    this.trimMapToSize(
+      this.lastRenderedFabricGroupImageMap,
+      this.lastRenderedFabricGroupImageCacheLimit
+    );
+  }
+
+  private getLastRenderedFabricGroupImage(product: ListingProductItem): string {
+    const groupKey = String(this.buildFabricGroupKey(product) || '').trim();
+    if (!groupKey) {
+      return '';
+    }
+    return this.lastRenderedFabricGroupImageMap.get(groupKey) || '';
+  }
+
   private trimMapToSize<K, V>(map: Map<K, V>, limit: number): void {
     while (map.size > limit) {
       const oldestKey = map.keys().next().value as K | undefined;
@@ -2624,6 +2740,9 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     this.failedListingImageKeys.clear();
     this.imageLoadPromiseCache.clear();
     this.frameTransparentRegionCache.clear();
+    this.lastRenderedFabricGroupImageMap.clear();
+    this.listingCardImageSrcBySlot.clear();
+    this.listingCardImageLoadedBySlot.clear();
     this.listingCompositionQueue = [];
     this.activeListingCompositions = 0;
   }
