@@ -724,7 +724,7 @@ hasDescriptionContent = false;
     }
     this.pendingVisualizerProductName = null;
 
-    const modelInfo = this.resolveModelInfo(productname);
+    const modelInfo = this.resolveModelInfoFromAvailableNames(productname);
     this.has3DModel = !!modelInfo;
     this.show_image_icons = this.has3DModel && this.category !== 2;
 
@@ -780,27 +780,42 @@ hasDescriptionContent = false;
     setTimeout(() => this.onWindowResize(), 0);
   }
 
+  private resolveModelInfoFromAvailableNames(productname: string): { url: string; type: 'rollerblinds' | 'venetian' | 'vertical' | 'wood' | 'daynight' | 'roman' | 'generic' } | null {
+    const candidates = [productname, this.productname, this.ecomproductname, this.productslug]
+      .map(name => String(name || '').trim())
+      .filter(name => name.length > 0);
+
+    for (const candidate of candidates) {
+      const resolved = this.resolveModelInfo(candidate);
+      if (resolved) {
+        return resolved;
+      }
+    }
+
+    return null;
+  }
+
   private resolveModelInfo(productname: string): { url: string; type: 'rollerblinds' | 'venetian' | 'vertical' | 'wood' | 'daynight' | 'roman' | 'generic' } | null {
     const name = (productname || '').toLowerCase();
-    if (name.includes('perfect fit roller')) {
+    if (name.includes('perfect fit roller') || name.includes('perfect-fit roller')) {
       return { url: 'assets/perfectfitroller.glb', type: 'rollerblinds' };
     }
-    if (name.includes('roller blinds')) {
+    if (name.includes('roller blinds') || name.includes('roller blind')) {
       return { url: 'assets/rollerblinds.glb', type: 'rollerblinds' };
     }
-    if (name.includes('venetian')) {
+    if (name.includes('venetian') || name.includes('fauxwood')) {
       return { url: 'assets/venetianblinds.glb', type: 'venetian' };
     }
     if (name.includes('vertical')) {
       return { url: 'assets/verticalblinds.glb', type: 'vertical' };
     }
-    if (name.includes('wood')) {
+    if (name.includes('wood') || name.includes('wooden')) {
       return { url: 'assets/woodenblinds.glb', type: 'wood' };
     }
-    if (name.includes('day and night')) {
+    if (name.includes('day and night') || name.includes('day & night') || name.includes('daynight')) {
       return { url: 'assets/daynight.glb', type: 'daynight' };
     }
-    if (name.includes('roman')) {
+    if (name.includes('roman') || name.includes('roman blind') || name.includes('roman blinds')) {
       return { url: 'assets/romanblinds.glb', type: 'roman' };
     }
     if (name.includes('door')) {
@@ -1444,7 +1459,7 @@ hasDescriptionContent = false;
 
           // Precompute composed thumbnails
           this.prepareFrameThumbnails();
-          this.setupVisualizer(ecomProductName);
+          this.setupVisualizer(this.productname || ecomProductName);
         }
         return this.apiService.getProductParameters(params, this.recipeid);
       }),
