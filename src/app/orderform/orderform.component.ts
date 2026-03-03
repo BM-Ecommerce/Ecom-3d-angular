@@ -287,6 +287,7 @@ hasDescriptionContent = false;
   siteurl = environment.site;
   readonly frameColorKey = 'framecolour';
   readonly curtainColorKey = 'curtaincolour';
+  private readonly twoDOnlyProductIds = new Set<number>([26, 25, 27, 28, 29, 30, 31, 32, 33]);
   selected_img_option:number = 0;
   selected_frame_option:number = 0;
   selected_curtain_option:number = 0;
@@ -307,6 +308,7 @@ hasDescriptionContent = false;
   isFullscreenMobile: boolean = false;
   private isBackgroundSelectedInCarousel = false;
   private isBackgroundZoomEnabled = false;
+  public isCurrentProductTwoDOnly = false;
   public enableFrameThumbnails = true;
   public fullCanvasZoomFactor =1;
   private previousZoomFactor: number | null = null;
@@ -667,6 +669,26 @@ public onToggleLoopAnimate(): void {
 }
   private setupVisualizer(productname: string): void {
     if (!this.canvasRef || !this.containerRef) return;
+    const finalizeSetup = () => {
+      this.ngZone.runOutsideAngular(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            this.ngZone.run(() => this.markCanvasReady());
+          });
+        });
+      });
+      setTimeout(() => this.onWindowResize(), 0);
+    };
+
+    if (this.isTwoDOnlyProduct(this.product_id)) {
+      this.is3DOn = false;
+      this.has3DModel = false;
+      this.show_image_icons = false;
+      this.setup2DVisualizer();
+      this.cd.markForCheck();
+      finalizeSetup();
+      return;
+    }
 
     const modelInfo = this.resolveModelInfo(productname);
     this.has3DModel = !!modelInfo;
@@ -692,14 +714,7 @@ public onToggleLoopAnimate(): void {
     } else {
       this.disable3DForMissingModel();
     }
-    this.ngZone.runOutsideAngular(() => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          this.ngZone.run(() => this.markCanvasReady());
-        });
-      });
-    });
-    setTimeout(() => this.onWindowResize(), 0);
+    finalizeSetup();
   }
 
   private setup2DVisualizer(): void {
@@ -754,6 +769,11 @@ public onToggleLoopAnimate(): void {
   }
 
   toggle3D() {
+    if (this.isTwoDOnlyProduct(this.product_id)) {
+      this.is3DOn = false;
+      this.show_image_icons = false;
+      return;
+    }
     if (!this.has3DModel) {
       this.is3DOn = false;
       return;
@@ -831,6 +851,10 @@ public onToggleLoopAnimate(): void {
 
   toggleFullscreen(): void {
     const entering = !this.isNativeFullscreen();
+    if (entering && this.isTwoDOnlyProduct(this.product_id)) {
+      this.is3DOn = false;
+      return;
+    }
     const wrapper = this.containerRef?.nativeElement || document.getElementById('configurator-root');
     if (entering) {
       this.prevIs3DOn = this.is3DOn;
@@ -901,6 +925,11 @@ public onToggleLoopAnimate(): void {
 
   private normalizeFieldName(name?: string): string {
     return (name || '').replace(/\s+/g, '').toLowerCase();
+  }
+
+  private isTwoDOnlyProduct(productId: number | string | null | undefined): boolean {
+    const numericProductId = Number(productId);
+    return Number.isFinite(numericProductId) && this.twoDOnlyProductIds.has(numericProductId);
   }
 
   private markDerivedDirty(): void {
@@ -1309,9 +1338,11 @@ public onToggleLoopAnimate(): void {
           this.recipeid = data.recipeid;
           this.freesameple_status = data?.pei_ecomFreeSample ?? 0;
           this.product_id = params?.product_id ?? this.route.snapshot.params['product_id'],
+          this.isCurrentProductTwoDOnly = this.isTwoDOnlyProduct(this.product_id);
           this.freesample_price = data?.pei_ecomsampleprice ?? 0;
           this.get_freesample();
           this.relatedframeimage =  data?.pi_frameimage ?? "";
+          const isTwoDOnly = this.isTwoDOnlyProduct(this.product_id);
          
           let productBgImages: string[] = [];
           try {
@@ -1319,6 +1350,13 @@ public onToggleLoopAnimate(): void {
           } catch (e) {
             console.error('Error parsing pi_backgroundimage:', e);
             productBgImages = [];
+          }
+          let productVisualizerImages: string[] = [];
+          try {
+            productVisualizerImages = JSON.parse(data.pi_productimage || '[]');
+          } catch (e) {
+            console.error('Error parsing pi_productimage:', e);
+            productVisualizerImages = [];
           }
 
           let productDefaultImage: any = {};
@@ -1340,8 +1378,13 @@ public onToggleLoopAnimate(): void {
           }
 
           const defaultImageSettings = productDefaultImage?.defaultimage || {};
-          const defaultFrameFilename = defaultImageSettings?.backgrounddefault || '';
+          const defaultFrameFilename = isTwoDOnly
+            ? (defaultImageSettings?.productdefault || '')
+            : (defaultImageSettings?.backgrounddefault || '');
           const frameDefaultFilename = defaultImageSettings?.framedefault || '';
+          const visualizerImages = isTwoDOnly ? productVisualizerImages : productBgImages;
+          this.mainframe = '';
+          this.frame_default_url = '';
           let frameFullUrl = '';
           frameImages.forEach(imgPath => {
             const isDefault = frameDefaultFilename && imgPath.includes(frameDefaultFilename);
@@ -1358,7 +1401,7 @@ public onToggleLoopAnimate(): void {
             }
           });
 
-          this.product_img_array = productBgImages.map(imgFilename => {
+          this.product_img_array = visualizerImages.map(imgFilename => {
             const isDefault = defaultFrameFilename && imgFilename.includes(defaultFrameFilename);
             const pathParts = imgFilename.split('/');
             const filename = pathParts.pop() || '';
@@ -1405,7 +1448,7 @@ public onToggleLoopAnimate(): void {
           this.dropField = this.parameters_data.find(f => [9, 10, 12, 32].includes(f.fieldtypeid));
           this.unitField = this.parameters_data.find(f => f.fieldtypeid === 34);
           this.get_freesample();
-		      this.show_image_icons = true;
+		      this.show_image_icons = !this.isTwoDOnlyProduct(this.product_id);
           if(2 == this.category){
                 this.show_image_icons = false;
           }
@@ -1754,6 +1797,7 @@ public onToggleLoopAnimate(): void {
   private handleOptionSelectionChange(params: any, field: ProductField, value: any, isInitial: boolean = false): void {
 
     if (!field) return;
+    const normalizedFieldName = this.normalizeFieldName(field.fieldname);
     this.removeSelectedOptionData([field]);
     if (value === null || value === undefined || value === '') {
       if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
@@ -1777,6 +1821,11 @@ public onToggleLoopAnimate(): void {
         this.get_relatedproduct_data();
       }
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
+      if (this.isTwoDOnlyProduct(this.product_id) && field.fieldtypeid === 3 && normalizedFieldName === this.curtainColorKey) {
+        this.background_color_image_url = '';
+        this.update2DTexturesForSelection();
+        this.syncBackgroundImageInCarousel();
+      }
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       this.get_freesample();
       this.setShutterObject(field,null);
@@ -1826,7 +1875,6 @@ public onToggleLoopAnimate(): void {
       if (!selectedOption) return;
       
       const canUpdate = !isInitial || (field.optiondefault && params.color_id);
-      const normalizedFieldName = this.normalizeFieldName(field.fieldname);
       const isMaterialField = (field.fieldtypeid === 5 || field.fieldtypeid === 21) && field.level == 1;
 
       if (!isInitial && isMaterialField) {
@@ -1864,7 +1912,17 @@ public onToggleLoopAnimate(): void {
 
       if (canUpdate && field.fieldtypeid === 3 && normalizedFieldName === this.curtainColorKey && selectedOption.optionimage) {
         this.selected_curtain_option = Number(selectedOption.optionid) || 0;
-        this.threeService.updateTextures(this.apiUrl + '/api/public' + selectedOption.optionimage);
+        const curtainImageUrl = this.apiUrl + '/api/public' + selectedOption.optionimage;
+        if (this.isTwoDOnlyProduct(this.product_id)) {
+          this.background_color_image_url = curtainImageUrl;
+          this.get_freesample();
+          this.update2DTexturesForSelection();
+          this.invalidateFrameThumbnails();
+          this.prepareFrameThumbnails();
+          this.syncBackgroundImageInCarousel();
+        } else {
+          this.threeService.updateTextures(curtainImageUrl);
+        }
         this.CurtainLabelName = field.fieldname;
       }
       if (canUpdate && field.fieldtypeid === 3 && normalizedFieldName === this.frameColorKey && selectedOption.optionimage) {
@@ -2209,11 +2267,29 @@ public onToggleLoopAnimate(): void {
 
   private update2DTexturesForSelection(): void {
     if (!this.threeService) return;
+    const isTwoDOnly = this.isTwoDOnlyProduct(this.product_id);
     const useBackgroundOnly = this.isBackgroundSelectedInCarousel;
-    const frameUrl = useBackgroundOnly ? this.background_color_image_url : this.mainframe;
+    const hasFrame = !!this.mainframe;
+
+    if (isTwoDOnly) {
+      const hasCurtainColorSelected = this.selected_curtain_option > 0 && !!this.background_color_image_url;
+      const visualizerImageUrl = hasCurtainColorSelected
+        ? this.background_color_image_url
+        : (this.mainframe || this.background_color_image_url);
+      if (!visualizerImageUrl) return;
+      this.threeService.setZoomHoleEnabled(false);
+      this.threeService.setFullCanvasZoom(false);
+      this.threeService.updateTextures2d(visualizerImageUrl, '');
+      this.update2DContainerHeightFromFrame();
+      setTimeout(() => this.threeService.refit2d(), 0);
+      return;
+    }
+
+    const renderBackgroundOnly = useBackgroundOnly || !hasFrame;
+    const frameUrl = renderBackgroundOnly ? this.background_color_image_url : this.mainframe;
     if (!frameUrl) return;
-    const backgroundUrl = useBackgroundOnly ? '' : this.background_color_image_url;
-    this.threeService.setZoomHoleEnabled(!useBackgroundOnly);
+    const backgroundUrl = renderBackgroundOnly ? '' : this.background_color_image_url;
+    this.threeService.setZoomHoleEnabled(!renderBackgroundOnly);
     this.threeService.setFullCanvasZoom(false);
     this.threeService.updateTextures2d(frameUrl, backgroundUrl || '');
     this.update2DContainerHeightFromFrame();
