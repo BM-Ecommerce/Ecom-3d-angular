@@ -89,7 +89,7 @@ body { margin: 0; font-family: 'Inter', sans-serif !important; }
 /* Tablet breakpoint */
 @media (max-width: 1023.98px) {
   :root { --app-action-icon-size: var(--app-action-icon-size-tablet); }
-   body { padding: 30px; }
+   
 }
 
 /* Mobile breakpoint */
