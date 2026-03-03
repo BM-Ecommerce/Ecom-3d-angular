@@ -28,7 +28,7 @@ import { ConfiguratorComponent } from "../configurator/configurator.component";
 import { CarouselModule } from 'ngx-owl-carousel-o';
 import { RelatedproductComponent } from '../relatedproduct/relatedproduct.component';
 import { MatButtonToggleChange } from '@angular/material/button-toggle';
-import { DomSanitizer } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MatIconRegistry } from '@angular/material/icon';
 import * as htmlToImage from 'html-to-image';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
@@ -261,6 +261,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   unitOption: any;
   productdescription: string = "";
   pei_prospec: string = "";
+  safeProductDescription: SafeHtml | '' = '';
+  safePeiProspec: SafeHtml | '' = '';
   isScrolled = false;
   unittypename = "";
   hasProspecContent = false;
@@ -313,6 +315,8 @@ hasDescriptionContent = false;
   private previousZoomFactor: number | null = null;
   
   private prevIs3DOn: boolean = false;
+  private viewInitialized = false;
+  private pendingVisualizerProductName: string | null = null;
 
   private updateShowDimensionsToggle(): void {
     try {
@@ -670,6 +674,8 @@ hasDescriptionContent = false;
   }
 
   ngAfterViewInit(): void {
+    this.viewInitialized = true;
+    this.tryRunPendingVisualizerSetup();
     // Initialization is handled by setupVisualizer() which is called after data fetch.
     // We also need to ensure the animation loop in three.service is started.
     // A better place for this might be after the first textures are loaded.
@@ -700,7 +706,7 @@ hasDescriptionContent = false;
    this.threeService.loopAnimate();
   }
   
-public onToggleLoopAnimate(): void {
+  public onToggleLoopAnimate(): void {
 
   if (this.isLooping) {
     this.threeService.stopAll();
@@ -710,10 +716,30 @@ public onToggleLoopAnimate(): void {
     this.isLooping = true;
   }
 }
-  private setupVisualizer(productname: string): void {
-    if (!this.canvasRef || !this.containerRef) return;
+  private tryRunPendingVisualizerSetup(): void {
+    if (!this.viewInitialized || !this.pendingVisualizerProductName) {
+      return;
+    }
+    if (!this.canvasRef || !this.containerRef) {
+      return;
+    }
 
-    const modelInfo = this.resolveModelInfo(productname);
+    const productname = this.pendingVisualizerProductName;
+    this.pendingVisualizerProductName = null;
+    this.setupVisualizer(productname);
+  }
+
+  private setupVisualizer(productname: string): void {
+    if (!this.canvasRef || !this.containerRef) {
+      const fallbackName = (productname || this.productname || this.ecomproductname || '').trim();
+      if (fallbackName) {
+        this.pendingVisualizerProductName = fallbackName;
+      }
+      return;
+    }
+    this.pendingVisualizerProductName = null;
+
+    const modelInfo = this.resolveModelInfoFromAvailableNames(productname);
     this.has3DModel = !!modelInfo;
     this.show_image_icons = this.has3DModel && this.category !== 2;
 
@@ -769,27 +795,42 @@ public onToggleLoopAnimate(): void {
     setTimeout(() => this.onWindowResize(), 0);
   }
 
+  private resolveModelInfoFromAvailableNames(productname: string): { url: string; type: 'rollerblinds' | 'venetian' | 'vertical' | 'wood' | 'daynight' | 'roman' | 'generic' } | null {
+    const candidates = [productname, this.productname, this.ecomproductname, this.productslug]
+      .map(name => String(name || '').trim())
+      .filter(name => name.length > 0);
+
+    for (const candidate of candidates) {
+      const resolved = this.resolveModelInfo(candidate);
+      if (resolved) {
+        return resolved;
+      }
+    }
+
+    return null;
+  }
+
   private resolveModelInfo(productname: string): { url: string; type: 'rollerblinds' | 'venetian' | 'vertical' | 'wood' | 'daynight' | 'roman' | 'generic' } | null {
     const name = (productname || '').toLowerCase();
-    if (name.includes('perfect fit roller')) {
+    if (name.includes('perfect fit roller') || name.includes('perfect-fit roller')) {
       return { url: 'assets/perfectfitroller.glb', type: 'rollerblinds' };
     }
-    if (name.includes('roller blinds')) {
+    if (name.includes('roller blinds') || name.includes('roller blind')) {
       return { url: 'assets/rollerblinds.glb', type: 'rollerblinds' };
     }
-    if (name.includes('venetian')) {
+    if (name.includes('venetian') || name.includes('fauxwood')) {
       return { url: 'assets/venetianblinds.glb', type: 'venetian' };
     }
     if (name.includes('vertical')) {
       return { url: 'assets/verticalblinds.glb', type: 'vertical' };
     }
-    if (name.includes('wood')) {
+    if (name.includes('wood') || name.includes('wooden')) {
       return { url: 'assets/woodenblinds.glb', type: 'wood' };
     }
-    if (name.includes('day and night')) {
+    if (name.includes('day and night') || name.includes('day & night') || name.includes('daynight')) {
       return { url: 'assets/daynight.glb', type: 'daynight' };
     }
-    if (name.includes('roman')) {
+    if (name.includes('roman') || name.includes('roman blind') || name.includes('roman blinds')) {
       return { url: 'assets/romanblinds.glb', type: 'roman' };
     }
     if (name.includes('door')) {
@@ -1343,8 +1384,10 @@ public onToggleLoopAnimate(): void {
           }
           this.registerProductIcon();
             
-          this.productdescription = data.pi_productdescription;
-          this.pei_prospec = data.pei_prospec;
+          this.productdescription = data.pi_productdescription || '';
+          this.pei_prospec = data.pei_prospec || '';
+          this.safeProductDescription = this.toSafeHtml(this.productdescription);
+          this.safePeiProspec = this.toSafeHtml(this.pei_prospec);
           this.hasProspecContent = this.hasContent(this.pei_prospec);
           this.hasDescriptionContent = this.hasContent(this.productdescription);
           this.category = Number(data.pi_category);
@@ -1431,7 +1474,7 @@ public onToggleLoopAnimate(): void {
 
           // Precompute composed thumbnails
           this.prepareFrameThumbnails();
-          this.setupVisualizer(ecomProductName);
+          this.setupVisualizer(this.productname || ecomProductName);
         }
         return this.apiService.getProductParameters(params, this.recipeid);
       }),
@@ -3038,7 +3081,19 @@ public onToggleLoopAnimate(): void {
 
     // Get the text content (ignores HTML tags) and trim it
     const text = div.textContent ?? '';
-    return text.trim().length > 0; // true only if there is real text
+    if (text.trim().length > 0) {
+      return true;
+    }
+
+    // Treat embedded content (for example iframe-only HTML) as valid content.
+    return div.querySelector('iframe, img, video, audio, object, embed') !== null;
+  }
+  private toSafeHtml(html: string | undefined): SafeHtml | '' {
+    if (!html) {
+      return '';
+    }
+
+    return this.sanitizer.bypassSecurityTrustHtml(html);
   }
   private handleWidthChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;

@@ -131,6 +131,8 @@ export class ThreeService implements OnDestroy {
 
   // Background texture URL requested before GLTF finished loading
   private pendingTextureUrl?: string;
+  // Monotonic token used to ignore stale async GLTF completions.
+  private modelLoadRequestId = 0;
 
   // Canvas mouse handlers (for cursor style)
   private readonly onCanvasMouseDown = () => {
@@ -580,6 +582,7 @@ public enableDimensions(on: boolean): void {
   // State reset & disposal
   // ------------------------------------------------------
   private resetState(): void {
+    this.modelLoadRequestId++;
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = undefined;
@@ -872,8 +875,17 @@ public enableDimensions(on: boolean): void {
     this.type = type;
     this.cube5Meshes = [];
     this.Wood = [];
+    const requestId = ++this.modelLoadRequestId;
 
     const apply = (gltf: any) => {
+        if (requestId !== this.modelLoadRequestId) {
+          try {
+            this.disposeObject(gltf.scene);
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
         // Remove old model
         if (this.currentModelRoot) {
           this.scene.remove(this.currentModelRoot);
@@ -1147,6 +1159,9 @@ public enableDimensions(on: boolean): void {
 
     const cached = this.gltfCache.get(gltfUrl);
     const handleError = (err: any) => {
+      if (requestId !== this.modelLoadRequestId) {
+        return;
+      }
       console.error(err);
       if (onError) {
         try {
