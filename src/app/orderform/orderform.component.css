@@ -28,6 +28,7 @@
     max-width: 1250px;
     padding: 0;
     background-color: #fff;
+    margin-top: 30px !important;
 }
 .ng-productaname a {
     text-transform: none;
@@ -997,6 +998,7 @@ button.mat-raised-button:hover {
 }
 h1.product-title {
     display: flex;
+    line-height: 1em;
 }
 .ng-productaname {
     display: flex;
