@@ -28,7 +28,7 @@ import { ConfiguratorComponent } from "../configurator/configurator.component";
 import { CarouselModule } from 'ngx-owl-carousel-o';
 import { RelatedproductComponent } from '../relatedproduct/relatedproduct.component';
 import { MatButtonToggleChange } from '@angular/material/button-toggle';
-import { DomSanitizer } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MatIconRegistry } from '@angular/material/icon';
 import * as htmlToImage from 'html-to-image';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
@@ -261,6 +261,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   unitOption: any;
   productdescription: string = "";
   pei_prospec: string = "";
+  safeProductDescription: SafeHtml | '' = '';
+  safePeiProspec: SafeHtml | '' = '';
   isScrolled = false;
   unittypename = "";
   hasProspecContent = false;
@@ -1328,8 +1330,10 @@ public onToggleLoopAnimate(): void {
           }
           this.registerProductIcon();
             
-          this.productdescription = data.pi_productdescription;
-          this.pei_prospec = data.pei_prospec;
+          this.productdescription = data.pi_productdescription || '';
+          this.pei_prospec = data.pei_prospec || '';
+          this.safeProductDescription = this.toSafeHtml(this.productdescription);
+          this.safePeiProspec = this.toSafeHtml(this.pei_prospec);
           this.hasProspecContent = this.hasContent(this.pei_prospec);
           this.hasDescriptionContent = this.hasContent(this.productdescription);
           this.category = Number(data.pi_category);
@@ -3023,7 +3027,19 @@ public onToggleLoopAnimate(): void {
 
     // Get the text content (ignores HTML tags) and trim it
     const text = div.textContent ?? '';
-    return text.trim().length > 0; // true only if there is real text
+    if (text.trim().length > 0) {
+      return true;
+    }
+
+    // Treat embedded content (for example iframe-only HTML) as valid content.
+    return div.querySelector('iframe, img, video, audio, object, embed') !== null;
+  }
+  private toSafeHtml(html: string | undefined): SafeHtml | '' {
+    if (!html) {
+      return '';
+    }
+
+    return this.sanitizer.bypassSecurityTrustHtml(html);
   }
   private handleWidthChange(params: any, field: ProductField, value: any): void {
     let fractionValue = 0;
