@@ -315,6 +315,8 @@ hasDescriptionContent = false;
   private previousZoomFactor: number | null = null;
   
   private prevIs3DOn: boolean = false;
+  private viewInitialized = false;
+  private pendingVisualizerProductName: string | null = null;
 
   private updateShowDimensionsToggle(): void {
     try {
@@ -657,6 +659,8 @@ hasDescriptionContent = false;
   }
 
   ngAfterViewInit(): void {
+    this.viewInitialized = true;
+    this.tryRunPendingVisualizerSetup();
     // Initialization is handled by setupVisualizer() which is called after data fetch.
     // We also need to ensure the animation loop in three.service is started.
     // A better place for this might be after the first textures are loaded.
@@ -687,7 +691,7 @@ hasDescriptionContent = false;
    this.threeService.loopAnimate();
   }
   
-public onToggleLoopAnimate(): void {
+  public onToggleLoopAnimate(): void {
 
   if (this.isLooping) {
     this.threeService.stopAll();
@@ -697,8 +701,28 @@ public onToggleLoopAnimate(): void {
     this.isLooping = true;
   }
 }
+  private tryRunPendingVisualizerSetup(): void {
+    if (!this.viewInitialized || !this.pendingVisualizerProductName) {
+      return;
+    }
+    if (!this.canvasRef || !this.containerRef) {
+      return;
+    }
+
+    const productname = this.pendingVisualizerProductName;
+    this.pendingVisualizerProductName = null;
+    this.setupVisualizer(productname);
+  }
+
   private setupVisualizer(productname: string): void {
-    if (!this.canvasRef || !this.containerRef) return;
+    if (!this.canvasRef || !this.containerRef) {
+      const fallbackName = (productname || this.productname || this.ecomproductname || '').trim();
+      if (fallbackName) {
+        this.pendingVisualizerProductName = fallbackName;
+      }
+      return;
+    }
+    this.pendingVisualizerProductName = null;
 
     const modelInfo = this.resolveModelInfo(productname);
     this.has3DModel = !!modelInfo;
