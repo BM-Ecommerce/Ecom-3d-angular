@@ -1798,24 +1798,29 @@ public onToggleLoopAnimate(): void {
 
     if (!field) return;
     const normalizedFieldName = this.normalizeFieldName(field.fieldname);
+    const isTwoDOnly = this.isTwoDOnlyProduct(this.product_id);
     this.removeSelectedOptionData([field]);
     if (value === null || value === undefined || value === '') {
       if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
         this.fabricid = 0;
         this.colorid = 0;
         this.updateMinMaxValidators(false);
-        this.background_color_image_url = "";
-        this.invalidateFrameThumbnails();
-        this.setupVisualizer(this.productname);
-        this.syncBackgroundImageInCarousel();
+        if (!isTwoDOnly) {
+          this.background_color_image_url = "";
+          this.invalidateFrameThumbnails();
+          this.setupVisualizer(this.productname);
+          this.syncBackgroundImageInCarousel();
+        }
       }
       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
         this.colorid = 0;
         this.updateMinMaxValidators(false);
-        this.background_color_image_url = "";
-        this.invalidateFrameThumbnails();
-        this.setupVisualizer(this.productname);
-        this.syncBackgroundImageInCarousel();
+        if (!isTwoDOnly) {
+          this.background_color_image_url = "";
+          this.invalidateFrameThumbnails();
+          this.setupVisualizer(this.productname);
+          this.syncBackgroundImageInCarousel();
+        }
       }
       if(field.fieldtypeid === 5 ||  field.fieldtypeid === 20){
         this.get_relatedproduct_data();
@@ -1880,11 +1885,13 @@ public onToggleLoopAnimate(): void {
       if (!isInitial && isMaterialField) {
         this.colorid = 0;
         this.colorname = '';
-        this.background_color_image_url = '';
-        this.invalidateFrameThumbnails();
-        this.resetFrameToDefault();
-        this.setupVisualizer(this.productname);
-        this.syncBackgroundImageInCarousel();
+        if (!isTwoDOnly) {
+          this.background_color_image_url = '';
+          this.invalidateFrameThumbnails();
+          this.resetFrameToDefault();
+          this.setupVisualizer(this.productname);
+          this.syncBackgroundImageInCarousel();
+        }
       }
 
       if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
@@ -1898,16 +1905,18 @@ public onToggleLoopAnimate(): void {
         this.updateProductTitle();
       }
       if (canUpdate && (field.fieldtypeid === 5 && field.level == 2 || field.fieldtypeid === 20) && selectedOption.optionimage) {
-        this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
-        this.get_freesample();
-        if (this.is3DOn) {
-          this.threeService.updateTextures(this.background_color_image_url);
-        } else {
-          this.update2DTexturesForSelection();
+        if (!isTwoDOnly) {
+          this.background_color_image_url = this.apiUrl + '/api/public' + selectedOption.optionimage;
+          this.get_freesample();
+          if (this.is3DOn) {
+            this.threeService.updateTextures(this.background_color_image_url);
+          } else {
+            this.update2DTexturesForSelection();
+          }
+          this.invalidateFrameThumbnails();
+          this.prepareFrameThumbnails();
+          this.syncBackgroundImageInCarousel();
         }
-        this.invalidateFrameThumbnails();
-        this.prepareFrameThumbnails();
-        this.syncBackgroundImageInCarousel();
       }
 
       if (canUpdate && field.fieldtypeid === 3 && normalizedFieldName === this.curtainColorKey && selectedOption.optionimage) {
