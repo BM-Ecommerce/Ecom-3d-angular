@@ -151,7 +151,7 @@ export class RelatedproductComponent implements OnInit, OnChanges, OnDestroy {
 
     const fdId = product.fd_id ?? 0;
 
-    return `${this.relatedproducts.siteurl}/visualizer/${this.relatedproducts.product_id}/${slug1}/${slug2}/${fdId}/${product.cd_id}/${product.groupid}/${product.supplierid}/${this.relatedproducts.routeParams.cart_productid}`;
+    return `${this.relatedproducts.siteurl}/visualizer/${this.relatedproducts.product_id}/${slug1}/${slug2}/${fdId}/${product.cd_id}/${product.groupid}/${product.supplierid}`;
   }
 
   // Thumbnail composition helpers
