@@ -2326,7 +2326,7 @@ public enableDimensions(on: boolean): void {
     const img = frameTexture.image as HTMLImageElement;
     if (!img || !img.width || !img.height) return;
 
-    const hole = this.detectTransparentRegion(img, 40);
+    const hole = this.detectTransparentRegion(img, 75);
     if (!hole.found) {
       frameMesh.geometry.computeBoundingBox();
       const bbox = (frameMesh.geometry as any)
@@ -2403,7 +2403,7 @@ public enableDimensions(on: boolean): void {
       return;
     }
 
-    const hole = this.detectTransparentRegion(img, 40);
+    const hole = this.detectTransparentRegion(img, 75);
     if (!hole.found) {
       this.zoomHoleRect = null;
       return;

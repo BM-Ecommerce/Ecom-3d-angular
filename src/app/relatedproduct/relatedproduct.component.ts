@@ -147,6 +147,7 @@ export class RelatedproductComponent implements OnInit, OnChanges, OnDestroy {
         : product.colorname
     )
       .toLowerCase()
+      .replace(/%/g, '&')
       .replace(/ /g, '-');
 
     const fdId = product.fd_id ?? 0;

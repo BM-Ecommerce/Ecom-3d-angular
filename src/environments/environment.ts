@@ -7,10 +7,10 @@
 // or environment variables to manage these settings securely.
 export const environment = {
   production: false,
-  apiUrl: 'https://blindmatrix.software',
-  apiKey: '0d5b2abe-d707-4eb3-a7cb-3f05a5e5d3fb',
-  apiName: 'ECOMMERCE',
-  site: 'https://blindssoftware.com',
+  apiUrl: 'https://us.blindmatrix.software',
+  apiKey: '250f9885-11f2-427e-9b1f-0dc7f8b98f8c',
+  apiName: 'VISTABLINDSCANADA',
+  site: 'https://new-vistablinds.blindsjunction.co.uk',
   loaderMode: 'topbar' as 'overlay' | 'topbar',
   loaderEnabled: true
 };
