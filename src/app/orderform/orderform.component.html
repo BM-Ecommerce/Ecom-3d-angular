@@ -634,13 +634,11 @@
   <mat-tab-group dynamicHeight>
 
     <mat-tab *ngIf="hasProspecContent" label="Product Specification">
-      <div class="tabsproduct" [innerHTML]="pei_prospec"></div>
+      <div class="tabsproduct" [innerHTML]="safePeiProspec"></div>
     </mat-tab>
 
     <mat-tab *ngIf="hasDescriptionContent" label="Details">
-      <p class="tabsproduct">
-        <span [innerHTML]="productdescription"></span>
-      </p>
+      <div class="tabsproduct" [innerHTML]="safeProductDescription"></div>
     </mat-tab>
 
   </mat-tab-group>
