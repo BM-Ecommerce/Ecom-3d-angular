@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, SimpleChanges, HostListener, Inject, NgZone } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, SimpleChanges, HostListener, Inject, NgZone } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { environment } from '../../environments/environment';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -628,7 +628,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
         this.isCalculatingPrice = true;
         const { grossprice } = res.fullpriceobject;
         this.pricedata = res.fullpriceobject;
-        this.currencySymbol = res.currencysymbol;
         this.grossPrice = `${this.currencySymbol}${Number(grossprice).toFixed(2)}`;
         this.grossPricenum = Number(grossprice);
       } else {
@@ -1498,7 +1497,8 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
               this.fabricFieldType
             ),
             recipeList: this.apiService.getRecipeList(params),
-            FractionList: this.apiService.getFractionList(params)
+            FractionList: this.apiService.getFractionList(params),
+            currencySymbol: this.getCurrencySymbol(params)
           });
         }
 
@@ -1507,6 +1507,11 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       }),
       tap((results: any) => {
         if (results) {
+          this.currencySymbol = results.currencySymbol || this.currencySymbol || '£';
+          this.get_freesample();
+          if (this.relatedproducts) {
+            this.get_relatedproduct_data();
+          }
           this.optionsLoaded = true;
           this.updateSkeletonState();
           this.parameters_data.forEach(field => {
@@ -3072,14 +3077,15 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
       return true;
     }
 
-    // Treat embedded content (for example iframe-only HTML) as valid content.
+
+    // Also treat embed-only HTML (for example iframe-only content) as valid.
     return div.querySelector('iframe, img, video, audio, object, embed') !== null;
   }
+
   private toSafeHtml(html: string | undefined): SafeHtml | '' {
     if (!html) {
       return '';
     }
-
     return this.sanitizer.bypassSecurityTrustHtml(html);
   }
   private handleWidthChange(params: any, field: ProductField, value: any): void {
@@ -3308,6 +3314,26 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private updateProductTitle(): void {
     this.productTitle = this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname);
+  }
+  private extractCurrencySymbol(response: any): string {
+    return (
+      response?.currency_symbol ||
+      response?.currencysymbol ||
+      response?.currencySymbol ||
+      response?.online_currency_symbol ||
+      response?.homecurrencysymbol ||
+      ''
+    );
+  }
+
+  private getCurrencySymbol(params: any): Observable<string> {
+    return this.apiService.getCurrencyConversion(params).pipe(
+      map((response: any) => this.extractCurrencySymbol(response) || this.currencySymbol || '£'),
+      catchError(error => {
+        console.error('Error getting currency symbol', error);
+        return of(this.currencySymbol || '£');
+      })
+    );
   }
   private getVat(): Observable<any> {
     return this.apiService.getVat(

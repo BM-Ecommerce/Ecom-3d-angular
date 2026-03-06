@@ -967,6 +967,12 @@ button.mat-raised-button:hover {
 .tabsproduct {
     color: var(--text-color);
 }
+::ng-deep .tabsproduct iframe {
+  width: 100%;
+  max-width: 100%;
+  min-height: 320px;
+  border: 0;
+}
 ::ng-deep .mat-ink-bar {
   background-color: var(--primary-color) !important; /* The underline color */
 }
