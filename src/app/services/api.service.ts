@@ -459,6 +459,11 @@ relatedProducts(
     const passData = `/job/get/vat/percentage/orderitem`;
     return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
   }
+  getCurrencyConversion(params: ApiCommonParams, payload: Record<string, any> = {}) {
+    const { api_url, api_key, api_name } = params;
+    const passData = `customer/currency-conversion/`;
+    return this.callApi('POST', passData, payload, true, false, api_url, api_key, api_name);
+  }
   getPrice(params: ApiCommonParams,
     width: any = "",
     drop: any = "",

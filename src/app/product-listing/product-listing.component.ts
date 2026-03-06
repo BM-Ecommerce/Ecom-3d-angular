@@ -517,7 +517,8 @@ export class ProductListingComponent implements OnInit, OnDestroy {
 
         return forkJoin({
           categoryData: this.apiService.getCategoryList(this.params).pipe(catchError(() => of(null))),
-          brandsData: this.apiService.getBrands(this.params).pipe(catchError(() => of(null)))
+          brandsData: this.apiService.getBrands(this.params).pipe(catchError(() => of(null))),
+          currencySymbol: this.getCurrencySymbol(this.params)
         });
       }),
       catchError((err) => {
@@ -534,6 +535,7 @@ export class ProductListingComponent implements OnInit, OnDestroy {
         return;
       }
 
+      this.currencySymbol = result?.currencySymbol || this.currencySymbol || '£';
       this.categories = this.prepareCategories(result?.categoryData?.result, result?.brandsData?.result);
       this.hasSidebarFilters = this.categories.some((category) => Array.isArray(category.values) && category.values.length > 0);
       this.initializeSelectedFilters();
@@ -3335,6 +3337,27 @@ export class ProductListingComponent implements OnInit, OnDestroy {
     }
     const numeric = Number(String(value).replace(/[^0-9.-]/g, ''));
     return Number.isFinite(numeric) ? numeric : 0;
+  }
+
+  private extractCurrencySymbol(response: any): string {
+    return (
+      response?.currency_symbol ||
+      response?.currencysymbol ||
+      response?.currencySymbol ||
+      response?.online_currency_symbol ||
+      response?.homecurrencysymbol ||
+      ''
+    );
+  }
+
+  private getCurrencySymbol(params: any) {
+    return this.apiService.getCurrencyConversion(params).pipe(
+      map((response: any) => this.extractCurrencySymbol(response) || this.currencySymbol || '£'),
+      catchError((error) => {
+        console.error('Error getting listing currency symbol', error);
+        return of(this.currencySymbol || '£');
+      })
+    );
   }
 
   private resolveCartProductId(routeParams?: any, queryParams?: any): string {

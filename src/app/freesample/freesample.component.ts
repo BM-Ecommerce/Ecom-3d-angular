@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -16,8 +16,8 @@ import { finalize } from 'rxjs/operators';
   styleUrls: ['./freesample.component.css'],
 
 })
-export class FreesampleComponent implements OnInit, OnChanges {
-  @Input() freesampledata: any;
+export class FreesampleComponent {
+  @Input() freesampledata: any = {};
   @Input() swatchSizeLabel: string = 'Approx. 10 × 10';
   @Input() mode: 'card' | 'button' = 'card';
   @Input() buttonStyle: 'raised' | 'stroked' = 'raised';
@@ -33,14 +33,6 @@ export class FreesampleComponent implements OnInit, OnChanges {
     private cdr: ChangeDetectorRef,
     private apiService: ApiService,
   ) { }
-
-  ngOnInit(): void {
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    // console.log(changes);
-    this.cdr.detectChanges();
-  }
 
   get isPaidSample(): boolean {
     return Number(this.freesampledata?.free_sample_price ?? 0) > 0;
@@ -80,21 +72,33 @@ export class FreesampleComponent implements OnInit, OnChanges {
     }
     this.button_disable = true;
 
-    let form_data = this.freesampledata.form_data;
-    let cartproductId = this.freesampledata.cart_productid;
-    let product_id = this.freesampledata.product_id;
+    const sampleData = this.freesampledata || {};
+    if (!sampleData?.form_data || !sampleData?.product_id) {
+      this.button_disable = false;
+      this.cdr.markForCheck();
+      Swal.fire({
+        icon: 'info',
+        title: 'Sample Not Ready',
+        text: 'Sample data is still loading. Please try again.'
+      });
+      return;
+    }
+
+    let form_data = sampleData.form_data;
+    let cartproductId = sampleData.cart_productid;
+    let product_id = sampleData.product_id;
     let api_url = this.resolveSiteBaseUrl() || environment.site;
-    let cartproductName = this.freesampledata.cartproductName;
-    let priceData = this.freesampledata.free_sample_price;
-    let vatpercentage = Number(this.freesampledata.vatpercentage);
-    let vatname = this.freesampledata.vatname;
-    let current_url = this.freesampledata.current_url;
-    let productname = this.freesampledata.productname;
-    let categoryId = Number(this.freesampledata.catagory_id);
-    let visualizer_url = this.freesampledata.pei_ecomImage;
-    let action = this.freesampledata.type;
-    let colorid = this.freesampledata.color_id;
-    let fabricid = this.freesampledata.fabric_id;
+    let cartproductName = sampleData.cartproductName;
+    let priceData = sampleData.free_sample_price;
+    let vatpercentage = Number(sampleData.vatpercentage);
+    let vatname = sampleData.vatname;
+    let current_url = sampleData.current_url;
+    let productname = sampleData.productname;
+    let categoryId = Number(sampleData.catagory_id);
+    let visualizer_url = sampleData.pei_ecomImage;
+    let action = sampleData.type;
+    let colorid = sampleData.color_id;
+    let fabricid = sampleData.fabric_id;
 
 
 
