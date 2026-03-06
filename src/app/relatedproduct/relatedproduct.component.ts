@@ -29,7 +29,7 @@ export class RelatedproductComponent implements OnInit, OnChanges, OnDestroy {
   private destroy$ = new Subject<void>();
   public related_products: any[] = [];
   gridView = false;
-  currencySymbol: string = '£';
+  currencySymbol: string = '';
   relatedframeimage: string = '';
   showframe: boolean = true;
   isDesktop = false;
@@ -75,7 +75,7 @@ export class RelatedproductComponent implements OnInit, OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['relatedproducts'] && changes['relatedproducts'].currentValue) {
       this.relatedframeimage = this.relatedproducts.relatedframeimage;
-      this.currencySymbol = this.relatedproducts.currencySymbol;
+      this.currencySymbol = this.relatedproducts?.currencySymbol || this.currencySymbol || '£';
       this.getRelatedProducts();
     }
   }

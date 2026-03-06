@@ -46,7 +46,7 @@
             <div class="fs-badge">Free Sample</div>
           </div>
           <div class="fs-subtitle" *ngIf="freesampledata?.cartproductName">
-            {{ freesampledata.cartproductName }}
+            {{ freesampledata?.cartproductName }}
           </div>
         </div>
 
@@ -54,7 +54,7 @@
           <div class="fs-price" *ngIf="isPaidSample">
             <span class="fs-price-label">Price</span>
             <span class="fs-price-value">
-              {{ freesampledata?.currencySymbol }} {{ freesampledata?.free_sample_price }}
+              {{ freesampledata?.currencySymbol || '' }} {{ freesampledata?.free_sample_price }}
             </span>
           </div>
           <div class="fs-price" *ngIf="!isPaidSample">
