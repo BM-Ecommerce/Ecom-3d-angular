@@ -597,7 +597,6 @@ hasDescriptionContent = false;
         this.isCalculatingPrice = true;
         const { grossprice } = res.fullpriceobject;
         this.pricedata = res.fullpriceobject;
-        this.currencySymbol = res.currencysymbol;
         this.grossPrice = `${this.currencySymbol}${Number(grossprice).toFixed(2)}`;
         this.grossPricenum = Number(grossprice);
       } else {
@@ -1462,7 +1461,8 @@ public onToggleLoopAnimate(): void {
               this.fabricFieldType
             ),
             recipeList: this.apiService.getRecipeList(params),
-            FractionList: this.apiService.getFractionList(params)
+            FractionList: this.apiService.getFractionList(params),
+            currencySymbol: this.getCurrencySymbol(params)
           });
         }
 
@@ -1471,6 +1471,11 @@ public onToggleLoopAnimate(): void {
       }),
       tap((results: any) => {
         if (results) {
+          this.currencySymbol = results.currencySymbol || this.currencySymbol || '£';
+          this.get_freesample();
+          if (this.relatedproducts) {
+            this.get_relatedproduct_data();
+          }
           this.optionsLoaded = true;
           this.updateSkeletonState();
           this.parameters_data.forEach(field => {
@@ -3221,6 +3226,26 @@ public onToggleLoopAnimate(): void {
 
   private updateProductTitle(): void {
     this.productTitle = this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname);
+  }
+  private extractCurrencySymbol(response: any): string {
+    return (
+      response?.currency_symbol ||
+      response?.currencysymbol ||
+      response?.currencySymbol ||
+      response?.online_currency_symbol ||
+      response?.homecurrencysymbol ||
+      ''
+    );
+  }
+
+  private getCurrencySymbol(params: any): Observable<string> {
+    return this.apiService.getCurrencyConversion(params).pipe(
+      map((response: any) => this.extractCurrencySymbol(response) || this.currencySymbol || '£'),
+      catchError(error => {
+        console.error('Error getting currency symbol', error);
+        return of(this.currencySymbol || '£');
+      })
+    );
   }
   private getVat(): Observable<any> {
     return this.apiService.getVat(
