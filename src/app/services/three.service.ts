@@ -13,9 +13,12 @@ import { LoadingService } from './loading.service';
 
 type BlindType =
   | 'rollerblinds'
+  | 'rollershades'
   | 'venetian'
   | 'vertical'
   | 'daynight'
+  | 'zebrashades'
+  | 'trippleshade'
   | 'roman'
   | 'wood'
   | 'generic';
@@ -525,6 +528,7 @@ public enableDimensions(on: boolean): void {
   public getBlindMaterialProfile(type: BlindType): BlindMaterialProfile {
     switch (type) {
       case 'rollerblinds':
+      case 'rollershades':
         return {
           roughness: 0.55,
           metalness: 0.0,
@@ -546,6 +550,8 @@ public enableDimensions(on: boolean): void {
         };
 
       case 'daynight':
+      case 'zebrashades':
+      case 'trippleshade':
         return {
           roughness: 0.4,
           metalness: 0.0,
@@ -985,7 +991,7 @@ public enableDimensions(on: boolean): void {
             mesh.receiveShadow = true;
 
             // Blind-type specific selection of slats / panels
-            if (type === 'rollerblinds') {
+            if (type === 'rollerblinds' || type === 'rollershades') {
               if (
                 mesh.name.startsWith('Cylinder032') ||
                 mesh.name.startsWith('Cylinder027') ||
@@ -1014,7 +1020,7 @@ public enableDimensions(on: boolean): void {
               ) {
                 this.cube5Meshes.push(mesh);
               }
-            } else if (type === 'daynight') {
+            } else if (type === 'daynight' || type === 'zebrashades' || type === 'trippleshade') {
               if (mesh.name.startsWith('Cube')) {
                 this.cube5Meshes.push(mesh);
               }
@@ -1746,8 +1752,11 @@ public enableDimensions(on: boolean): void {
           this.type === 'venetian' ||
           this.type === 'vertical' ||
           this.type === 'daynight' ||
+          this.type === 'zebrashades' ||
+          this.type === 'trippleshade' ||
           this.type === 'roman' ||
           this.type === 'rollerblinds' ||
+          this.type === 'rollershades' ||
           this.type === 'wood' ||
           this.type === 'generic'
           

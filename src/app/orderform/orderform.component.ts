@@ -749,7 +749,7 @@ public onToggleLoopAnimate(): void {
     setTimeout(() => this.onWindowResize(), 0);
   }
 
-  private resolveModelInfoFromAvailableNames(productname: string): { url: string; type: 'rollerblinds' | 'venetian' | 'vertical' | 'wood' | 'daynight' | 'roman' | 'generic' } | null {
+  private resolveModelInfoFromAvailableNames(productname: string): { url: string; type: 'rollerblinds' | 'rollershades' | 'venetian' | 'vertical' | 'wood' | 'daynight' | 'zebrashades' | 'trippleshade' | 'roman' | 'generic' } | null {
     const candidates = [productname, this.productname, this.ecomproductname, this.productslug]
       .map(name => String(name || '').trim())
       .filter(name => name.length > 0);
@@ -764,13 +764,16 @@ public onToggleLoopAnimate(): void {
     return null;
   }
 
-  private resolveModelInfo(productname: string): { url: string; type: 'rollerblinds' | 'venetian' | 'vertical' | 'wood' | 'daynight' | 'roman' | 'generic' } | null {
+  private resolveModelInfo(productname: string): { url: string; type: 'rollerblinds' | 'rollershades' | 'venetian' | 'vertical' | 'wood' | 'daynight' | 'zebrashades' | 'trippleshade' | 'roman' | 'generic' } | null {
     const name = (productname || '').toLowerCase();
     if (name.includes('perfect fit roller') || name.includes('perfect-fit roller')) {
       return { url: 'assets/perfectfitroller.glb', type: 'rollerblinds' };
     }
     if (name.includes('roller blinds') || name.includes('roller blind')) {
       return { url: 'assets/rollerblinds.glb', type: 'rollerblinds' };
+    }
+    if (name.includes('roller shades') || name.includes('roller shades')) {
+      return { url: 'assets/rollershades.glb', type: 'rollershades' };
     }
     if (name.includes('venetian') || name.includes('fauxwood')) {
       return { url: 'assets/venetianblinds.glb', type: 'venetian' };
@@ -783,6 +786,12 @@ public onToggleLoopAnimate(): void {
     }
     if (name.includes('day and night') || name.includes('day & night') || name.includes('daynight')) {
       return { url: 'assets/daynight.glb', type: 'daynight' };
+    }
+    if (name.includes('zebra shade') || name.includes('zebra shades')) {
+      return { url: 'assets/daynight.glb', type: 'zebrashades' };
+    }
+    if (name.includes('tripple shade') || name.includes('tripple shades')) {
+      return { url: 'assets/trippleshade.glb', type: 'trippleshade' };
     }
     if (name.includes('roman') || name.includes('roman blind') || name.includes('roman blinds')) {
       return { url: 'assets/romanblinds.glb', type: 'roman' };
