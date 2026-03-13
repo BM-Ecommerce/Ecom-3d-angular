@@ -13,9 +13,9 @@ name: "CodeQL Advanced"
 
 on:
   push:
-    branches: [ "main", "Listingpage", "rollerdor", "Template2", "Template_One", "VistaBlinds", "Ai_chat" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "Listingpage", "rollerdor", "Template2", "Template_One", "VistaBlinds", "Ai_chat" ]
+    branches: [ "main" ]
   schedule:
     - cron: '0 0 */24 * *'
 
