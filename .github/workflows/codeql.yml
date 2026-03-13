@@ -9,29 +9,13 @@
 # the `language` matrix defined below to confirm you have the correct set of
 # supported CodeQL languages.
 #
-name: CodeQL Advanced
+name: "CodeQL Advanced"
 
 on:
 push:
-branches:
-- main
-- Listingpage
-- rollerdor
-- Template2
-- Template_One
-- VistaBlinds
-- Ai_chat
-
+branches: [ "main", "Listingpage", "rollerdor", "Template2", "Template_One", "VistaBlinds", "Ai_chat" ]
 pull_request:
-branches:
-- main
-- Listingpage
-- rollerdor
-- Template2
-- Template_One
-- VistaBlinds
-- Ai_chat
-
+branches: [ "main", "Listingpage", "rollerdor", "Template2", "Template_One", "VistaBlinds", "Ai_chat" ]
 schedule:
 - cron: '0 0 */2 * *'
 
