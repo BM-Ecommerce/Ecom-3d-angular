@@ -9,5 +9,5 @@ export const environment = {
   apiName: 'ECOMMERCE',
   site: 'https://blindssoftware.com',
   loaderMode: 'topbar' as 'overlay' | 'topbar',
-  loaderEnabled: true
+  loaderEnabled: false
 };
