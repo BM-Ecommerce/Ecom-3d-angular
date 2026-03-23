@@ -1,10 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
 
 html, body { height: 100%; }
-body { margin: 0; font-family: 'Inter', sans-serif !important; }
+body { margin: 0; font-family: 'Inter', sans-serif;  }
 /* 1. Update the global variable (standard components) */
 :root {
-  --mat-typography-font-family: 'Inter', sans-serif !important;
+  --mat-typography-font-family: 'Inter', sans-serif;
 }
 
 /* 2. Target all .mat- classes EXCEPT mat-icon and its variants */
@@ -14,7 +14,7 @@ body { margin: 0; font-family: 'Inter', sans-serif !important; }
 .mat-typography h2, 
 .mat-typography h3, 
 .mat-typography p {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Inter', sans-serif;
 }
 .mat-input-element {
     caret-color: var(--primary-color) !important;
@@ -28,7 +28,7 @@ body { margin: 0; font-family: 'Inter', sans-serif !important; }
     font-size: 14px;
     font-weight: 600;
     color: var(--dark-gray);
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Inter', sans-serif;
 }
 
 .mat-form-field-required-marker {
@@ -121,7 +121,7 @@ body { margin: 0; font-family: 'Inter', sans-serif !important; }
 }
 
 .mat-tab-label, .mat-tab-link {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Inter', sans-serif;
     font-size: 14px;
     font-weight: 600 !important;
 }

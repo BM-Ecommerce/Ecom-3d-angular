@@ -31,7 +31,7 @@
 
 .listing-page,
 .listing-page *:not(mat-icon):not(.mat-icon):not(.material-icons):not(.material-symbols-outlined) {
-  font-family: var(--listing-font-family) !important;
+  font-family: var(--listing-font-family);
 }
 
 .listing-page h1,
@@ -44,7 +44,7 @@
 .listing-page button,
 .listing-page label,
 .listing-page .mdc-list-item__primary-text {
-  font-family: var(--listing-font-family) !important;
+  font-family: var(--listing-font-family);
 }
 
 .skeleton {

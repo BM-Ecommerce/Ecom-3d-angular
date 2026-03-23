@@ -256,7 +256,7 @@ body:before {
     font-size: 1.0769230769rem;
 }
 .configurator-productDetails-steps .section>.heading .help-icon:before {
-    font-family: icomoon!important;
+    font-family: icomoon;
     speak: none;
     font-style: normal;
     font-weight: 400;

@@ -21,7 +21,7 @@
 
 .tooltip-container {
     position: relative;
-    font-family: 'Inter', sans-serif;
+    /* font-family: 'Inter', sans-serif; */
 }
 
 .blinds.container {
@@ -919,7 +919,7 @@ mat-button-toggle.mat-button-toggle-checked {
   opacity: 1 !important;
   transition: var(--transition);
   font-size: 14;
-  font-family: 'Inter', sans-serif !important;
+  /* font-family: 'Inter', sans-serif !important; */
 }
 
 :host ::ng-deep .mat-tab-label {
@@ -934,7 +934,7 @@ mat-button-toggle.mat-button-toggle-checked {
 /* Active tab text color on first render + after interaction */
 :host ::ng-deep .mat-tab-label.mat-tab-label-active .mat-tab-label-content {
   color: var(--dark-gray) !important;
-  font-family: 'Inter', sans-serif !important;
+  /* font-family: 'Inter', sans-serif !important; */
 }
 
 .mat-ink-bar {
@@ -1348,7 +1348,7 @@ mat-button-toggle-group:disabled {
 .show-order-details-contents {
   width: 100%;
   border-collapse: collapse;
-  font-family: Arial, sans-serif;
+  /* font-family: Arial, sans-serif; */
 }
 .show-order-details-contents tr {
   display: flex;
