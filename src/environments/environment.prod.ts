@@ -8,7 +8,7 @@ export const environment = {
   apiKey: '0d5b2abe-d707-4eb3-a7cb-3f05a5e5d3fb',
   apiName: 'ECOMMERCE',
   site: 'https://template2.blindssoftware.com',
-  cart_productid: '5964',
+  cart_productid: '6277',
   loaderMode: 'topbar' as 'overlay' | 'topbar',
   loaderEnabled: true
 };
