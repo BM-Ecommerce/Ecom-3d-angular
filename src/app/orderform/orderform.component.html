@@ -41,7 +41,7 @@
                 (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()" *ngIf="this.category != 5">
               <div id="main-img"  #mainImg [ngClass]="{ 'view3d': is3DOn }" class="configuratorpreviewimage" (click)="onVisualizerClick($event)">
 
-                <canvas #visualizerCanvas role="img" [attr.aria-label]="currentAltText || productTitle || ecomproductname"></canvas>
+                <canvas #visualizerCanvas></canvas>
                   <div *ngIf="!is3DOn && category != 5 && product_img_array.length > 1 && !isCurrentProductTwoDOnly" class="frame-nav">
 
                   <button type="button" class="frame-nav-button left" (click)="onPrevFrameClick($event)" aria-label="Previous frame">
