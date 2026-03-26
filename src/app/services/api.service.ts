@@ -281,26 +281,21 @@ relatedProducts(
   params: ApiCommonParams,
   category_id: number,
   related_fabric: number = 0,
-  colorid: number = 0,
-  noPayload: boolean = false   // 👈 new param (default keeps old behavior)
+  colorid: number = 0
 ): Observable<ApiResponse> {
 
-  const { api_url, api_key, api_name, product_id } = params;
+ const { api_url, api_key, api_name, product_id, ...rest } = params;
 
-  let payload: any = {
-    related_fabric: related_fabric || colorid,
+  let fabric_id = related_fabric || colorid;
+
+  const payload = {
+    related_fabric: fabric_id,
     colorid: colorid,
     productid: product_id,
   };
+    const passData = `fabriclistview/${category_id}/${product_id}/?page=1&perpage=2000`;
 
-  // 👇 Only override when explicitly requested
-  if (noPayload) {
-    payload = {};
-  }
-
-  const passData = `fabriclistview/${category_id}/${product_id}/?page=1&perpage=2000`;
-
-  return this.callApi('POST', passData, payload, false, false, api_url, api_key, api_name);
+    return this.callApi('POST', passData, payload, false, false, api_url, api_key, api_name);
 }
 
   getOptionlist(

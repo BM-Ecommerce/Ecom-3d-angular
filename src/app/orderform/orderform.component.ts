@@ -6,7 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { CommonModule, DOCUMENT } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { ThreeService } from '../services/three.service';;
@@ -28,7 +28,7 @@ import { ConfiguratorComponent } from "../configurator/configurator.component";
 import { CarouselModule } from 'ngx-owl-carousel-o';
 import { RelatedproductComponent } from '../relatedproduct/relatedproduct.component';
 import { MatButtonToggleChange } from '@angular/material/button-toggle';
-import { DomSanitizer, Meta, SafeHtml, Title } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MatIconRegistry } from '@angular/material/icon';
 import * as htmlToImage from 'html-to-image';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
@@ -174,24 +174,6 @@ interface FractionOption {
   frac_decimalvalue: string;
 }
 
-interface MaterialMetaEntry {
-  fd_id?: number | string | null;
-  cd_id?: number | string | null;
-  metatitle?: string | null;
-  metadescription?: string | null;
-  metakeyword?: string | null;
-  canonicalurl?: string | null;
-  alttext?: string | null;
-}
-
-interface MaterialMetaState {
-  title: string;
-  description: string;
-  keywords: string;
-  canonicalUrl: string;
-  altText: string;
-}
-
 @Component({
   selector: 'app-orderform',
   templateUrl: './orderform.component.html',
@@ -250,11 +232,6 @@ export class OrderformComponent implements OnInit, OnDestroy, AfterViewInit {
   private unitField?: ProductField;
   // Form / UI state
   public productTitle: string = '';
-  public currentMetaTitle: string = '';
-  public currentMetaDescription: string = '';
-  public currentMetaKeyword: string = '';
-  public currentCanonicalUrl: string = '';
-  public currentAltText: string = '';
   public related_products: any[] = [];
   isLoading = false;
   public showSkeleton = false;
@@ -478,14 +455,6 @@ hasDescriptionContent = false;
   currencySymbol: string = '£';
   public isMobile = false;
   public skeletonRows = Array.from({ length: 6 }, (_, i) => i);
-  private materialMetaEntries: MaterialMetaEntry[] = [];
-  private initialMaterialMeta: MaterialMetaState = {
-    title: '',
-    description: '',
-    keywords: '',
-    canonicalUrl: '',
-    altText: ''
-  };
   // Form controls
   orderForm: FormGroup;
   previousFormValue: any;
@@ -537,13 +506,10 @@ hasDescriptionContent = false;
     private cd: ChangeDetectorRef,
     private threeService: ThreeService,
     private http: HttpClient,
-    @Inject(DOCUMENT) private document: Document,
     @Inject(LoadingService) public loading: LoadingService,
     private matIconRegistry: MatIconRegistry,
     private sanitizer: DomSanitizer,
-    private ngZone: NgZone,
-    private titleService: Title,
-    private metaService: Meta
+    private ngZone: NgZone
   ) {
     // initial minimal group; will be replaced in initializeFormControls
     this.orderForm = this.fb.group({
@@ -553,7 +519,6 @@ hasDescriptionContent = false;
       qty: [1, [Validators.required, Validators.min(1)]]
     });
     this.previousFormValue = this.orderForm.value;
-    this.initialMaterialMeta = this.readCurrentMaterialMeta();
     this.updateProductTitle();
   }
 
@@ -1345,7 +1310,6 @@ public onToggleLoopAnimate(): void {
     this.isLoading = true;
     this.isCanvasReady = false;
     this.optionsLoaded = false;
-    this.materialMetaEntries = [];
     this.updateSkeletonState();
     this.errorMessage = null;
 
@@ -1498,13 +1462,7 @@ public onToggleLoopAnimate(): void {
             ),
             recipeList: this.apiService.getRecipeList(params),
             FractionList: this.apiService.getFractionList(params),
-            currencySymbol: this.getCurrencySymbol(params),
-            productList: this.apiService.relatedProducts(params, this.fabricFieldType, 0, 0, true).pipe(
-              catchError((error) => {
-                console.error('Error loading material metadata list:', error);
-                return of({ result: [] } as any);
-              })
-            )
+            currencySymbol: this.getCurrencySymbol(params)
           });
         }
 
@@ -1558,21 +1516,6 @@ public onToggleLoopAnimate(): void {
               this.updateFieldValues(this.unitField, selectedunitOption, 'updateunittype');
             }
           }
-          if (results.productList?.result) {
-            this.materialMetaEntries = results.productList.result;
-          }
-
-          if (!this.fabricid && this.routeParams?.fabric_id && !this.hasConfigurableFabricField()) {
-            this.fabricid = Number(this.routeParams.fabric_id) || this.fabricid;
-          }
-          if (!this.colorid && this.routeParams?.color_id && !this.hasConfigurableColorField()) {
-            this.colorid = Number(this.routeParams.color_id) || this.colorid;
-          }
-
-          this.syncSelectedMaterialMeta(
-            this.fabricid || this.routeParams?.fabric_id,
-            this.colorid || this.routeParams?.color_id
-          );
         }
       }),
       catchError(err => {
@@ -1864,10 +1807,6 @@ public onToggleLoopAnimate(): void {
       if ((field.fieldtypeid === 5 && field.level == 1) || (field.fieldtypeid === 21 && field.level == 1)) {
         this.fabricid = 0;
         this.colorid = 0;
-        this.fabricname = '';
-        this.colorname = '';
-        this.selected_img_option = 0;
-        this.selected_color_option = null;
         this.updateMinMaxValidators(false);
         this.background_color_image_url = "";
         this.invalidateFrameThumbnails();
@@ -1876,9 +1815,6 @@ public onToggleLoopAnimate(): void {
       }
       if ((field.fieldtypeid === 5 && field.level == 2) || field.fieldtypeid === 20 || (field.fieldtypeid === 21 && field.level == 2)) {
         this.colorid = 0;
-        this.colorname = '';
-        this.selected_img_option = 0;
-        this.selected_color_option = null;
         this.updateMinMaxValidators(false);
         this.background_color_image_url = "";
         this.invalidateFrameThumbnails();
@@ -1889,11 +1825,9 @@ public onToggleLoopAnimate(): void {
         this.get_relatedproduct_data();
       }
       this.updateFieldValues(field, null, 'valueChangedToEmpty');
-      this.updateProductTitle();
       this.clearExistingSubfields(field.fieldid, field.allparentFieldId);
       this.get_freesample();
       this.setShutterObject(field,null);
-      this.syncSelectedMaterialMeta();
    
       return;
     }
@@ -2072,7 +2006,6 @@ public onToggleLoopAnimate(): void {
              this.setShutterObject(field,selectedOption);
              this.setShutterImage();
           }
-          this.syncSelectedMaterialMeta();
           this.cd.markForCheck();
         });
     }
@@ -3294,160 +3227,6 @@ public onToggleLoopAnimate(): void {
   private updateProductTitle(): void {
     this.productTitle = this.buildProductTitle(this.ecomproductname, this.fabricname, this.colorname);
   }
-
-  private readCurrentMaterialMeta(): MaterialMetaState {
-    const canonicalLink = this.document.head.querySelector("link[rel='canonical']") as HTMLLinkElement | null;
-
-    return {
-      title: this.titleService.getTitle() || '',
-      description: this.metaService.getTag("name='description'")?.content || '',
-      keywords: this.metaService.getTag("name='keywords'")?.content || '',
-      canonicalUrl: canonicalLink?.href || '',
-      altText: ''
-    };
-  }
-
-  private normalizeMetaValue(value: unknown): string {
-    if (value === null || value === undefined) {
-      return '';
-    }
-
-    return String(value).trim();
-  }
-
-  private normalizeMetaId(value: unknown): string {
-    const normalizedValue = this.normalizeMetaValue(value);
-    return normalizedValue === '0' ? '' : normalizedValue;
-  }
-
-  private htmlToPlainText(html?: string): string {
-    if (!html) {
-      return '';
-    }
-
-    const div = this.document.createElement('div');
-    div.innerHTML = html;
-    return (div.textContent || div.innerText || '').trim();
-  }
-
-  private getFallbackCanonicalUrl(): string {
-    const currentUrl = this.normalizeMetaValue(this.document.location?.href);
-    return currentUrl || this.initialMaterialMeta.canonicalUrl;
-  }
-
-  private hasConfigurableFabricField(): boolean {
-    return (this.parameters_data || []).some((field) => {
-      const level = field.level ?? field.fieldlevel;
-      return field.showfieldecomonjob == 1 && (field.fieldtypeid === 5 || field.fieldtypeid === 21) && level === 1;
-    });
-  }
-
-  private hasConfigurableColorField(): boolean {
-    return (this.parameters_data || []).some((field) => {
-      const level = field.level ?? field.fieldlevel;
-      return field.showfieldecomonjob == 1 && (((field.fieldtypeid === 5 || field.fieldtypeid === 21) && level === 2) || field.fieldtypeid === 20);
-    });
-  }
-
-  private findMaterialMetaEntry(fabricId: unknown, colorId: unknown): MaterialMetaEntry | undefined {
-    if (!this.materialMetaEntries.length) {
-      return undefined;
-    }
-
-    const normalizedFabricId = this.normalizeMetaId(fabricId);
-    const normalizedColorId = this.normalizeMetaId(colorId);
-
-    if (normalizedFabricId && normalizedColorId) {
-      return this.materialMetaEntries.find((entry) =>
-        this.normalizeMetaId(entry.fd_id) === normalizedFabricId &&
-        this.normalizeMetaId(entry.cd_id) === normalizedColorId
-      );
-    }
-
-    if (this.hasConfigurableFabricField() && this.hasConfigurableColorField()) {
-      return undefined;
-    }
-
-    if (normalizedColorId) {
-      return this.materialMetaEntries.find((entry) => this.normalizeMetaId(entry.cd_id) === normalizedColorId);
-    }
-
-    if (normalizedFabricId) {
-      return this.materialMetaEntries.find((entry) => this.normalizeMetaId(entry.fd_id) === normalizedFabricId);
-    }
-
-    return undefined;
-  }
-
-  private buildFallbackMaterialMeta(): MaterialMetaState {
-    const title = this.productTitle || this.ecomproductname || this.initialMaterialMeta.title;
-    const description = this.htmlToPlainText(this.productdescription) || this.initialMaterialMeta.description;
-    const keywords = this.initialMaterialMeta.keywords;
-    const canonicalUrl = this.getFallbackCanonicalUrl();
-    const altText = title || this.initialMaterialMeta.altText;
-
-    return {
-      title,
-      description,
-      keywords,
-      canonicalUrl,
-      altText
-    };
-  }
-
-  private updateCanonicalLink(url: string): void {
-    let canonicalLink = this.document.head.querySelector("link[rel='canonical']") as HTMLLinkElement | null;
-
-    if (!canonicalLink) {
-      canonicalLink = this.document.createElement('link');
-      canonicalLink.setAttribute('rel', 'canonical');
-      this.document.head.appendChild(canonicalLink);
-    }
-
-    const normalizedUrl = this.normalizeMetaValue(url);
-    if (normalizedUrl) {
-      canonicalLink.setAttribute('href', normalizedUrl);
-    } else {
-      canonicalLink.removeAttribute('href');
-    }
-  }
-
-  private applyMaterialMeta(metaState: MaterialMetaState): void {
-    this.currentMetaTitle = metaState.title;
-    this.currentMetaDescription = metaState.description;
-    this.currentMetaKeyword = metaState.keywords;
-    this.currentCanonicalUrl = metaState.canonicalUrl;
-    this.currentAltText = metaState.altText;
-
-    if (metaState.title) {
-      this.titleService.setTitle(metaState.title);
-    }
-
-    this.metaService.updateTag(
-      { name: 'description', content: metaState.description || '' },
-      "name='description'"
-    );
-    this.metaService.updateTag(
-      { name: 'keywords', content: metaState.keywords || '' },
-      "name='keywords'"
-    );
-    this.updateCanonicalLink(metaState.canonicalUrl);
-    this.cd.markForCheck();
-  }
-
-  private syncSelectedMaterialMeta(fabricId: unknown = this.fabricid, colorId: unknown = this.colorid): void {
-    const fallbackMeta = this.buildFallbackMaterialMeta();
-    const matchedMeta = this.findMaterialMetaEntry(fabricId, colorId);
-
-    this.applyMaterialMeta({
-      title: this.normalizeMetaValue(matchedMeta?.metatitle) || fallbackMeta.title,
-      description: this.normalizeMetaValue(matchedMeta?.metadescription) || fallbackMeta.description,
-      keywords: this.normalizeMetaValue(matchedMeta?.metakeyword) || fallbackMeta.keywords,
-      canonicalUrl: this.normalizeMetaValue(matchedMeta?.canonicalurl) || fallbackMeta.canonicalUrl,
-      altText: this.normalizeMetaValue(matchedMeta?.alttext) || fallbackMeta.altText
-    });
-  }
-
   private extractCurrencySymbol(response: any): string {
     return (
       response?.currency_symbol ||
