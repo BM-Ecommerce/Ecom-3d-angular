@@ -80,7 +80,7 @@ jobs:
 
   # ── Tab 3: Quality + AI Analysis + Teams ───────────────────────
   quality-and-notify:
-    name: 🔍 Quality & 🤖 AI
+    name: 🔍 Code Quality & 🤖 AI
     runs-on: ubuntu-latest
     needs: [build, unit-tests]
     if: always()
