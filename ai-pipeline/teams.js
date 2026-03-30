@@ -1,25 +1,25 @@
 /**
- * Microsoft Teams notifier — Short & concise Adaptive Card
+ * Microsoft Teams notifier — Simple & user friendly Adaptive Card
  */
 
 const axios = require('axios');
 
 function statusEmoji(status) {
-  return status === 'pass' ? '✅' : '❌';
+  return status === 'pass' ? '✅ Passed' : '❌ Failed';
 }
 
-function statusColor(statuses) {
-  return Object.values(statuses).some((s) => s === 'fail') ? 'attention' : 'good';
+function overallStatus(statuses) {
+  return Object.values(statuses).some((s) => s === 'fail') ? '❌ Build Failed' : '✅ Build Passed';
 }
 
-async function sendTeamsNotification(context, statuses, outputs, results) {
+function headerColor(statuses) {
+  return Object.values(statuses).some((s) => s === 'fail') ? 'Attention' : 'Good';
+}
+
+async function sendTeamsNotification(context, statuses, _outputs, results) {
   const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
   if (!webhookUrl) return;
 
-  const color = statusColor(statuses);
-  const overallStatus = color === 'good' ? '✅ ALL PASSED' : '❌ FAILED';
-
-  // Build one compact AI summary from all results
   const aiSummary = buildShortSummary(results, statuses);
 
   const card = {
@@ -32,70 +32,90 @@ async function sendTeamsNotification(context, statuses, outputs, results) {
           type: 'AdaptiveCard',
           version: '1.4',
           body: [
-            // ── Header ─────────────────────────────────────────
+
+            // ── 1. Title ───────────────────────────────────────
             {
               type: 'TextBlock',
-              text: `🚀 Ecom-3D-Angular | ${overallStatus}`,
+              text: `Ecom 3D Angular — ${overallStatus(statuses)}`,
               weight: 'Bolder',
               size: 'Large',
-              color: color === 'good' ? 'Good' : 'Attention',
+              color: headerColor(statuses),
+              wrap: true,
+            },
+
+            // ── 2. Push Info ───────────────────────────────────
+            {
+              type: 'FactSet',
+              spacing: 'Small',
+              facts: [
+                { title: '👤 Developer', value: context.actor },
+                { title: '🌿 Branch',    value: context.branch },
+                { title: '📝 Commit',    value: context.commitSha },
+                { title: '💬 Message',   value: context.commitMsg || '—' },
+              ],
+            },
+
+            { type: 'separator' },
+
+            // ── 3. Pipeline Step Results ───────────────────────
+            {
+              type: 'TextBlock',
+              text: 'Pipeline Results',
+              weight: 'Bolder',
+              size: 'Medium',
+              spacing: 'Medium',
             },
             {
               type: 'FactSet',
               facts: [
-                { title: 'Branch', value: `${context.branch}` },
-                { title: 'By', value: context.actor },
-                { title: 'Commit', value: `${context.commitSha} — ${context.commitMsg || ''}` },
+                { title: '🔨 Build',      value: statusEmoji(statuses.build) },
+                { title: '🧪 Unit Tests', value: statusEmoji(statuses.test) },
+                { title: '🔍 SonarQube', value: statusEmoji(statuses.sonar) },
               ],
             },
+
             { type: 'separator' },
 
-            // ── Pipeline Results (one line each) ───────────────
-            {
-              type: 'ColumnSet',
-              columns: [
-                {
-                  type: 'Column',
-                  width: 'stretch',
-                  items: [
-                    { type: 'TextBlock', text: `${statusEmoji(statuses.build)} Build`, size: 'Small', weight: 'Bolder' },
-                    { type: 'TextBlock', text: `${statusEmoji(statuses.test)} Unit Tests`, size: 'Small', weight: 'Bolder' },
-                    { type: 'TextBlock', text: `${statusEmoji(statuses.sonar)} SonarQube`, size: 'Small', weight: 'Bolder' },
-                  ],
-                },
-              ],
-            },
-            { type: 'separator' },
-
-            // ── AI Summary (short, only key points) ───────────
+            // ── 4. AI Summary (only shown if something failed) ─
             ...(aiSummary
               ? [
                   {
                     type: 'TextBlock',
-                    text: '🤖 AI Summary',
+                    text: '🤖 What Went Wrong (AI Analysis)',
                     weight: 'Bolder',
-                    size: 'Small',
-                    spacing: 'Small',
+                    size: 'Medium',
+                    spacing: 'Medium',
                   },
                   {
                     type: 'TextBlock',
                     text: aiSummary,
                     wrap: true,
                     size: 'Small',
-                    color: 'Attention',
+                    spacing: 'Small',
                   },
                 ]
-              : []),
+              : [
+                  {
+                    type: 'TextBlock',
+                    text: '🤖 AI Review: No issues found. Great work! 🎉',
+                    wrap: true,
+                    size: 'Small',
+                    color: 'Good',
+                    spacing: 'Medium',
+                  },
+                ]),
           ],
+
+          // ── 5. Action Buttons ────────────────────────────────
           actions: [
             {
               type: 'Action.OpenUrl',
-              title: '🔍 View Pipeline',
+              title: '🔍 View Pipeline Logs',
               url: context.runUrl || `https://github.com/${context.repo}/actions`,
             },
             {
               type: 'Action.OpenUrl',
-              title: '📂 Repository',
+              title: '📂 Open Repository',
               url: `https://github.com/${context.repo}`,
             },
           ],
@@ -108,37 +128,35 @@ async function sendTeamsNotification(context, statuses, outputs, results) {
 }
 
 /**
- * Build a short 3-5 bullet summary from all AI results
+ * Extract only the most important line from each AI analyzer
  */
 function buildShortSummary(results, statuses) {
+  const anyFail = Object.values(statuses).some((s) => s === 'fail');
+  if (!anyFail) return null;
+
   const bullets = [];
 
-  // Only show AI summary if something failed
-  const anyFail = Object.values(statuses).some((s) => s === 'fail');
-  if (!anyFail) return '✅ Everything looks good!';
-
   if (results.incident) {
-    // Extract just the ROOT CAUSE line
-    const rootCause = results.incident.match(/ROOT CAUSE[:\s]+(.+)/i);
-    if (rootCause) bullets.push(`🔴 ${rootCause[1].trim()}`);
+    const match = results.incident.match(/ROOT CAUSE[:\s]+(.+)/i);
+    if (match) bullets.push(`🔴 Root Cause: ${match[1].trim()}`);
   }
 
   if (results.security) {
-    const critical = results.security.match(/CRITICAL[^•\n]*[•\-]\s*(.+)/i);
-    if (critical) bullets.push(`🔒 ${critical[1].trim()}`);
+    const match = results.security.match(/CRITICAL[^•\n]*[•\-]\s*(.+)/i);
+    if (match) bullets.push(`🔒 Security: ${match[1].trim()}`);
   }
 
   if (results.testGap) {
-    const coverage = results.testGap.match(/COVERAGE SUMMARY[:\s]+(.+)/i);
-    if (coverage) bullets.push(`🧪 ${coverage[1].trim()}`);
+    const match = results.testGap.match(/COVERAGE SUMMARY[:\s]+(.+)/i);
+    if (match) bullets.push(`🧪 Coverage: ${match[1].trim()}`);
   }
 
   if (results.performance) {
-    const issue = results.performance.match(/ISSUES?[^•\n]*[•\-]\s*(.+)/i);
-    if (issue) bullets.push(`📦 ${issue[1].trim()}`);
+    const match = results.performance.match(/BIGGEST ISSUE[:\s]+(.+)/i);
+    if (match) bullets.push(`📦 Bundle: ${match[1].trim()}`);
   }
 
-  return bullets.length > 0 ? bullets.join('\n') : null;
+  return bullets.length > 0 ? bullets.join('\n\n') : null;
 }
 
 module.exports = { sendTeamsNotification };
