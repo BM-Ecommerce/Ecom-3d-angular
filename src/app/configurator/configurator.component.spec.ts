@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfiguratorComponent } from './configurator.component';
 
@@ -8,7 +11,12 @@ describe('ConfiguratorComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ ConfiguratorComponent ]
+      imports: [
+        ConfiguratorComponent,
+        NoopAnimationsModule,
+        HttpClientTestingModule,
+        RouterTestingModule,
+      ]
     })
     .compileComponents();
 

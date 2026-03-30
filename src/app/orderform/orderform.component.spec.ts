@@ -3,6 +3,7 @@ import { OrderformComponent } from './orderform.component';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 
@@ -46,7 +47,8 @@ describe('OrderformComponent', () => {
         ReactiveFormsModule,
         RouterTestingModule,
         HttpClientTestingModule,
-        OrderformComponent
+        NoopAnimationsModule,
+        OrderformComponent,
       ],
       providers: [
         {
