@@ -7,12 +7,18 @@ on:
     branches: ['**']
 
 # ─────────────────────────────────────────────────────────────────
-# Each job appears as a separate tab in GitHub Actions UI
+#  Execution Flow (optimized):
+#
+#  🔨 Build  ──┐
+#              ├──► 🔍 Code Quality ──► 🤖 AI Analysis → Teams
+#  🧪 Tests  ──┘
+#
+#  Build & Tests run IN PARALLEL → saves 3-4 minutes
 # ─────────────────────────────────────────────────────────────────
 
 jobs:
 
-  # ── Tab 1: Build ───────────────────────────────────────────────
+  # ── Tab 1: Build (runs in parallel with tests) ─────────────────
   build:
     name: 🔨 Build
     runs-on: ubuntu-latest
@@ -25,7 +31,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'npm'           # ← caches node_modules between runs
 
       - name: Install dependencies
         run: npm ci
@@ -42,15 +48,16 @@ jobs:
         if: always()
         with:
           name: build-output
+          retention-days: 1      # ← auto delete after 1 day
           path: |
             build-output.txt
             dist/
 
-  # ── Tab 2: Unit Tests ──────────────────────────────────────────
+  # ── Tab 2: Unit Tests (runs in parallel with build) ────────────
   unit-tests:
     name: 🧪 Unit Tests
     runs-on: ubuntu-latest
-    needs: build
+    # NO 'needs' here → runs at same time as build ✅
     outputs:
       status: ${{ steps.test.outputs.status }}
     steps:
@@ -60,7 +67,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'npm'           # ← caches node_modules between runs
 
       - name: Install dependencies
         run: npm ci
@@ -77,15 +84,16 @@ jobs:
         if: always()
         with:
           name: test-output
+          retention-days: 1
           path: |
             test-output.txt
             coverage/
 
-  # ── Tab 3: Code Quality (SonarQube) ───────────────────────────
+  # ── Tab 3: Code Quality — waits for both build + tests ─────────
   code-quality:
     name: 🔍 Code Quality
     runs-on: ubuntu-latest
-    needs: unit-tests
+    needs: [build, unit-tests]   # ← waits for both to finish
     outputs:
       status: ${{ steps.sonar.outputs.status }}
     steps:
@@ -126,14 +134,15 @@ jobs:
         if: always()
         with:
           name: sonar-output
+          retention-days: 1
           path: sonar-output.txt
 
-  # ── Tab 4: AI Analysis + Teams Notification ────────────────────
+  # ── Tab 4: AI Analysis + Teams — always runs last ──────────────
   ai-analysis:
     name: 🤖 AI Analysis
     runs-on: ubuntu-latest
     needs: [build, unit-tests, code-quality]
-    if: always()
+    if: always()                 # ← runs even if other jobs fail
     steps:
       - uses: actions/checkout@v4
 
@@ -141,27 +150,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
 
       - name: Install AI pipeline dependencies
         run: npm ci
         working-directory: ai-pipeline
 
-      - name: Download build output
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
-        with:
-          name: build-output
         continue-on-error: true
 
-      - name: Download test output
-        uses: actions/download-artifact@v4
-        with:
-          name: test-output
-        continue-on-error: true
-
-      - name: Download sonar output
-        uses: actions/download-artifact@v4
-        with:
-          name: sonar-output
+      - name: Move artifact files to root
+        run: |
+          mv build-output/build-output.txt . 2>/dev/null || true
+          mv test-output/test-output.txt . 2>/dev/null || true
+          mv sonar-output/sonar-output.txt . 2>/dev/null || true
         continue-on-error: true
 
       - name: Run AI Analysis & Notify Teams
