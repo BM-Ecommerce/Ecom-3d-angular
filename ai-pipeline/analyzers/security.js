@@ -1,48 +1,29 @@
 /**
  * AI Security Scanner
- * Scans build/test output for known security issues in the Angular repo
- * Specifically flags the hardcoded API key in environment files
+ * Dynamically scans actual CI build/test output for security issues
  */
 
 const { ask } = require('../claude');
 
-const SYSTEM_PROMPT = `You are a security engineer reviewing an Angular 14 app for vulnerabilities.
-Known issue: environment.ts and environment.prod.ts contain hardcoded API keys on GitHub.
+const SYSTEM_PROMPT = `You are a security engineer reviewing CI pipeline output for an Angular 14 app.
+Analyze ONLY what is present in the provided output — do not mention issues that are not visible.
 
-Scan the provided output and respond in this format (max 150 words):
+Respond in this format (max 150 words):
 🔴 CRITICAL (fix before merge):
-  • [issue]: [file/location] — [fix]
+  • [issue found in output]: [fix]
 ⚠️  WARNING (fix this sprint):
-  • [issue]: [explanation]
-✅ SAFE: [what looks good]
+  • [issue found in output]: [explanation]
+✅ SAFE: [what looks good based on the output]
 
-If no issues found, respond: ✅ No security issues detected.`;
-
-// Known patterns to flag regardless of CI output
-const KNOWN_ISSUES = [
-  {
-    pattern: /apiKey.*['"]\w{8}-\w{4}-\w{4}-\w{4}-\w{12}['"]/,
-    message: '🔴 CRITICAL: Hardcoded API key detected in environment files\n  • environment.ts & environment.prod.ts\n  • Fix: Move to GitHub Secrets → replace with process.env.API_KEY in build',
-  },
-  {
-    pattern: /innerHTML/,
-    message: '⚠️  WARNING: innerHTML usage detected — potential XSS risk\n  • Use DomSanitizer or Angular binding instead',
-  },
-];
+If no issues found, respond: ✅ No security issues detected in this run.
+Do NOT mention or remind about issues not present in the provided output.`;
 
 async function analyzeSecurity(outputs) {
-  const combinedOutput = Object.values(outputs).join('\n').slice(0, 3000);
+  const combinedOutput = Object.values(outputs)
+    .filter(Boolean)
+    .join('\n')
+    .slice(0, 3000);
 
-  // Always flag known issues for this specific repo
-  const staticFindings = KNOWN_ISSUES
-    .filter((issue) => issue.pattern.test(combinedOutput))
-    .map((issue) => issue.message);
-
-  if (staticFindings.length > 0) {
-    return staticFindings.join('\n\n');
-  }
-
-  // If no static findings, ask Claude to analyze
   if (!combinedOutput.trim()) return null;
 
   return await ask(

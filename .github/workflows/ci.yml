@@ -2,9 +2,9 @@ name: Angular CI Pipeline with AI Analysis
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
+    branches: ['**']
 
 jobs:
   build-test-analyze:
