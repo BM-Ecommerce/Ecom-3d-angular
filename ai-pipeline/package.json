@@ -1,0 +1,14 @@
+{
+  "name": "ai-pipeline",
+  "version": "1.0.0",
+  "description": "AI-powered CI pipeline analyzer for Ecom-3D-Angular",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "axios": "^1.7.0",
+    "dotenv": "^16.0.0"
+  }
+}
