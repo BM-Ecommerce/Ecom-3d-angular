@@ -18,7 +18,10 @@ function headerColor(statuses) {
 
 async function sendTeamsNotification(context, statuses, _outputs, results) {
   const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
-  if (!webhookUrl) return;
+  if (!webhookUrl) {
+    console.warn('⚠️ TEAMS_WEBHOOK_URL not set');
+    return;
+  }
 
   const aiSummary = buildShortSummary(results, statuses);
 
@@ -55,8 +58,6 @@ async function sendTeamsNotification(context, statuses, _outputs, results) {
               ],
             },
 
-            { type: 'separator' },
-
             // ── 3. Pipeline Step Results ───────────────────────
             {
               type: 'TextBlock',
@@ -64,6 +65,7 @@ async function sendTeamsNotification(context, statuses, _outputs, results) {
               weight: 'Bolder',
               size: 'Medium',
               spacing: 'Medium',
+              separator: true,
             },
             {
               type: 'FactSet',
@@ -74,36 +76,25 @@ async function sendTeamsNotification(context, statuses, _outputs, results) {
               ],
             },
 
-            { type: 'separator' },
-
-            // ── 4. AI Summary (only shown if something failed) ─
-            ...(aiSummary
-              ? [
-                  {
-                    type: 'TextBlock',
-                    text: '🤖 What Went Wrong (AI Analysis)',
-                    weight: 'Bolder',
-                    size: 'Medium',
-                    spacing: 'Medium',
-                  },
-                  {
-                    type: 'TextBlock',
-                    text: aiSummary,
-                    wrap: true,
-                    size: 'Small',
-                    spacing: 'Small',
-                  },
-                ]
-              : [
-                  {
-                    type: 'TextBlock',
-                    text: '🤖 AI Review: No issues found. Great work! 🎉',
-                    wrap: true,
-                    size: 'Small',
-                    color: 'Good',
-                    spacing: 'Medium',
-                  },
-                ]),
+            // ── 4. AI Summary ──────────────────────────────────
+            {
+              type: 'TextBlock',
+              text: aiSummary
+                ? '🤖 What Went Wrong (AI Analysis)'
+                : '🤖 AI Review',
+              weight: 'Bolder',
+              size: 'Medium',
+              spacing: 'Medium',
+              separator: true,
+            },
+            {
+              type: 'TextBlock',
+              text: aiSummary || '✅ No issues found. Great work! 🎉',
+              wrap: true,
+              size: 'Small',
+              spacing: 'Small',
+              color: aiSummary ? 'Attention' : 'Good',
+            },
           ],
 
           // ── 5. Action Buttons ────────────────────────────────
@@ -124,7 +115,13 @@ async function sendTeamsNotification(context, statuses, _outputs, results) {
     ],
   };
 
-  await axios.post(webhookUrl, card);
+  try {
+    const response = await axios.post(webhookUrl, card);
+    console.log('✅ Teams notification sent. Status:', response.status);
+  } catch (err) {
+    console.error('❌ Teams notification failed:', err.response?.status, err.response?.data || err.message);
+    throw err;
+  }
 }
 
 /**
