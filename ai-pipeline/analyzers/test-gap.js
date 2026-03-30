@@ -12,12 +12,9 @@ Key high-risk files to prioritize:
 - configurator.service.ts (44KB) — manages product configuration
 - api.service.ts — communicates with BlindMatrix ecommerce API
 
-Analyze the coverage report and respond in this format (max 150 words):
-⚠️ COVERAGE SUMMARY: [overall % if visible]
-🎯 HIGH RISK GAPS:
-  • [filename]: [uncovered function] — [why it's risky]
-  • [repeat for top 3 gaps]
-✅ SUGGESTION: [one actionable next step]`;
+Respond in max 2 lines:
+⚠️ COVERAGE SUMMARY: [overall % — statements/branches/functions]
+🎯 TOP RISK: [highest risk uncovered file and why in one line]`;
 
 async function analyzeTestGap(testOutput) {
   if (!testOutput) return null;

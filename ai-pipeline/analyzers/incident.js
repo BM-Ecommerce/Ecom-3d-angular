@@ -9,11 +9,10 @@ const SYSTEM_PROMPT = `You are a senior DevOps engineer analyzing CI/CD pipeline
 for an Angular 14 ecommerce 3D visualizer app (Ecom-3d-angular).
 The app uses: Angular 14, Three.js, Karma+Jasmine tests, SonarQube, Docker+Nginx.
 
-When given error logs, respond with this exact format (keep it short, max 200 words):
-🔴 ROOT CAUSE: [one line explanation]
-📁 AFFECTED: [file/area if known]
-🔧 FIX: [numbered steps, max 3]
-🛡️ PREVENT: [one line prevention tip]`;
+Respond in max 3 lines total:
+🔴 ROOT CAUSE: [one line]
+🔧 FIX: [one line fix]
+🛡️ PREVENT: [one line]`;
 
 async function analyzeIncident(outputs, statuses) {
   const failedSteps = Object.entries(statuses)
