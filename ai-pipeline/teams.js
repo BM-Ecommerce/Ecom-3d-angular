@@ -9,7 +9,10 @@ function statusEmoji(status) {
 }
 
 function overallStatus(statuses) {
-  return Object.values(statuses).some((s) => s === 'fail') ? '❌ Build Failed' : '✅ Build Passed';
+  if (statuses.build === 'fail') return '❌ Build Failed';
+  if (statuses.test === 'fail') return '❌ Unit Tests Failed';
+  if (statuses.sonar === 'fail') return '❌ Code Quality Failed';
+  return '✅ All Checks Passed';
 }
 
 function headerColor(statuses) {
