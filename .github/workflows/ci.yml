@@ -156,16 +156,43 @@ jobs:
         run: npm ci
         working-directory: ai-pipeline
 
-      - name: Download all artifacts
+      - name: Download build output
         uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .
         continue-on-error: true
 
-      - name: Move artifact files to root
-        run: |
-          mv build-output/build-output.txt . 2>/dev/null || true
-          mv test-output/test-output.txt . 2>/dev/null || true
-          mv sonar-output/sonar-output.txt . 2>/dev/null || true
+      - name: Download test output
+        uses: actions/download-artifact@v4
+        with:
+          name: test-output
+          path: .
         continue-on-error: true
+
+      - name: Download sonar output
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-output
+          path: .
+        continue-on-error: true
+
+      - name: Debug — verify files and secrets
+        run: |
+          echo "=== Files available ==="
+          ls -la *.txt 2>/dev/null || echo "No .txt files found"
+          echo "=== Teams webhook set ==="
+          [ -n "$TEAMS_WEBHOOK_URL" ] && echo "YES ✅" || echo "NO ❌"
+          echo "=== Claude API key set ==="
+          [ -n "$CLAUDE_API_KEY" ] && echo "YES ✅" || echo "NO ❌"
+          echo "=== Statuses ==="
+          echo "Build: $BUILD_STATUS | Test: $TEST_STATUS | Sonar: $SONAR_STATUS"
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          BUILD_STATUS: ${{ needs.build.outputs.status }}
+          TEST_STATUS: ${{ needs.unit-tests.outputs.status }}
+          SONAR_STATUS: ${{ needs.code-quality.outputs.status }}
 
       - name: Run AI Analysis & Notify Teams
         env:
