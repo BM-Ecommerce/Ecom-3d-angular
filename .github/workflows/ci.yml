@@ -6,34 +6,30 @@ on:
   pull_request:
     branches: ['**']
 
+# ─────────────────────────────────────────────────────────────────
+# Each job appears as a separate tab in GitHub Actions UI
+# ─────────────────────────────────────────────────────────────────
+
 jobs:
-  build-test-analyze:
+
+  # ── Tab 1: Build ───────────────────────────────────────────────
+  build:
+    name: 🔨 Build
     runs-on: ubuntu-latest
-
+    outputs:
+      status: ${{ steps.build.outputs.status }}
     steps:
-      # ─── Checkout ───────────────────────────────────────────────
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # Required for SonarQube blame info
+      - uses: actions/checkout@v4
 
-      # ─── Node.js Setup ──────────────────────────────────────────
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
-      # ─── Install Dependencies ───────────────────────────────────
       - name: Install dependencies
         run: npm ci
 
-      # ─── Install AI Pipeline Dependencies ──────────────────────
-      - name: Install AI pipeline dependencies
-        run: npm ci
-        working-directory: ai-pipeline
-
-      # ─── Step 1: Build ──────────────────────────────────────────
       - name: Build Angular app
         id: build
         run: |
@@ -41,7 +37,34 @@ jobs:
           echo "status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
         continue-on-error: true
 
-      # ─── Step 2: Unit Tests + Coverage ─────────────────────────
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-output
+          path: |
+            build-output.txt
+            dist/
+
+  # ── Tab 2: Unit Tests ──────────────────────────────────────────
+  unit-tests:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      status: ${{ steps.test.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run Karma tests with coverage
         id: test
         run: |
@@ -49,7 +72,42 @@ jobs:
           echo "status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
         continue-on-error: true
 
-      # ─── Step 3: SonarQube ──────────────────────────────────────
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-output
+          path: |
+            test-output.txt
+            coverage/
+
+  # ── Tab 3: Code Quality (SonarQube) ───────────────────────────
+  code-quality:
+    name: 🔍 Code Quality
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    outputs:
+      status: ${{ steps.sonar.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: test-output
+        continue-on-error: true
+
       - name: SonarQube scan
         id: sonar
         env:
@@ -63,29 +121,50 @@ jobs:
           echo "status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
         continue-on-error: true
 
-      # ─── Step 4: Bundle Size Report ─────────────────────────────
-      - name: Generate bundle size report
-        id: bundle
-        run: |
-          if [ -d "dist/visualizer" ]; then
-            du -sh dist/visualizer/* 2>&1 | tee bundle-output.txt
-            find dist/visualizer -name "*.js" -exec wc -c {} + 2>&1 >> bundle-output.txt
-          else
-            echo "Build artifacts not found" > bundle-output.txt
-          fi
-        continue-on-error: true
-
-      # ─── Step 5: Upload Coverage Artifact ───────────────────────
-      - name: Upload coverage report
+      - name: Upload sonar output
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-report
-          path: coverage/visualization/
+          name: sonar-output
+          path: sonar-output.txt
 
-      # ─── Step 6: Run AI Pipeline Analysis ───────────────────────
+  # ── Tab 4: AI Analysis + Teams Notification ────────────────────
+  ai-analysis:
+    name: 🤖 AI Analysis
+    runs-on: ubuntu-latest
+    needs: [build, unit-tests, code-quality]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install AI pipeline dependencies
+        run: npm ci
+        working-directory: ai-pipeline
+
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+        continue-on-error: true
+
+      - name: Download test output
+        uses: actions/download-artifact@v4
+        with:
+          name: test-output
+        continue-on-error: true
+
+      - name: Download sonar output
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-output
+        continue-on-error: true
+
       - name: Run AI Analysis & Notify Teams
-        if: always()
         env:
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
@@ -97,7 +176,7 @@ jobs:
           COMMIT_MSG: ${{ github.event.head_commit.message }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          BUILD_STATUS: ${{ steps.build.outputs.status }}
-          TEST_STATUS: ${{ steps.test.outputs.status }}
-          SONAR_STATUS: ${{ steps.sonar.outputs.status }}
+          BUILD_STATUS: ${{ needs.build.outputs.status }}
+          TEST_STATUS: ${{ needs.unit-tests.outputs.status }}
+          SONAR_STATUS: ${{ needs.code-quality.outputs.status }}
         run: node ai-pipeline/index.js
