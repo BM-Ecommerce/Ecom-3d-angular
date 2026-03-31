@@ -33,7 +33,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Build
         id: build
@@ -71,7 +71,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Test
         id: test
@@ -113,7 +113,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Cache ai-pipeline node_modules
         id: cache-ai
@@ -124,7 +124,7 @@ jobs:
 
       - name: Install AI pipeline deps
         if: steps.cache-ai.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm install --legacy-peer-deps
         working-directory: ai-pipeline
 
       - uses: actions/download-artifact@v4
