@@ -16,6 +16,9 @@
     "downlevelIteration": true,
     "experimentalDecorators": true,
     "moduleResolution": "node",
+    "paths": {
+      "three/examples/jsm/*": ["./node_modules/@types/three/examples/jsm/*"]
+    },
     "importHelpers": true,
     "target": "es2020",
     "module": "es2020",

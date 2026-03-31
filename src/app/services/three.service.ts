@@ -776,14 +776,15 @@ public enableDimensions(on: boolean): void {
     this.camera.position.z = 5;
 
     this.canvasEl = canvas.nativeElement;
-    this.canvasEl.classList.add('grab');
+    const canvasEl = this.canvasEl!;
+    canvasEl.classList.add('grab');
 
-    this.canvasEl.addEventListener('mousedown', this.onCanvasMouseDown);
-    this.canvasEl.addEventListener('mouseup', this.onCanvasMouseUp);
-    this.canvasEl.addEventListener('mouseleave', this.onCanvasMouseLeave);
+    canvasEl.addEventListener('mousedown', this.onCanvasMouseDown);
+    canvasEl.addEventListener('mouseup', this.onCanvasMouseUp);
+    canvasEl.addEventListener('mouseleave', this.onCanvasMouseLeave);
 
     this.renderer = new THREE.WebGLRenderer({
-      canvas: this.canvasEl,
+      canvas: canvasEl,
       alpha: true,
       antialias: !isMobile
     });
