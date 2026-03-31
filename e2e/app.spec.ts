@@ -23,9 +23,8 @@ test('correct route is active', async ({ page }) => {
 // ── Visual tests — run locally with ng serve ────────────────────
 test('3D visualizer page renders content', async ({ page }) => {
   await page.goto(PRODUCT_URL);
-  await page.waitForTimeout(4000); // wait for 3D + API to load
+  await page.waitForTimeout(4000);
   await page.screenshot({ path: 'e2e/screenshots/visualizer.png', fullPage: true });
-  // Page should have loaded something visible
   const bodyText = await page.locator('body').innerText();
   expect(bodyText.length).toBeGreaterThan(0);
 });
@@ -35,5 +34,45 @@ test('3D canvas is present', async ({ page }) => {
   await page.waitForTimeout(4000);
   const canvas = page.locator('canvas');
   const count = await canvas.count();
-  expect(count).toBeGreaterThan(0); // Three.js renders a <canvas>
+  expect(count).toBeGreaterThan(0);
+});
+
+test('enter width value in configurator', async ({ page }) => {
+  await page.goto(PRODUCT_URL);
+  await page.waitForTimeout(4000); // wait for configurator to load
+
+  // Find width input field (Angular Material input)
+  const widthInput = page.locator('input').filter({ hasText: '' }).first();
+  await widthInput.click({ clickCount: 3 }); // select all existing text
+  await widthInput.fill('120');              // type new width
+  await page.keyboard.press('Tab');          // confirm input
+  await page.waitForTimeout(1500);
+
+  await page.screenshot({ path: 'e2e/screenshots/width-entered.png' });
+});
+
+test('drag 3D model to rotate', async ({ page }) => {
+  await page.goto(PRODUCT_URL);
+  await page.waitForTimeout(5000); // wait for 3D model to fully load
+
+  const canvas = page.locator('canvas').first();
+  const box = await canvas.boundingBox();
+
+  if (box) {
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
+
+    // Drag left to right to rotate the 3D model
+    await page.mouse.move(centerX - 100, centerY);
+    await page.mouse.down();
+    await page.waitForTimeout(300);
+    await page.mouse.move(centerX + 100, centerY, { steps: 20 }); // slow drag
+    await page.waitForTimeout(300);
+    await page.mouse.up();
+
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: 'e2e/screenshots/after-drag.png' });
+  }
+
+  expect(box).not.toBeNull();
 });

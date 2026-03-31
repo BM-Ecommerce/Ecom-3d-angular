@@ -11,5 +11,8 @@ export default defineConfig({
     baseURL: 'http://localhost:4200/visualizer',
     screenshot: 'on',
     video: 'on',
+    launchOptions: {
+      slowMo: 800,
+    },
   },
 });
