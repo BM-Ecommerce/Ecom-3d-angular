@@ -9,14 +9,6 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-# ─────────────────────────────────────────────────────────────────
-#  Flow:
-#  🔨 Build ──┐
-#             ├──► 🔍 Quality + 🤖 AI → Teams
-#  🧪 Tests ──┘
-#  (Build & Tests run in parallel → fastest possible)
-# ─────────────────────────────────────────────────────────────────
-
 jobs:
 
   # ── Tab 1: Build ───────────────────────────────────────────────
@@ -31,9 +23,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
-      - run: npm ci
+      - name: Cache node_modules
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
 
       - name: Build
         id: build
@@ -61,9 +61,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
-      - run: npm ci
+      - name: Cache node_modules
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
 
       - name: Test
         id: test
@@ -81,7 +89,7 @@ jobs:
             test-output.txt
             coverage/
 
-  # ── Tab 3: Quality + AI Analysis + Teams ───────────────────────
+  # ── Tab 3: Code Quality & AI ───────────────────────────────────
   quality-and-notify:
     name: 🔍 Code Quality & 🤖 AI
     runs-on: ubuntu-latest
@@ -95,16 +103,31 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
-      - run: npm ci
+      - name: Cache node_modules
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Cache ai-pipeline node_modules
+        id: cache-ai
+        uses: actions/cache@v4
+        with:
+          path: ai-pipeline/node_modules
+          key: ai-node-${{ hashFiles('ai-pipeline/package-lock.json') }}
 
       - name: Install AI pipeline deps
+        if: steps.cache-ai.outputs.cache-hit != 'true'
         run: npm ci
         working-directory: ai-pipeline
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-output
           path: .
@@ -116,7 +139,6 @@ jobs:
           path: .
         continue-on-error: true
 
-      # SonarQube — only runs on main branch
       - name: 🔍 SonarQube Scan
         if: github.ref == 'refs/heads/main'
         id: sonar
