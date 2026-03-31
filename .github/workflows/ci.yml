@@ -6,8 +6,6 @@ on:
   pull_request:
     branches: ['**']
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
 
@@ -18,15 +16,15 @@ jobs:
     outputs:
       status: ${{ steps.build.outputs.status }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '18'
 
       - name: Cache node_modules
         id: cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: node-${{ hashFiles('package-lock.json') }}
@@ -42,7 +40,7 @@ jobs:
           echo "status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
         continue-on-error: true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: build-output
@@ -56,15 +54,15 @@ jobs:
     outputs:
       status: ${{ steps.test.outputs.status }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '18'
 
       - name: Cache node_modules
         id: cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: node-${{ hashFiles('package-lock.json') }}
@@ -80,7 +78,7 @@ jobs:
           echo "status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
         continue-on-error: true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: test-output
@@ -96,17 +94,17 @@ jobs:
     needs: [build, unit-tests]
     if: always()
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '18'
 
       - name: Cache node_modules
         id: cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: node-${{ hashFiles('package-lock.json') }}
@@ -117,7 +115,7 @@ jobs:
 
       - name: Cache ai-pipeline node_modules
         id: cache-ai
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ai-pipeline/node_modules
           key: ai-node-${{ hashFiles('ai-pipeline/package-lock.json') }}
@@ -127,13 +125,13 @@ jobs:
         run: npm install --legacy-peer-deps
         working-directory: ai-pipeline
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: build-output
           path: .
         continue-on-error: true
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: test-output
           path: .
