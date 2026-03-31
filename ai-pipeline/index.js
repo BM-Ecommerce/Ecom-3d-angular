@@ -53,7 +53,6 @@ async function main() {
     build: getStatus('BUILD_STATUS'),
     test: getStatus('TEST_STATUS'),
     e2e: process.env.E2E_STATUS !== undefined && process.env.E2E_STATUS !== '' ? getStatus('E2E_STATUS') : null,
-    lighthouse: process.env.LIGHTHOUSE_STATUS !== undefined && process.env.LIGHTHOUSE_STATUS !== '' ? getStatus('LIGHTHOUSE_STATUS') : null,
     sonar: getStatus('SONAR_STATUS'),
   };
 
