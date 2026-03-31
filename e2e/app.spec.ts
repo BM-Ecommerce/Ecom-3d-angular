@@ -23,9 +23,9 @@ test('Full 3D Configurator Journey - Roller Blinds Order', async ({ page }) => {
   await test.step('3️⃣ Enter Width measurement — 120 cm', async () => {
     const widthInput = page.locator('mat-form-field').filter({ hasText: /Width/ }).locator('input');
     await widthInput.click();
-    await widthInput.fill('120');
-    await page.keyboard.press('Tab');
-    await page.waitForTimeout(1000); // wait for 3D to update
+    await widthInput.selectText();
+    await widthInput.pressSequentially('120', { delay: 300 }); // type slowly — no shake
+    await page.waitForTimeout(1500); // let 3D settle
     await page.screenshot({ path: 'e2e/screenshots/step3-width-entered.png' });
     expect(await widthInput.inputValue()).toBe('120');
   });
@@ -33,9 +33,9 @@ test('Full 3D Configurator Journey - Roller Blinds Order', async ({ page }) => {
   await test.step('4️⃣ Enter Drop measurement — 150 cm', async () => {
     const dropInput = page.locator('mat-form-field').filter({ hasText: /Drop/ }).locator('input');
     await dropInput.click();
-    await dropInput.fill('150');
-    await page.keyboard.press('Tab');
-    await page.waitForTimeout(1000); // wait for 3D to update
+    await dropInput.selectText();
+    await dropInput.pressSequentially('150', { delay: 300 }); // type slowly — no shake
+    await page.waitForTimeout(1500); // let 3D settle
     await page.screenshot({ path: 'e2e/screenshots/step4-drop-entered.png' });
     expect(await dropInput.inputValue()).toBe('150');
   });
@@ -111,14 +111,16 @@ test('TC01 - Enter Width and Drop measurements', async ({ page }) => {
   // Enter Width
   const widthInput = page.locator('mat-form-field').filter({ hasText: /Width/ }).locator('input');
   await widthInput.click();
-  await widthInput.fill('1200');
-  await page.waitForTimeout(800);
+  await widthInput.selectText();
+  await widthInput.pressSequentially('1200', { delay: 300 });
+  await page.waitForTimeout(1500);
 
   // Enter Drop
   const dropInput = page.locator('mat-form-field').filter({ hasText: /Drop/ }).locator('input');
   await dropInput.click();
-  await dropInput.fill('1500');
-  await page.waitForTimeout(800);
+  await dropInput.selectText();
+  await dropInput.pressSequentially('1500', { delay: 300 });
+  await page.waitForTimeout(1500);
 
   await page.screenshot({ path: 'e2e/screenshots/tc01-width-drop.png' });
 
@@ -133,9 +135,12 @@ test('TC02 - Select mandatory fields', async ({ page }) => {
   await page.waitForTimeout(2000);
 
   // Enter Width and Drop first
-  await page.locator('mat-form-field').filter({ hasText: /Width/ }).locator('input').fill('1200');
-  await page.locator('mat-form-field').filter({ hasText: /Drop/ }).locator('input').fill('1500');
-  await page.waitForTimeout(500);
+  const w = page.locator('mat-form-field').filter({ hasText: /Width/ }).locator('input');
+  await w.click(); await w.selectText(); await w.pressSequentially('1200', { delay: 300 });
+  await page.waitForTimeout(1500);
+  const d = page.locator('mat-form-field').filter({ hasText: /Drop/ }).locator('input');
+  await d.click(); await d.selectText(); await d.pressSequentially('1500', { delay: 300 });
+  await page.waitForTimeout(1500);
 
   // Select Blind or Recess
   await page.locator('mat-form-field').filter({ hasText: /Blind or Recess/ }).locator('mat-select').click();
@@ -256,7 +261,8 @@ test('TC05 - Validate max measurement boundary (above 3500)', async ({ page }) =
   await test.step('Enter Width above max (9999)', async () => {
     const widthInput = page.locator('mat-form-field').filter({ hasText: /Width/ }).locator('input');
     await widthInput.click();
-    await widthInput.fill('9999');
+    await widthInput.selectText();
+    await widthInput.pressSequentially('9999', { delay: 300 });
     await page.keyboard.press('Tab');
     await page.waitForTimeout(1000);
     await page.screenshot({ path: 'e2e/screenshots/tc05-width-over-max.png' });
@@ -265,7 +271,8 @@ test('TC05 - Validate max measurement boundary (above 3500)', async ({ page }) =
   await test.step('Enter Drop above max (9999)', async () => {
     const dropInput = page.locator('mat-form-field').filter({ hasText: /Drop/ }).locator('input');
     await dropInput.click();
-    await dropInput.fill('9999');
+    await dropInput.selectText();
+    await dropInput.pressSequentially('9999', { delay: 300 });
     await page.keyboard.press('Tab');
     await page.waitForTimeout(1000);
     await page.screenshot({ path: 'e2e/screenshots/tc05-drop-over-max.png' });
