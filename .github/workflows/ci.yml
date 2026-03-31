@@ -46,6 +46,25 @@ jobs:
           retention-days: 1
           path: build-output.txt
 
+      - uses: actions/upload-artifact@v4
+        if: steps.build.outputs.status == '0'
+        with:
+          name: dist
+          retention-days: 1
+          path: dist/
+
+      - name: 📡 Upload Source Maps to Sentry
+        if: github.ref == 'refs/heads/main' && steps.build.outputs.status == '0'
+        continue-on-error: true
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          npx @sentry/cli releases new ${{ github.sha }}
+          npx @sentry/cli releases files ${{ github.sha }} upload-sourcemaps ./dist/visualizer --rewrite
+          npx @sentry/cli releases finalize ${{ github.sha }}
+
   # ── Tab 2: Unit Tests + Coverage ───────────────────────────────
   unit-tests:
     name: 🧪 Unit Tests
@@ -94,11 +113,89 @@ jobs:
             test-output.txt
             coverage/
 
-  # ── Tab 3: Code Quality & AI ───────────────────────────────────
+  # ── Tab 3: E2E Tests ───────────────────────────────────────────
+  e2e:
+    name: 🎭 E2E Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: needs.build.outputs.status == '0'
+    outputs:
+      status: ${{ steps.e2e.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Install Playwright
+        run: |
+          npm install --legacy-peer-deps @playwright/test serve
+          npx playwright install chromium --with-deps
+
+      - name: Run E2E Tests
+        id: e2e
+        run: |
+          npx playwright test 2>&1 | tee e2e-output.txt
+          echo "status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-output
+          retention-days: 1
+          path: |
+            e2e-output.txt
+            playwright-report/
+
+  # ── Tab 4: Performance ─────────────────────────────────────────
+  lighthouse:
+    name: 🏎️ Lighthouse CI
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: needs.build.outputs.status == '0'
+    outputs:
+      status: ${{ steps.lhci.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Run Lighthouse CI
+        id: lhci
+        run: |
+          npm install -g @lhci/cli
+          lhci autorun 2>&1 | tee lhci-output.txt
+          echo "status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lhci-output
+          retention-days: 1
+          path: lhci-output.txt
+
+  # ── Tab 5: Code Quality & AI ───────────────────────────────────
   quality-and-notify:
     name: 🔍 Code Quality & 🤖 AI
     runs-on: ubuntu-latest
-    needs: [build, unit-tests]
+    needs: [build, unit-tests, e2e, lighthouse]
     if: always()
     steps:
       - uses: actions/checkout@v4
@@ -144,6 +241,18 @@ jobs:
           path: .
         continue-on-error: true
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: e2e-output
+          path: .
+        continue-on-error: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: lhci-output
+          path: .
+        continue-on-error: true
+
       - name: 🔒 Snyk Security Scan
         id: snyk
         uses: snyk/actions/node@master
@@ -182,5 +291,7 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           BUILD_STATUS: ${{ needs.build.outputs.status }}
           TEST_STATUS: ${{ needs.unit-tests.outputs.status }}
+          E2E_STATUS: ${{ needs.e2e.outputs.status }}
+          LIGHTHOUSE_STATUS: ${{ needs.lighthouse.outputs.status }}
           SONAR_STATUS: ${{ steps.sonar.outputs.status }}
         run: node ai-pipeline/index.js

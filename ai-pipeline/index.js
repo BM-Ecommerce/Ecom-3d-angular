@@ -45,11 +45,15 @@ async function main() {
     test: readFile('test-output.txt'),
     sonar: readFile('sonar-output.txt'),
     bundle: readFile('bundle-output.txt'),
+    e2e: readFile('e2e-output.txt'),
+    lighthouse: readFile('lhci-output.txt'),
   };
 
   const statuses = {
     build: getStatus('BUILD_STATUS'),
     test: getStatus('TEST_STATUS'),
+    e2e: process.env.E2E_STATUS !== undefined && process.env.E2E_STATUS !== '' ? getStatus('E2E_STATUS') : null,
+    lighthouse: process.env.LIGHTHOUSE_STATUS !== undefined && process.env.LIGHTHOUSE_STATUS !== '' ? getStatus('LIGHTHOUSE_STATUS') : null,
     sonar: getStatus('SONAR_STATUS'),
   };
 

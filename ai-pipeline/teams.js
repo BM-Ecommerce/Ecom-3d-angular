@@ -11,12 +11,19 @@ function statusEmoji(status) {
 function overallStatus(statuses) {
   if (statuses.build === 'fail') return '❌ Build Failed';
   if (statuses.test === 'fail') return '❌ Unit Tests Failed';
+  if (statuses.e2e === 'fail') return '❌ E2E Tests Failed';
+  if (statuses.lighthouse === 'fail') return '⚠️ Performance Issues';
   if (statuses.sonar === 'fail') return '❌ Code Quality Failed';
   return '✅ All Checks Passed';
 }
 
 function headerColor(statuses) {
   return Object.values(statuses).some((s) => s === 'fail') ? 'Attention' : 'Good';
+}
+
+function statusLabel(val) {
+  if (val === null || val === undefined) return '⏭️ Skipped';
+  return statusEmoji(val);
 }
 
 async function sendTeamsNotification(context, statuses, _outputs, results) {
@@ -73,9 +80,11 @@ async function sendTeamsNotification(context, statuses, _outputs, results) {
             {
               type: 'FactSet',
               facts: [
-                { title: '🔨 Build',      value: statusEmoji(statuses.build) },
-                { title: '🧪 Unit Tests', value: statusEmoji(statuses.test) },
-                { title: '🔍 SonarQube', value: statusEmoji(statuses.sonar) },
+                { title: '🔨 Build',        value: statusEmoji(statuses.build) },
+                { title: '🧪 Unit Tests',   value: statusEmoji(statuses.test) },
+                { title: '🎭 E2E Tests',    value: statusLabel(statuses.e2e) },
+                { title: '🏎️ Lighthouse',  value: statusLabel(statuses.lighthouse) },
+                { title: '🔍 SonarQube',   value: statusEmoji(statuses.sonar) },
               ],
             },
 
