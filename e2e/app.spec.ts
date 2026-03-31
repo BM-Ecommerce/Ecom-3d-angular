@@ -64,24 +64,37 @@ test('Full 3D Configurator Journey - Roller Blinds Order', async ({ page }) => {
     await page.screenshot({ path: 'e2e/screenshots/step7-control-type.png' });
   });
 
-  await test.step('8️⃣ Scroll down and select Control Side', async () => {
-    await page.locator('mat-form-field').filter({ hasText: /Control Side/ }).scrollIntoViewIfNeeded();
+  await test.step('8️⃣ Try Add to Cart without Control Side — should be blocked', async () => {
+    const addToCart = page.locator('button').filter({ hasText: /Add to Cart/ });
+    await addToCart.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(800);
+    await addToCart.click(); // attempt without mandatory field
+    await page.waitForTimeout(1000);
+    // Control Side should show red validation error
+    const controlSide = page.locator('mat-form-field').filter({ hasText: /Control Side/ });
+    await controlSide.scrollIntoViewIfNeeded();
     await page.waitForTimeout(600);
+    await page.screenshot({ path: 'e2e/screenshots/step8-validation-error.png' });
+  });
+
+  await test.step('9️⃣ Select mandatory Control Side field', async () => {
     await page.locator('mat-form-field').filter({ hasText: /Control Side/ }).locator('mat-select').click();
     await page.waitForTimeout(600);
     await page.locator('mat-option').first().click();
     await page.waitForTimeout(800);
-    await page.screenshot({ path: 'e2e/screenshots/step8-control-side.png' });
+    await page.screenshot({ path: 'e2e/screenshots/step9-control-side-selected.png' });
   });
 
-  await test.step('9️⃣ Scroll to Add to Cart and click', async () => {
+  await test.step('🔟 Verify price and click Add to Cart', async () => {
+    // Price should be visible (e.g. $107.69)
+    await expect(page.locator('text=Your Price')).toBeVisible();
     const addToCart = page.locator('button').filter({ hasText: /Add to Cart/ });
     await addToCart.scrollIntoViewIfNeeded();
     await page.waitForTimeout(1000);
-    await page.screenshot({ path: 'e2e/screenshots/step9-before-cart.png' });
+    await page.screenshot({ path: 'e2e/screenshots/step10-price-shown.png' });
     await addToCart.click();
     await page.waitForTimeout(2000);
-    await page.screenshot({ path: 'e2e/screenshots/step9-after-cart.png' });
+    await page.screenshot({ path: 'e2e/screenshots/step10-added-to-cart.png' });
   });
 
 });
