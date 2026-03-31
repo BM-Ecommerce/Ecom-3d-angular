@@ -116,11 +116,19 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
+      - name: Cache node_modules
+        id: cache
+        uses: actions/cache@v4
         with:
-          name: dist
-          path: dist/
+          path: node_modules
+          key: node-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm install --legacy-peer-deps
+
+      - name: Build for E2E (base-href /)
+        run: npm run build -- --configuration production --base-href /
 
       - name: Install Playwright
         run: |
