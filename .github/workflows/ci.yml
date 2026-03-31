@@ -53,18 +53,6 @@ jobs:
           retention-days: 1
           path: dist/
 
-      - name: 📡 Upload Source Maps to Sentry
-        if: github.ref == 'refs/heads/main' && steps.build.outputs.status == '0'
-        continue-on-error: true
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        run: |
-          npx @sentry/cli releases new ${{ github.sha }}
-          npx @sentry/cli releases files ${{ github.sha }} upload-sourcemaps ./dist/visualizer --rewrite
-          npx @sentry/cli releases finalize ${{ github.sha }}
-
   # ── Tab 2: Unit Tests + Coverage ───────────────────────────────
   unit-tests:
     name: 🧪 Unit Tests
