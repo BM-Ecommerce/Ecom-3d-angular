@@ -5,13 +5,13 @@ export default defineConfig({
   timeout: 30000,
   retries: 1,
   use: {
-    baseURL: 'http://localhost:4200',
+    baseURL: 'http://localhost:4200/visualizer/',
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: 'npx serve dist/visualizer -p 4200 -s --no-clipboard',
-    url: 'http://localhost:4200',
-    reuseExistingServer: !process.env.CI,
+    command: 'npx serve dist -p 4200',
+    url: 'http://localhost:4200/visualizer/',
+    reuseExistingServer: !process.env['CI'],
     timeout: 60000,
   },
 });

@@ -1,7 +1,9 @@
 module.exports = {
   ci: {
     collect: {
-      staticDistDir: './dist/visualizer',
+      staticDistDir: './dist',
+      startServerCommand: 'npx serve dist -p 4200',
+      url: ['http://localhost:4200/visualizer/'],
       numberOfRuns: 1,
     },
     assert: {
