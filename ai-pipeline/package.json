@@ -7,7 +7,7 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
+    "@anthropic-ai/sdk": "^0.80.0",
     "axios": "^1.7.0",
     "dotenv": "^16.0.0"
   }
