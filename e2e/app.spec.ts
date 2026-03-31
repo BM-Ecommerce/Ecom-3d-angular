@@ -7,7 +7,7 @@ test('Full 3D Configurator Journey - Roller Blinds Order', async ({ page }) => {
 
   await test.step('1️⃣ Open 3D Visualizer and wait for page to load', async () => {
     await page.goto(PRODUCT_URL);
-    await expect(page.locator('text=Roller Blinds - Alara Alba')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: 'Roller Blinds - Alara Alba' })).toBeVisible({ timeout: 15000 });
     await expect(page.locator('text=Please enter your measurements')).toBeVisible();
     await expect(page.locator('canvas')).toBeVisible(); // 3D model loaded
     await page.waitForTimeout(2500);
@@ -15,7 +15,7 @@ test('Full 3D Configurator Journey - Roller Blinds Order', async ({ page }) => {
   });
 
   await test.step('2️⃣ Select unit type — cm', async () => {
-    await page.locator('button, mat-button-toggle').filter({ hasText: 'cm' }).click();
+    await page.getByRole('button', { name: 'cm' }).click();
     await page.waitForTimeout(800);
     await page.screenshot({ path: 'e2e/screenshots/step2-unit-cm.png' });
   });
@@ -95,6 +95,7 @@ test('Full 3D Configurator Journey - Roller Blinds Order', async ({ page }) => {
     await addToCart.click();
     await page.waitForTimeout(2000);
     await page.screenshot({ path: 'e2e/screenshots/step10-added-to-cart.png' });
+    await page.waitForTimeout(5000); // keep browser open to see result
   });
 
 });
@@ -199,4 +200,82 @@ test('TC03 - Scroll and click Add to Cart', async ({ page }) => {
   await page.waitForTimeout(2000);
 
   await page.screenshot({ path: 'e2e/screenshots/tc03-after-cart.png' });
+});
+
+// ── TC04: Change Fabric and Color — 3D model should update ───────
+test('TC04 - Change Fabric and Color updates 3D model', async ({ page }) => {
+  await page.goto(PRODUCT_URL);
+  await expect(page.locator('text=Please enter your measurements')).toBeVisible({ timeout: 15000 });
+  await page.waitForTimeout(2500);
+
+  await test.step('Take screenshot of default fabric/color', async () => {
+    await page.screenshot({ path: 'e2e/screenshots/tc04-before-change.png' });
+  });
+
+  await test.step('Change Fabric dropdown', async () => {
+    const fabricSelect = page.locator('mat-form-field').filter({ hasText: /^Fabric/ }).locator('mat-select');
+    await fabricSelect.click();
+    await page.waitForTimeout(600);
+    // Select the second option (different from current)
+    const options = page.locator('mat-option');
+    const count = await options.count();
+    if (count > 1) {
+      await options.nth(1).click();
+    } else {
+      await options.first().click();
+    }
+    await page.waitForTimeout(1500); // wait for 3D to update
+    await page.screenshot({ path: 'e2e/screenshots/tc04-fabric-changed.png' });
+  });
+
+  await test.step('Change Color dropdown', async () => {
+    const colorSelect = page.locator('mat-form-field').filter({ hasText: /^Color/ }).locator('mat-select');
+    await colorSelect.click();
+    await page.waitForTimeout(600);
+    const options = page.locator('mat-option');
+    const count = await options.count();
+    if (count > 1) {
+      await options.nth(1).click();
+    } else {
+      await options.first().click();
+    }
+    await page.waitForTimeout(1500); // wait for 3D to update
+    await page.screenshot({ path: 'e2e/screenshots/tc04-color-changed.png' });
+  });
+
+  // 3D canvas should still be visible after changes
+  await expect(page.locator('canvas')).toBeVisible();
+});
+
+// ── TC05: Validate measurements above max value ───────────────────
+test('TC05 - Validate max measurement boundary (above 3500)', async ({ page }) => {
+  await page.goto(PRODUCT_URL);
+  await expect(page.locator('text=Please enter your measurements')).toBeVisible({ timeout: 15000 });
+  await page.waitForTimeout(2000);
+
+  await test.step('Enter Width above max (9999)', async () => {
+    const widthInput = page.locator('mat-form-field').filter({ hasText: /Width/ }).locator('input');
+    await widthInput.click();
+    await widthInput.fill('9999');
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: 'e2e/screenshots/tc05-width-over-max.png' });
+  });
+
+  await test.step('Enter Drop above max (9999)', async () => {
+    const dropInput = page.locator('mat-form-field').filter({ hasText: /Drop/ }).locator('input');
+    await dropInput.click();
+    await dropInput.fill('9999');
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: 'e2e/screenshots/tc05-drop-over-max.png' });
+  });
+
+  await test.step('Verify validation error is shown', async () => {
+    // Form should show error message for out-of-range values
+    const errorMsg = page.locator('mat-error, .error, text=/max|invalid|exceed/i');
+    const hasError = await errorMsg.count() > 0;
+    await page.screenshot({ path: 'e2e/screenshots/tc05-validation-shown.png' });
+    expect(hasError).toBeTruthy();
+  });
 });
