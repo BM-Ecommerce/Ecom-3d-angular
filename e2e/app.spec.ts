@@ -2,6 +2,90 @@ import { test, expect } from '@playwright/test';
 
 const PRODUCT_URL = '/visualizer/10/roller-blinds/alara-alba/738/3802/45/2/5020';
 
+// ── 🎯 FULL CONFIGURATOR JOURNEY ────────────────────────────────
+test('Full 3D Configurator Journey - Roller Blinds Order', async ({ page }) => {
+
+  await test.step('1️⃣ Open 3D Visualizer and wait for page to load', async () => {
+    await page.goto(PRODUCT_URL);
+    await expect(page.locator('text=Roller Blinds - Alara Alba')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('text=Please enter your measurements')).toBeVisible();
+    await expect(page.locator('canvas')).toBeVisible(); // 3D model loaded
+    await page.waitForTimeout(2500);
+    await page.screenshot({ path: 'e2e/screenshots/step1-page-loaded.png' });
+  });
+
+  await test.step('2️⃣ Select unit type — cm', async () => {
+    await page.locator('button, mat-button-toggle').filter({ hasText: 'cm' }).click();
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: 'e2e/screenshots/step2-unit-cm.png' });
+  });
+
+  await test.step('3️⃣ Enter Width measurement — 120 cm', async () => {
+    const widthInput = page.locator('mat-form-field').filter({ hasText: /Width/ }).locator('input');
+    await widthInput.click();
+    await widthInput.fill('120');
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(1000); // wait for 3D to update
+    await page.screenshot({ path: 'e2e/screenshots/step3-width-entered.png' });
+    expect(await widthInput.inputValue()).toBe('120');
+  });
+
+  await test.step('4️⃣ Enter Drop measurement — 150 cm', async () => {
+    const dropInput = page.locator('mat-form-field').filter({ hasText: /Drop/ }).locator('input');
+    await dropInput.click();
+    await dropInput.fill('150');
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(1000); // wait for 3D to update
+    await page.screenshot({ path: 'e2e/screenshots/step4-drop-entered.png' });
+    expect(await dropInput.inputValue()).toBe('150');
+  });
+
+  await test.step('5️⃣ Select Blind or Recess option', async () => {
+    await page.locator('mat-form-field').filter({ hasText: /Blind or Recess/ }).locator('mat-select').click();
+    await page.waitForTimeout(600);
+    await page.locator('mat-option').first().click();
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: 'e2e/screenshots/step5-blind-recess.png' });
+  });
+
+  await test.step('6️⃣ Enter Room name', async () => {
+    const roomInput = page.locator('mat-form-field').filter({ hasText: /Room/ }).locator('input');
+    await roomInput.click();
+    await roomInput.fill('Living Room');
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: 'e2e/screenshots/step6-room-entered.png' });
+  });
+
+  await test.step('7️⃣ Select Control Type', async () => {
+    await page.locator('mat-form-field').filter({ hasText: /Control Type/ }).locator('mat-select').click();
+    await page.waitForTimeout(600);
+    await page.locator('mat-option').first().click();
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: 'e2e/screenshots/step7-control-type.png' });
+  });
+
+  await test.step('8️⃣ Scroll down and select Control Side', async () => {
+    await page.locator('mat-form-field').filter({ hasText: /Control Side/ }).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(600);
+    await page.locator('mat-form-field').filter({ hasText: /Control Side/ }).locator('mat-select').click();
+    await page.waitForTimeout(600);
+    await page.locator('mat-option').first().click();
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: 'e2e/screenshots/step8-control-side.png' });
+  });
+
+  await test.step('9️⃣ Scroll to Add to Cart and click', async () => {
+    const addToCart = page.locator('button').filter({ hasText: /Add to Cart/ });
+    await addToCart.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: 'e2e/screenshots/step9-before-cart.png' });
+    await addToCart.click();
+    await page.waitForTimeout(2000);
+    await page.screenshot({ path: 'e2e/screenshots/step9-after-cart.png' });
+  });
+
+});
+
 // ── Test 1: Wait for page to load and enter Width + Drop ────────
 test('TC01 - Enter Width and Drop measurements', async ({ page }) => {
   await page.goto(PRODUCT_URL);
