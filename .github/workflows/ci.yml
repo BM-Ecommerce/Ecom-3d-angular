@@ -77,13 +77,13 @@ jobs:
           echo "status=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
         continue-on-error: true
 
-      - name: 📊 Upload Coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: 📊 Coverage Summary
         if: always()
-        with:
-          directory: coverage/visualization
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat test-output.txt | grep -A 10 "Coverage summary" >> $GITHUB_STEP_SUMMARY || echo "No coverage data" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
       - uses: actions/upload-artifact@v4
         if: always()
