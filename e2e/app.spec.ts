@@ -64,17 +64,13 @@ test('Full 3D Configurator Journey - Roller Blinds Order', async ({ page }) => {
     await page.screenshot({ path: 'e2e/screenshots/step7-control-type.png' });
   });
 
-  await test.step('8️⃣ Try Add to Cart without Control Side — should be blocked', async () => {
+  await test.step('8️⃣ Verify Add to Cart is disabled without Control Side', async () => {
     const addToCart = page.locator('button').filter({ hasText: /Add to Cart/ });
     await addToCart.scrollIntoViewIfNeeded();
     await page.waitForTimeout(800);
-    await addToCart.click(); // attempt without mandatory field
-    await page.waitForTimeout(1000);
-    // Control Side should show red validation error
-    const controlSide = page.locator('mat-form-field').filter({ hasText: /Control Side/ });
-    await controlSide.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(600);
-    await page.screenshot({ path: 'e2e/screenshots/step8-validation-error.png' });
+    // Button should be disabled — Control Side not selected yet
+    await expect(addToCart).toBeDisabled();
+    await page.screenshot({ path: 'e2e/screenshots/step8-cart-disabled.png' });
   });
 
   await test.step('9️⃣ Select mandatory Control Side field', async () => {
